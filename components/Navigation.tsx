@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
-  { href: "/forecast", label: "Forecast" },
+  { href: "/forecasts", label: "Forecasts" },
+  { href: "/forecast", label: "Legacy Grid" },
   { href: "/settings", label: "Settings" },
   { href: "/workback", label: "Workback" },
   { href: "/summary", label: "Summary" },
@@ -18,7 +19,8 @@ export default function Navigation() {
       <span className="font-bold text-lg tracking-tight">FY2026 Forecast</span>
       <div className="flex gap-1">
         {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href;
+          const active =
+            pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}

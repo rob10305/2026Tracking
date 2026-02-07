@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Forecast {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  type        String   @default("financial") // financial, pipeline, timeline
+  granularity String   @default("monthly")   // monthly, quarterly, weekly, custom
+  startDate   String                          // "YYYY-MM-DD"
+  endDate     String                          // "YYYY-MM-DD"
+  config      String   @default("{}")         // JSON blob for type-specific config
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  scenarios   Scenario[]
+  timePeriods TimePeriod[]
+}
+
+model Scenario {
+  id         String   @id @default(cuid())
+  forecastId String
+  name       String
+  color      String   @default("#3b82f6")
+  isBaseline Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  forecast  Forecast   @relation(fields: [forecastId], references: [id], onDelete: Cascade)
+  lineItems LineItem[]
+
+  @@index([forecastId])
+}
+
+model TimePeriod {
+  id         String @id @default(cuid())
+  forecastId String
+  label      String
+  startDate  String // "YYYY-MM-DD"
+  endDate    String // "YYYY-MM-DD"
+  sortOrder  Int    @default(0)
+
+  forecast  Forecast   @relation(fields: [forecastId], references: [id], onDelete: Cascade)
+  lineItems LineItem[]
+
+  @@index([forecastId])
+}
+
+model LineItem {
+  id           String @id @default(cuid())
+  scenarioId   String
+  timePeriodId String
+  category     String // e.g., "revenue", "cost", "pipeline-stage", "effort"
+  subcategory  String @default("") // e.g., product name, cost type
+  value        Float  @default(0)
+  metadata     String @default("{}") // JSON blob for type-specific data
+
+  scenario   Scenario   @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  timePeriod TimePeriod @relation(fields: [timePeriodId], references: [id], onDelete: Cascade)
+
+  @@unique([scenarioId, timePeriodId, category, subcategory])
+  @@index([scenarioId])
+  @@index([timePeriodId])
+}

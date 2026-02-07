@@ -24,3 +24,6 @@ export {
   exportSummaryCSV,
   exportWorkbackCSV,
 } from "./csv";
+
+export { generateTimePeriods } from "./time-periods";
+export type { TimePeriodDef } from "./time-periods";
