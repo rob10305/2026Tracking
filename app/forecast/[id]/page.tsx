@@ -34,8 +34,6 @@ import {
   Target,
   Minus,
   Plus,
-  ChevronDown,
-  ChevronUp,
   BarChart3,
   PieChart as PieChartIcon,
   Users,
@@ -89,15 +87,9 @@ export default function ForecastDetailPage() {
   const { getForecast, setQty, isLoaded } = useSavedForecasts();
   const [mode, setMode] = useState<RevenueMode>("net");
   const [activeTab, setActiveTab] = useState<TabKey>("revenue");
-  const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
-
   const forecast = getForecast(forecastId);
   const products = state.products;
   const quantities = forecast?.quantities ?? {};
-
-  const toggleProduct = (pid: string) => {
-    setExpandedProducts((prev) => ({ ...prev, [pid]: !prev[pid] }));
-  };
 
   const handleQtyChange = useCallback(
     (productId: string, month: string, delta: number) => {
@@ -393,88 +385,92 @@ export default function ForecastDetailPage() {
         />
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-3">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900">Product Quantities</h2>
-          <p className="text-xs text-gray-400">Set units per month per product</p>
+          <p className="text-xs text-gray-400">Set units per month for each product</p>
         </div>
-        <div className="space-y-3">
-          {products.map((product, pi) => {
-            const isExpanded = expandedProducts[product.id] ?? true;
-            const pd = monthlyProductData[pi];
-            const annualRev = pd.annualResult
-              ? (mode === "gross" ? pd.annualResult.gross_revenue : pd.annualResult.net_revenue)
-              : 0;
-
-            return (
-              <div key={product.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all">
-                <button
-                  onClick={() => toggleProduct(product.id)}
-                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-3 h-3 rounded-full shrink-0"
-                      style={{ backgroundColor: PRODUCT_COLORS[pi % PRODUCT_COLORS.length] }}
-                    />
-                    <span className="font-semibold text-gray-900">{product.name}</span>
-                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                      {pd.annualQty} units
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    {annualRev > 0 && (
-                      <span className="text-sm font-medium text-gray-600">{fmtCompact(annualRev)}</span>
-                    )}
-                    {isExpanded ? (
-                      <ChevronUp className="w-4 h-4 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    )}
-                  </div>
-                </button>
-
-                {isExpanded && (
-                  <div className="px-5 pb-5 border-t border-gray-100">
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 mt-4">
-                      {MONTHS_2026.map((m, mi) => {
-                        const qty = quantities[forecastKey(product.id, m)] ?? 0;
-                        return (
-                          <div key={m} className="flex flex-col items-center">
-                            <span className="text-[10px] font-medium text-gray-400 mb-1.5 uppercase">
-                              {MONTH_LABELS[mi]}
-                            </span>
-                            <div className="flex flex-col items-center gap-1">
-                              <button
-                                onClick={() => handleQtyChange(product.id, m, 1)}
-                                className="w-8 h-6 flex items-center justify-center rounded-md bg-gray-100 hover:bg-blue-100 hover:text-blue-600 text-gray-500 transition-colors"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
-                              <input
-                                type="number"
-                                min={0}
-                                value={qty}
-                                onChange={(e) => handleQtyDirect(product.id, m, e.target.value)}
-                                className="w-10 text-center text-sm font-medium border border-gray-200 rounded-lg py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              />
-                              <button
-                                onClick={() => handleQtyChange(product.id, m, -1)}
-                                className="w-8 h-6 flex items-center justify-center rounded-md bg-gray-100 hover:bg-red-100 hover:text-red-600 text-gray-500 transition-colors"
-                                disabled={qty === 0}
-                              >
-                                <Minus className="w-3 h-3" />
-                              </button>
-                            </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 min-w-[180px] z-10">
+                  Product
+                </th>
+                {MONTH_LABELS.map((m) => (
+                  <th key={m} className="px-2 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[72px]">
+                    {m}
+                  </th>
+                ))}
+                <th className="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[72px] bg-gray-100">
+                  Total
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product, pi) => {
+                const pd = monthlyProductData[pi];
+                return (
+                  <tr key={product.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors">
+                    <td className="px-4 py-3 sticky left-0 bg-white z-10">
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: PRODUCT_COLORS[pi % PRODUCT_COLORS.length] }}
+                        />
+                        <span className="font-medium text-sm text-gray-900 truncate">{product.name}</span>
+                      </div>
+                    </td>
+                    {MONTHS_2026.map((m) => {
+                      const qty = quantities[forecastKey(product.id, m)] ?? 0;
+                      return (
+                        <td key={m} className="px-1 py-2 text-center">
+                          <div className="flex flex-col items-center gap-0.5">
+                            <button
+                              onClick={() => handleQtyChange(product.id, m, 1)}
+                              className="w-7 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-blue-100 hover:text-blue-600 text-gray-400 transition-colors"
+                            >
+                              <Plus className="w-2.5 h-2.5" />
+                            </button>
+                            <input
+                              type="number"
+                              min={0}
+                              value={qty}
+                              onChange={(e) => handleQtyDirect(product.id, m, e.target.value)}
+                              className="w-12 text-center text-sm font-medium border border-gray-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                            <button
+                              onClick={() => handleQtyChange(product.id, m, -1)}
+                              className="w-7 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-red-100 hover:text-red-600 text-gray-400 transition-colors"
+                              disabled={qty === 0}
+                            >
+                              <Minus className="w-2.5 h-2.5" />
+                            </button>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                        </td>
+                      );
+                    })}
+                    <td className="px-3 py-3 text-center bg-gray-50">
+                      <span className="font-semibold text-sm text-gray-900">{pd.annualQty}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+              <tr className="bg-gray-50 font-semibold">
+                <td className="px-4 py-3 sticky left-0 bg-gray-50 z-10 text-sm text-gray-700">Total</td>
+                {MONTHS_2026.map((m, mi) => {
+                  let monthSum = 0;
+                  for (const p of products) {
+                    monthSum += quantities[forecastKey(p.id, m)] ?? 0;
+                  }
+                  return (
+                    <td key={m} className="px-2 py-3 text-center text-sm text-gray-700">{monthSum}</td>
+                  );
+                })}
+                <td className="px-3 py-3 text-center text-sm text-gray-900 bg-gray-100">{totalUnits}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 

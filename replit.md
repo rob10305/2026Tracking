@@ -37,7 +37,7 @@ __tests__/       - Vitest test files
 
 ## Recent Changes
 - 2026-02-07: Interactive forecast builder UI redesign
-  - Replaced spreadsheet grid with interactive product cards (stepper +/- controls)
+  - Grid layout: months across top, products down left column, stepper +/- controls in each cell
   - KPI summary cards at top (Revenue, Units, Gross Profit, Blended Margin)
   - Tabbed analysis navigation (Revenue, Components, Profit & Margin, Pipeline, Channels)
   - Recharts bar charts for monthly revenue and pie charts for component/channel breakdowns
@@ -45,7 +45,7 @@ __tests__/       - Vitest test files
   - Gradient hero section for creating new forecasts
   - Dropdown action menus (rename, duplicate, delete)
   - lucide-react icons throughout
-  - Pipeline Summary by Month table restored in Pipeline tab
+  - Pipeline Summary by Month table in Pipeline tab
 - 2026-02-07: Build Forecast feature (multiple named forecasts)
   - SavedForecast type with id, name, timestamps, quantities map
   - Separate localStorage persistence (forecast-app-saved-forecasts)
