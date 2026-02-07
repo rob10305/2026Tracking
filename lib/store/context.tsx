@@ -54,6 +54,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const saved = loadState();
     if (saved) {
+      if (!saved.margins) {
+        saved.margins = {
+          professional_services_margin_pct: 45,
+          software_resale_margin_pct: 20,
+          cloud_consumption_margin_pct: 30,
+          epss_margin_pct: 55,
+        };
+      }
       if (!saved.industryAverages) {
         saved.industryAverages = {
           sales_cycle_months: 3,
