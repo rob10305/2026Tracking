@@ -32,8 +32,6 @@ import {
   Package,
   TrendingUp,
   Target,
-  Minus,
-  Plus,
   BarChart3,
   PieChart as PieChartIcon,
   Users,
@@ -90,16 +88,6 @@ export default function ForecastDetailPage() {
   const forecast = getForecast(forecastId);
   const products = state.products;
   const quantities = forecast?.quantities ?? {};
-
-  const handleQtyChange = useCallback(
-    (productId: string, month: string, delta: number) => {
-      const key = forecastKey(productId, month);
-      const current = quantities[key] ?? 0;
-      const newVal = Math.max(0, current + delta);
-      setQty(forecastId, productId, month, newVal);
-    },
-    [forecastId, quantities, setQty]
-  );
 
   const handleQtyDirect = useCallback(
     (productId: string, month: string, value: string) => {
@@ -424,29 +412,15 @@ export default function ForecastDetailPage() {
                     {MONTHS_2026.map((m) => {
                       const qty = quantities[forecastKey(product.id, m)] ?? 0;
                       return (
-                        <td key={m} className="px-1 py-2 text-center">
-                          <div className="flex flex-col items-center gap-0.5">
-                            <button
-                              onClick={() => handleQtyChange(product.id, m, 1)}
-                              className="w-7 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-blue-100 hover:text-blue-600 text-gray-400 transition-colors"
-                            >
-                              <Plus className="w-2.5 h-2.5" />
-                            </button>
-                            <input
-                              type="number"
-                              min={0}
-                              value={qty}
-                              onChange={(e) => handleQtyDirect(product.id, m, e.target.value)}
-                              className="w-12 text-center text-sm font-medium border border-gray-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                            <button
-                              onClick={() => handleQtyChange(product.id, m, -1)}
-                              className="w-7 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-red-100 hover:text-red-600 text-gray-400 transition-colors"
-                              disabled={qty === 0}
-                            >
-                              <Minus className="w-2.5 h-2.5" />
-                            </button>
-                          </div>
+                        <td key={m} className="px-1 py-1.5 text-center">
+                          <input
+                            type="number"
+                            min={0}
+                            value={qty || ""}
+                            placeholder="0"
+                            onChange={(e) => handleQtyDirect(product.id, m, e.target.value)}
+                            className="w-14 text-center text-sm font-medium bg-gray-50 border border-gray-200 rounded-md py-1.5 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
                         </td>
                       );
                     })}
