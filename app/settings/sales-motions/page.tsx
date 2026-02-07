@@ -223,7 +223,7 @@ export default function SalesMotionsPage() {
     <div className="max-w-4xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Revenue Operations</h1>
+          <h1 className="text-2xl font-bold">RevOps Performance Metrics</h1>
           <p className="text-sm text-gray-500 mt-1">
             Configure sales cycle timing, win rates, and prospecting parameters for each product.
           </p>
