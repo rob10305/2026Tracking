@@ -24,6 +24,15 @@ function generateId(): string {
   return "prod-" + Math.random().toString(36).slice(2, 10);
 }
 
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <span className="text-xs text-gray-400">{label}</span>
+      <p className="text-sm font-medium text-gray-800">{value}</p>
+    </div>
+  );
+}
+
 function ProductCard({
   product,
   onSave,
@@ -40,6 +49,7 @@ function ProductCard({
   const [p, setP] = useState<Product>({ ...product });
   const [dirty, setDirty] = useState(false);
   const [expanded, setExpanded] = useState(defaultExpanded ?? false);
+  const [editing, setEditing] = useState(false);
 
   const componentSum =
     p.professional_services_pct +
@@ -57,6 +67,13 @@ function ProductCard({
     if (!validMix) return;
     onSave(p);
     setDirty(false);
+    setEditing(false);
+  };
+
+  const cancel = () => {
+    setP({ ...product });
+    setDirty(false);
+    setEditing(false);
   };
 
   const formatPrice = (v: number) =>
@@ -67,8 +84,8 @@ function ProductCard({
       <div
         role="button"
         tabIndex={0}
-        onClick={() => setExpanded(!expanded)}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setExpanded(!expanded); }}
+        onClick={() => { if (!editing) setExpanded(!expanded); }}
+        onKeyDown={(e) => { if (!editing && (e.key === "Enter" || e.key === " ")) setExpanded(!expanded); }}
         className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors text-left cursor-pointer select-none"
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -95,18 +112,13 @@ function ProductCard({
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          {dirty && (
-            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
-              Unsaved
-            </span>
-          )}
           {!expanded && (
             <>
               <span className="text-sm text-gray-500 mr-2">
-                {formatPrice(p.gross_unit_price)}
+                {formatPrice(product.gross_unit_price)}
               </span>
               <button
-                onClick={() => setExpanded(true)}
+                onClick={() => { setExpanded(true); setEditing(true); }}
                 className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
               >
                 Edit
@@ -122,18 +134,15 @@ function ProductCard({
         </div>
       </div>
 
-      {expanded && (
+      {expanded && !editing && (
         <div className="px-5 pb-5 space-y-4 border-t border-gray-100">
           <div className="flex justify-end gap-2 pt-3">
-            {dirty && (
-              <button
-                onClick={save}
-                disabled={!validMix}
-                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-              >
-                Save
-              </button>
-            )}
+            <button
+              onClick={() => setEditing(true)}
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Edit
+            </button>
             <button
               onClick={onClone}
               className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
@@ -141,10 +150,50 @@ function ProductCard({
               Clone
             </button>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
+              onClick={onDelete}
+              className="px-3 py-1 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100"
+            >
+              Delete
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+            <DetailRow label="Name" value={product.name || "—"} />
+            <DetailRow label="Description" value={product.description || "—"} />
+            <DetailRow label="Gross Unit Price" value={formatPrice(product.gross_unit_price)} />
+            <DetailRow label="Default Discount" value={`${product.default_discount_pct}%`} />
+          </div>
+
+          <div>
+            <span className="text-sm font-medium text-gray-700 block mb-2">Revenue Component Mix</span>
+            <div className="grid grid-cols-4 gap-x-6 gap-y-2">
+              <DetailRow label="Prof. Services" value={`${product.professional_services_pct}%`} />
+              <DetailRow label="Software Resale" value={`${product.software_resale_pct}%`} />
+              <DetailRow label="Cloud Consumption" value={`${product.cloud_consumption_pct}%`} />
+              <DetailRow label="EPSS" value={`${product.epss_pct}%`} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {expanded && editing && (
+        <div className="px-5 pb-5 space-y-4 border-t border-gray-100">
+          <div className="flex justify-end gap-2 pt-3">
+            <button
+              onClick={save}
+              disabled={!validMix}
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              Save
+            </button>
+            <button
+              onClick={cancel}
+              className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onDelete}
               className="px-3 py-1 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100"
             >
               Delete
