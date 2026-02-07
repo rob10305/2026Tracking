@@ -127,7 +127,7 @@ function SalesMotionCard({
           <div className="grid grid-cols-4 gap-x-6 gap-y-2">
             <DetailRow label="Sales Cycle" value={`${salesMotion.sales_cycle_months} mo`} />
             <DetailRow label="Win Rate" value={`${salesMotion.opp_to_close_win_rate_pct}%`} />
-            <DetailRow label="Prospect to Opp" value={`${salesMotion.prospect_to_opp_rate_pct}%`} />
+            <DetailRow label="Prospect to Closure" value={`${salesMotion.prospect_to_opp_rate_pct}%`} />
             <DetailRow label="Lead Time to Close" value={`${salesMotion.prospecting_lead_time_months} mo`} />
           </div>
         </div>
@@ -190,7 +190,7 @@ function SalesMotionCard({
               max={100}
             />
             <NumberInput
-              label="Prospect to Opp"
+              label="Prospect to Closure"
               value={s.prospect_to_opp_rate_pct}
               onChange={(v) => updateS({ prospect_to_opp_rate_pct: v })}
               suffix="%"
