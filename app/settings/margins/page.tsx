@@ -8,6 +8,7 @@ import NumberInput from "@/components/NumberInput";
 export default function MarginsPage() {
   const { state, updateMargins } = useStore();
   const [m, setM] = useState<Margins>({ ...state.margins });
+  const [editing, setEditing] = useState(false);
   const [dirty, setDirty] = useState(false);
 
   const update = (patch: Partial<Margins>) => {
@@ -18,11 +19,13 @@ export default function MarginsPage() {
   const save = () => {
     updateMargins(m);
     setDirty(false);
+    setEditing(false);
   };
 
   const cancel = () => {
     setM({ ...state.margins });
     setDirty(false);
+    setEditing(false);
   };
 
   return (
@@ -35,7 +38,15 @@ export default function MarginsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {dirty && (
+          {!editing && (
+            <button
+              onClick={() => setEditing(true)}
+              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Edit
+            </button>
+          )}
+          {editing && (
             <>
               <button
                 onClick={save}
@@ -63,6 +74,7 @@ export default function MarginsPage() {
             suffix="%"
             min={0}
             max={100}
+            disabled={!editing}
           />
           <NumberInput
             label="Software Resale Margin"
@@ -71,6 +83,7 @@ export default function MarginsPage() {
             suffix="%"
             min={0}
             max={100}
+            disabled={!editing}
           />
           <NumberInput
             label="Cloud Consumption Margin"
@@ -79,6 +92,7 @@ export default function MarginsPage() {
             suffix="%"
             min={0}
             max={100}
+            disabled={!editing}
           />
           <NumberInput
             label="EPS Margin"
@@ -87,6 +101,7 @@ export default function MarginsPage() {
             suffix="%"
             min={0}
             max={100}
+            disabled={!editing}
           />
         </div>
       </div>

@@ -10,6 +10,7 @@ export default function NumberInput({
   min,
   max,
   step,
+  disabled,
 }: {
   label: string;
   value: number;
@@ -18,6 +19,7 @@ export default function NumberInput({
   min?: number;
   max?: number;
   step?: number;
+  disabled?: boolean;
 }) {
   return (
     <label className="block text-sm">
@@ -30,7 +32,8 @@ export default function NumberInput({
           min={min}
           max={max}
           step={step ?? 1}
-          className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+          disabled={disabled}
+          className={`w-full border border-gray-300 rounded px-2 py-1 text-sm ${disabled ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
         />
         {suffix && <span className="text-gray-400 text-xs">{suffix}</span>}
       </div>
