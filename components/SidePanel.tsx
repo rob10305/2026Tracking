@@ -28,7 +28,7 @@ export default function SidePanel({ productId, mode }: SidePanelProps) {
   const { state } = useStore();
 
   const product = state.products.find((p) => p.id === productId);
-  const margins = productId ? state.marginsByProductId[productId] : undefined;
+  const margins = state.margins;
 
   const result = useMemo(() => {
     if (!product || !margins) return null;

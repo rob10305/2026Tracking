@@ -1,8 +1,5 @@
 import type {
   AppState,
-  Product,
-  Margins,
-  MONTHS_2026,
 } from "@/lib/models/types";
 import { forecastKey, MONTH_LABELS } from "@/lib/models/types";
 import { calcFullRevenue } from "./revenue";
@@ -67,9 +64,7 @@ export function exportSummaryCSV(state: AppState): string {
     for (const p of state.products) {
       const qty = state.forecastByProductIdMonth[forecastKey(p.id, m)] ?? 0;
       if (qty === 0) continue;
-      const margins = state.marginsByProductId[p.id];
-      if (!margins) continue;
-      const r = calcFullRevenue(p, margins, qty);
+      const r = calcFullRevenue(p, state.margins, qty);
       totalGross += r.gross_revenue;
       totalNet += r.net_revenue;
       totalGrossGP += r.total_gross_gp;

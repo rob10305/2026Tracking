@@ -1,4 +1,4 @@
-import type { AppState } from "@/lib/models/types";
+import type { AppState, Margins } from "@/lib/models/types";
 
 export function createSeedData(): AppState {
   const products = [
@@ -40,25 +40,11 @@ export function createSeedData(): AppState {
     },
   ];
 
-  const marginsByProductId: AppState["marginsByProductId"] = {
-    "prod-managed-cloud": {
-      professional_services_margin_pct: 45,
-      software_resale_margin_pct: 20,
-      cloud_consumption_margin_pct: 30,
-      epss_margin_pct: 55,
-    },
-    "prod-devops-accelerator": {
-      professional_services_margin_pct: 50,
-      software_resale_margin_pct: 25,
-      cloud_consumption_margin_pct: 28,
-      epss_margin_pct: 52,
-    },
-    "prod-security-suite": {
-      professional_services_margin_pct: 48,
-      software_resale_margin_pct: 18,
-      cloud_consumption_margin_pct: 32,
-      epss_margin_pct: 58,
-    },
+  const margins: Margins = {
+    professional_services_margin_pct: 45,
+    software_resale_margin_pct: 20,
+    cloud_consumption_margin_pct: 30,
+    epss_margin_pct: 55,
   };
 
   const salesMotionByProductId: AppState["salesMotionByProductId"] = {
@@ -127,7 +113,7 @@ export function createSeedData(): AppState {
 
   return {
     products,
-    marginsByProductId,
+    margins,
     salesMotionByProductId,
     forecastByProductIdMonth,
   };

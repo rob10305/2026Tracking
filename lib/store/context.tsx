@@ -22,11 +22,11 @@ import { createSeedData } from "./seed";
 interface AppStore {
   state: AppState;
   // Product CRUD
-  addProduct: (p: Product, m: Margins, s: SalesMotion) => void;
+  addProduct: (p: Product, s: SalesMotion) => void;
   updateProduct: (p: Product) => void;
   deleteProduct: (id: string) => void;
   // Margins
-  updateMargins: (productId: string, m: Margins) => void;
+  updateMargins: (m: Margins) => void;
   // Sales Motion
   updateSalesMotion: (productId: string, s: SalesMotion) => void;
   // Forecast
@@ -70,11 +70,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addProduct = useCallback(
-    (p: Product, m: Margins, s: SalesMotion) => {
+    (p: Product, s: SalesMotion) => {
       update((prev) => ({
         ...prev,
         products: [...prev.products, p],
-        marginsByProductId: { ...prev.marginsByProductId, [p.id]: m },
         salesMotionByProductId: { ...prev.salesMotionByProductId, [p.id]: s },
       }));
     },
@@ -100,12 +99,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             newForecast[k] = v;
           }
         }
-        const { [id]: _m, ...restMargins } = prev.marginsByProductId;
         const { [id]: _s, ...restSales } = prev.salesMotionByProductId;
         return {
           ...prev,
           products: prev.products.filter((x) => x.id !== id),
-          marginsByProductId: restMargins,
           salesMotionByProductId: restSales,
           forecastByProductIdMonth: newForecast,
         };
@@ -115,10 +112,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateMargins = useCallback(
-    (productId: string, m: Margins) => {
+    (m: Margins) => {
       update((prev) => ({
         ...prev,
-        marginsByProductId: { ...prev.marginsByProductId, [productId]: m },
+        margins: m,
       }));
     },
     [update],

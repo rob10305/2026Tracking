@@ -39,9 +39,7 @@ export default function SummaryPage() {
         const qty =
           state.forecastByProductIdMonth[forecastKey(p.id, m)] ?? 0;
         if (qty === 0) continue;
-        const margins = state.marginsByProductId[p.id];
-        if (!margins) continue;
-        const r = calcFullRevenue(p, margins, qty);
+        const r = calcFullRevenue(p, state.margins, qty);
         grossRev += r.gross_revenue;
         netRev += r.net_revenue;
         grossGP += r.total_gross_gp;
@@ -62,13 +60,12 @@ export default function SummaryPage() {
   // Product annual summary
   const productSummary = useMemo(() => {
     return state.products.map((p) => {
-      const margins = state.marginsByProductId[p.id];
       let totalQty = 0;
       for (const m of MONTHS_2026) {
         totalQty +=
           state.forecastByProductIdMonth[forecastKey(p.id, m)] ?? 0;
       }
-      if (!margins || totalQty === 0) {
+      if (totalQty === 0) {
         return {
           product: p,
           qty: totalQty,
@@ -78,7 +75,7 @@ export default function SummaryPage() {
       return {
         product: p,
         qty: totalQty,
-        result: calcFullRevenue(p, margins, totalQty),
+        result: calcFullRevenue(p, state.margins, totalQty),
       };
     });
   }, [state]);

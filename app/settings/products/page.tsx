@@ -2,15 +2,8 @@
 
 import React, { useState } from "react";
 import { useStore } from "@/lib/store/context";
-import type { Product, Margins, SalesMotion, ComponentMixMode } from "@/lib/models/types";
+import type { Product, SalesMotion, ComponentMixMode } from "@/lib/models/types";
 import NumberInput from "@/components/NumberInput";
-
-const DEFAULT_MARGINS: Margins = {
-  professional_services_margin_pct: 45,
-  software_resale_margin_pct: 20,
-  cloud_consumption_margin_pct: 30,
-  epss_margin_pct: 50,
-};
 
 const DEFAULT_SALES_MOTION: SalesMotion = {
   sales_cycle_months: 3,
@@ -385,7 +378,7 @@ export default function ProductsPage() {
       cloud_consumption_pct: 25,
       epss_pct: 25,
     };
-    addProduct(newProduct, { ...DEFAULT_MARGINS }, { ...DEFAULT_SALES_MOTION });
+    addProduct(newProduct, { ...DEFAULT_SALES_MOTION });
     setExpandAll(false);
   };
 
@@ -396,9 +389,8 @@ export default function ProductsPage() {
       id,
       name: `${sourceProduct.name} (Copy)`,
     };
-    const margins = state.marginsByProductId[sourceProduct.id] ?? { ...DEFAULT_MARGINS };
     const salesMotion = state.salesMotionByProductId[sourceProduct.id] ?? { ...DEFAULT_SALES_MOTION };
-    addProduct(cloned, { ...margins }, { ...salesMotion });
+    addProduct(cloned, { ...salesMotion });
   };
 
   return (
