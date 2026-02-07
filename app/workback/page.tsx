@@ -85,7 +85,7 @@ export default function WorkbackPage() {
           <span className="font-semibold">Assumptions:</span>{" "}
           Sales cycle {selectedMotion.sales_cycle_months}mo, win rate{" "}
           {selectedMotion.opp_to_close_win_rate_pct}%, prospect→opp{" "}
-          {selectedMotion.prospect_to_opp_rate_pct}%, prospecting lead{" "}
+          {selectedMotion.prospect_to_opp_rate_pct}%, lead time to close{" "}
           {selectedMotion.prospecting_lead_time_months}mo
         </div>
       )}

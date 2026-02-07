@@ -109,7 +109,7 @@ export default function IndustryAveragesPage() {
               <p className="text-sm font-medium text-gray-800">{state.industryAverages.prospect_to_opp_rate_pct}%</p>
             </div>
             <div>
-              <span className="text-xs text-gray-400">Prospect Lead Time</span>
+              <span className="text-xs text-gray-400">Lead Time to Close</span>
               <p className="text-sm font-medium text-gray-800">{state.industryAverages.prospecting_lead_time_months} mo</p>
             </div>
           </div>
@@ -139,7 +139,7 @@ export default function IndustryAveragesPage() {
               max={100}
             />
             <NumberInput
-              label="Prospect Lead Time"
+              label="Lead Time to Close"
               value={draft.prospecting_lead_time_months}
               onChange={(v) => updateDraft({ prospecting_lead_time_months: Math.max(0, Math.round(v)) })}
               suffix="mo"

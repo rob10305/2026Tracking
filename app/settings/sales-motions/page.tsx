@@ -128,7 +128,7 @@ function SalesMotionCard({
             <DetailRow label="Sales Cycle" value={`${salesMotion.sales_cycle_months} mo`} />
             <DetailRow label="Win Rate" value={`${salesMotion.opp_to_close_win_rate_pct}%`} />
             <DetailRow label="Prospect to Opp" value={`${salesMotion.prospect_to_opp_rate_pct}%`} />
-            <DetailRow label="Prospect Lead Time" value={`${salesMotion.prospecting_lead_time_months} mo`} />
+            <DetailRow label="Lead Time to Close" value={`${salesMotion.prospecting_lead_time_months} mo`} />
           </div>
         </div>
       )}
@@ -198,7 +198,7 @@ function SalesMotionCard({
               max={100}
             />
             <NumberInput
-              label="Prospect Lead Time"
+              label="Lead Time to Close"
               value={s.prospecting_lead_time_months}
               onChange={(v) =>
                 updateS({
