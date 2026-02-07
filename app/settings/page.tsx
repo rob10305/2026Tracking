@@ -35,7 +35,7 @@ const SUB_PAGES = [
   },
   {
     href: "/settings/sales-motions",
-    title: "Sales Motions",
+    title: "Revenue Operations",
     description: "Define sales cycles, win rates, and prospecting parameters.",
     icon: (
       <svg className="w-8 h-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
