@@ -13,6 +13,7 @@ import type {
   Product,
   Margins,
   SalesMotion,
+  PipelineContribution,
   ForecastMap,
 } from "@/lib/models/types";
 import { forecastKey } from "@/lib/models/types";
@@ -29,6 +30,8 @@ interface AppStore {
   updateMargins: (m: Margins) => void;
   // Industry Averages
   updateIndustryAverages: (s: SalesMotion) => void;
+  // Pipeline Contribution
+  updatePipelineContribution: (p: PipelineContribution) => void;
   // Sales Motion
   updateSalesMotion: (productId: string, s: SalesMotion) => void;
   // Forecast
@@ -57,6 +60,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           opp_to_close_win_rate_pct: 20,
           prospect_to_opp_rate_pct: 15,
           prospecting_lead_time_months: 1,
+        };
+      }
+      if (!saved.pipelineContribution) {
+        saved.pipelineContribution = {
+          mode: "pct",
+          website_inbound: 30,
+          sales_team_generated: 35,
+          event_sourced: 20,
+          abm_thought_leadership: 15,
         };
       }
       skipNextSave.current = true;
@@ -141,6 +153,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [update],
   );
 
+  const updatePipelineContribution = useCallback(
+    (p: PipelineContribution) => {
+      update((prev) => ({
+        ...prev,
+        pipelineContribution: p,
+      }));
+    },
+    [update],
+  );
+
   const updateSalesMotion = useCallback(
     (productId: string, s: SalesMotion) => {
       update((prev) => ({
@@ -203,6 +225,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         deleteProduct,
         updateMargins,
         updateIndustryAverages,
+        updatePipelineContribution,
         updateSalesMotion,
         setForecastQty,
         setForecastBulk,

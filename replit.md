@@ -36,6 +36,11 @@ __tests__/       - Vitest test files
 - **Dev Origins**: Configured to allow *.replit.dev origins
 
 ## Recent Changes
+- 2026-02-07: Added Pipeline Contribution to Industry Averages
+  - New `PipelineContribution` type with mode (pct/num) and 4 channels
+  - New `pipelineContribution` field in AppState
+  - Pipeline Contribution section on /settings/industry-averages with %/# toggle
+  - Migration guard for existing saved states without pipelineContribution
 - 2026-02-07: Added Industry Averages feature
   - New `industryAverages` field in AppState (SalesMotion type)
   - New settings page at /settings/industry-averages

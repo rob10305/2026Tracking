@@ -29,6 +29,16 @@ export interface SalesMotion {
   prospecting_lead_time_months: number;
 }
 
+export type PipelineContributionMode = "pct" | "num";
+
+export interface PipelineContribution {
+  mode: PipelineContributionMode;
+  website_inbound: number;
+  sales_team_generated: number;
+  event_sourced: number;
+  abm_thought_leadership: number;
+}
+
 /** Map of "productId::YYYY-MM" → quantity */
 export type ForecastMap = Record<string, number>;
 
@@ -36,6 +46,7 @@ export interface AppState {
   products: Product[];
   margins: Margins;
   industryAverages: SalesMotion;
+  pipelineContribution: PipelineContribution;
   salesMotionByProductId: Record<string, SalesMotion>;
   forecastByProductIdMonth: ForecastMap;
 }

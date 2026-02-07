@@ -1,4 +1,4 @@
-import type { AppState, Margins } from "@/lib/models/types";
+import type { AppState, Margins, PipelineContribution } from "@/lib/models/types";
 
 export function createSeedData(): AppState {
   const products = [
@@ -75,6 +75,14 @@ export function createSeedData(): AppState {
     prospecting_lead_time_months: 1,
   };
 
+  const pipelineContribution: PipelineContribution = {
+    mode: "pct",
+    website_inbound: 30,
+    sales_team_generated: 35,
+    event_sourced: 20,
+    abm_thought_leadership: 15,
+  };
+
   // Seed some forecast data for Q1/Q2
   const forecastByProductIdMonth: AppState["forecastByProductIdMonth"] = {
     "prod-managed-cloud::2026-01": 2,
@@ -119,6 +127,7 @@ export function createSeedData(): AppState {
     products,
     margins,
     industryAverages,
+    pipelineContribution,
     salesMotionByProductId,
     forecastByProductIdMonth,
   };
