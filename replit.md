@@ -36,6 +36,26 @@ __tests__/       - Vitest test files
 - **Dev Origins**: Configured to allow *.replit.dev origins
 
 ## Recent Changes
+- 2026-02-07: Performance Tracker page
+  - New /performance page with pipeline coverage, channel performance, and monthly trends
+  - KPI summary cards (Annual Revenue, Deals Required, Prospects Needed, Top Channel)
+  - Pipeline Coverage tab with coverage gauges and health assessment
+  - Channel Performance tab with pie/bar charts, ranking table, and insights
+  - Monthly Trends tab with revenue bar chart, pipeline line chart, and data table
+  - Forecast selector dropdown to switch between default and saved forecasts
+  - Added to main navigation
+- 2026-02-07: Partner Referral pipeline channel
+  - Added partner_referral to PipelineContribution type (5 channels total)
+  - Migration guard for existing saved states
+- 2026-02-07: Product status and readiness tracking
+  - ProductStatus (live/in_development) and ProductReadiness types
+  - Status badges on product cards, toggle in edit mode
+  - Conditional readiness checklist for In Development products
+  - Migration guard defaults existing products to "live"
+- 2026-02-07: Label updates
+  - Sales Motions → RevOps Performance Metrics
+  - Product list moved to Manual Overrides section
+  - Prospect to Opp → Prospect to Closure
 - 2026-02-07: Interactive forecast builder UI redesign
   - Grid layout: months across top, products down left column, stepper +/- controls in each cell
   - KPI summary cards at top (Revenue, Units, Gross Profit, Blended Margin)
