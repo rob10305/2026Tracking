@@ -10,6 +10,7 @@ const PIPELINE_CHANNELS: { key: keyof Omit<PipelineContribution, "mode">; label:
   { key: "sales_team_generated", label: "Sales Team Generated" },
   { key: "event_sourced", label: "Event Sourced" },
   { key: "abm_thought_leadership", label: "ABM/Thought Leadership" },
+  { key: "partner_referral", label: "Partner Referral" },
 ];
 
 export default function IndustryAveragesPage() {

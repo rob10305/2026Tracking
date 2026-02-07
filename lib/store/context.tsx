@@ -73,11 +73,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!saved.pipelineContribution) {
         saved.pipelineContribution = {
           mode: "pct",
-          website_inbound: 30,
-          sales_team_generated: 35,
-          event_sourced: 20,
+          website_inbound: 25,
+          sales_team_generated: 30,
+          event_sourced: 15,
           abm_thought_leadership: 15,
+          partner_referral: 15,
         };
+      }
+      if (saved.pipelineContribution && saved.pipelineContribution.partner_referral === undefined) {
+        saved.pipelineContribution.partner_referral = 0;
       }
       for (const p of saved.products) {
         if (!p.status) {

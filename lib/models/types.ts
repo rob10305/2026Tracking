@@ -50,6 +50,7 @@ export interface PipelineContribution {
   sales_team_generated: number;
   event_sourced: number;
   abm_thought_leadership: number;
+  partner_referral: number;
 }
 
 /** Map of "productId::YYYY-MM" → quantity */

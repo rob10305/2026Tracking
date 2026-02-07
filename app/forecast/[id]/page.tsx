@@ -220,12 +220,13 @@ export default function ForecastDetailPage() {
           { label: "Sales Team", pct: pc.sales_team_generated, prospects: Math.ceil(totalProspects * pc.sales_team_generated / 100), opps: Math.ceil(totalOpps * pc.sales_team_generated / 100) },
           { label: "Event Sourced", pct: pc.event_sourced, prospects: Math.ceil(totalProspects * pc.event_sourced / 100), opps: Math.ceil(totalOpps * pc.event_sourced / 100) },
           { label: "ABM/Thought Leadership", pct: pc.abm_thought_leadership, prospects: Math.ceil(totalProspects * pc.abm_thought_leadership / 100), opps: Math.ceil(totalOpps * pc.abm_thought_leadership / 100) },
+          { label: "Partner Referral", pct: pc.partner_referral, prospects: Math.ceil(totalProspects * pc.partner_referral / 100), opps: Math.ceil(totalOpps * pc.partner_referral / 100) },
         ],
         totalProspects,
         totalOpps,
       };
     }
-    const totalNum = pc.website_inbound + pc.sales_team_generated + pc.event_sourced + pc.abm_thought_leadership;
+    const totalNum = pc.website_inbound + pc.sales_team_generated + pc.event_sourced + pc.abm_thought_leadership + pc.partner_referral;
     const pctOf = (v: number) => totalNum > 0 ? (v / totalNum) * 100 : 0;
     return {
       channels: [
@@ -233,6 +234,7 @@ export default function ForecastDetailPage() {
         { label: "Sales Team", pct: pctOf(pc.sales_team_generated), prospects: Math.ceil(totalProspects * pctOf(pc.sales_team_generated) / 100), opps: Math.ceil(totalOpps * pctOf(pc.sales_team_generated) / 100) },
         { label: "Event Sourced", pct: pctOf(pc.event_sourced), prospects: Math.ceil(totalProspects * pctOf(pc.event_sourced) / 100), opps: Math.ceil(totalOpps * pctOf(pc.event_sourced) / 100) },
         { label: "ABM/Thought Leadership", pct: pctOf(pc.abm_thought_leadership), prospects: Math.ceil(totalProspects * pctOf(pc.abm_thought_leadership) / 100), opps: Math.ceil(totalOpps * pctOf(pc.abm_thought_leadership) / 100) },
+        { label: "Partner Referral", pct: pctOf(pc.partner_referral), prospects: Math.ceil(totalProspects * pctOf(pc.partner_referral) / 100), opps: Math.ceil(totalOpps * pctOf(pc.partner_referral) / 100) },
       ],
       totalProspects,
       totalOpps,

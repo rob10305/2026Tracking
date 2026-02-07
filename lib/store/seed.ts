@@ -88,10 +88,11 @@ export function createSeedData(): AppState {
 
   const pipelineContribution: PipelineContribution = {
     mode: "pct",
-    website_inbound: 30,
-    sales_team_generated: 35,
-    event_sourced: 20,
+    website_inbound: 25,
+    sales_team_generated: 30,
+    event_sourced: 15,
     abm_thought_leadership: 15,
+    partner_referral: 15,
   };
 
   // Seed some forecast data for Q1/Q2
