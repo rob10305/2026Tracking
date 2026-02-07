@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { StoreProvider } from "@/lib/store/context";
+import { SavedForecastsProvider } from "@/lib/store/saved-forecasts-context";
 import Navigation from "@/components/Navigation";
 
 export const metadata: Metadata = {
@@ -17,8 +18,10 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-gray-50 text-gray-900 min-h-screen">
         <StoreProvider>
-          <Navigation />
-          <main className="p-4">{children}</main>
+          <SavedForecastsProvider>
+            <Navigation />
+            <main className="p-4">{children}</main>
+          </SavedForecastsProvider>
         </StoreProvider>
       </body>
     </html>

@@ -36,14 +36,20 @@ __tests__/       - Vitest test files
 - **Dev Origins**: Configured to allow *.replit.dev origins
 
 ## Recent Changes
-- 2026-02-07: Forecast Model page redesign
-  - Replaced simple forecast grid with comprehensive Forecast Model page
-  - Unit Quantity grid (Handsontable) at top for entering monthly product counts
-  - Auto-calculated Revenue by Product table (monthly + annual, gross/net toggle)
-  - Revenue Component Breakdown table (PS, Software Resale, Cloud, EPS)
-  - Gross Profit & Margin table with per-component GP and blended margin %
-  - Collapsible sections for each detail table
-  - Updated navigation label from "Forecast Grid" to "Forecast Model"
+- 2026-02-07: Build Forecast feature (multiple named forecasts)
+  - SavedForecast type with id, name, timestamps, quantities map
+  - Separate localStorage persistence (forecast-app-saved-forecasts)
+  - SavedForecastsProvider context for CRUD operations
+  - /forecast list page: create, rename, duplicate, delete forecasts
+  - /forecast/[id] detail page with:
+    - Handsontable quantity grid (12 months x products)
+    - Revenue by Product table (gross/net toggle)
+    - Revenue Component Breakdown (PS, Software Resale, Cloud, EPS)
+    - Gross Profit & Margin with blended margin %
+    - Pipeline Requirements table (deals, opps, prospects needed + timing)
+    - Pipeline Contribution by Channel breakdown
+  - All tables are collapsible sections
+  - Navigation updated to "Build Forecast"
 - 2026-02-07: Added Pipeline Contribution to Industry Averages
   - New `PipelineContribution` type with mode (pct/num) and 4 channels
   - New `pipelineContribution` field in AppState

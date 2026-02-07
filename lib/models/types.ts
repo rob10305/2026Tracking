@@ -51,6 +51,16 @@ export interface AppState {
   forecastByProductIdMonth: ForecastMap;
 }
 
+// ── Saved Forecast types ──
+
+export interface SavedForecast {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  quantities: ForecastMap;
+}
+
 // ── Calculation result types ──
 
 export type RevenueMode = "net" | "gross";
