@@ -36,6 +36,14 @@ __tests__/       - Vitest test files
 - **Dev Origins**: Configured to allow *.replit.dev origins
 
 ## Recent Changes
+- 2026-02-07: Forecast Model page redesign
+  - Replaced simple forecast grid with comprehensive Forecast Model page
+  - Unit Quantity grid (Handsontable) at top for entering monthly product counts
+  - Auto-calculated Revenue by Product table (monthly + annual, gross/net toggle)
+  - Revenue Component Breakdown table (PS, Software Resale, Cloud, EPS)
+  - Gross Profit & Margin table with per-component GP and blended margin %
+  - Collapsible sections for each detail table
+  - Updated navigation label from "Forecast Grid" to "Forecast Model"
 - 2026-02-07: Added Pipeline Contribution to Industry Averages
   - New `PipelineContribution` type with mode (pct/num) and 4 channels
   - New `pipelineContribution` field in AppState
