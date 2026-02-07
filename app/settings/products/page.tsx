@@ -411,29 +411,29 @@ function ProductCard({
 
           <div>
             <span className="text-sm font-medium text-gray-700 block mb-2">Product Status</span>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <button
                 type="button"
                 onClick={() => updateP({ status: "live" })}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-medium transition-all ${
                   p.status === "live"
-                    ? "border-green-500 bg-green-50 text-green-700"
+                    ? "border-green-400 bg-green-50 text-green-700"
                     : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${p.status === "live" ? "bg-green-500" : "bg-gray-300"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${p.status === "live" ? "bg-green-500" : "bg-gray-300"}`} />
                 Live
               </button>
               <button
                 type="button"
                 onClick={() => updateP({ status: "in_development", readiness: p.readiness ?? { ...DEFAULT_READINESS } })}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-medium transition-all ${
                   p.status === "in_development"
-                    ? "border-amber-500 bg-amber-50 text-amber-700"
+                    ? "border-amber-400 bg-amber-50 text-amber-700"
                     : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${p.status === "in_development" ? "bg-amber-500" : "bg-gray-300"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${p.status === "in_development" ? "bg-amber-500" : "bg-gray-300"}`} />
                 In Development
               </button>
             </div>
