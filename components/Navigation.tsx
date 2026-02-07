@@ -4,11 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
-  { href: "/forecasts", label: "Forecasts" },
-  { href: "/forecast", label: "Legacy Grid" },
-  { href: "/settings", label: "Settings" },
-  { href: "/workback", label: "Workback" },
+  { href: "/products", label: "Products" },
+  { href: "/margins", label: "Margins" },
+  { href: "/sales-motions", label: "Sales Motions" },
+  { href: "/forecast", label: "Forecast Grid" },
   { href: "/summary", label: "Summary" },
+  { href: "/workback", label: "Workback" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export default function Navigation() {
@@ -16,7 +18,9 @@ export default function Navigation() {
 
   return (
     <nav className="bg-gray-900 text-white px-6 py-3 flex items-center gap-8">
-      <span className="font-bold text-lg tracking-tight">FY2026 Forecast</span>
+      <Link href="/" className="font-bold text-lg tracking-tight hover:text-gray-200 transition-colors">
+        FY2026 Forecast
+      </Link>
       <div className="flex gap-1">
         {NAV_ITEMS.map((item) => {
           const active =
