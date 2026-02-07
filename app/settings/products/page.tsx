@@ -7,7 +7,6 @@ import NumberInput from "@/components/NumberInput";
 
 const DEFAULT_SALES_MOTION: SalesMotion = {
   sales_cycle_months: 3,
-  buffer_months: 1,
   opp_to_close_win_rate_pct: 25,
   prospect_to_opp_rate_pct: 15,
   prospecting_lead_time_months: 1,

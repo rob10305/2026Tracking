@@ -54,9 +54,8 @@ export function calcProspectsNeeded(
 export function calcPipelineMonth(
   closeMonth: string,
   salesCycleMonths: number,
-  bufferMonths: number,
 ): string {
-  return offsetMonth(closeMonth, -(salesCycleMonths + bufferMonths));
+  return offsetMonth(closeMonth, -salesCycleMonths);
 }
 
 export function calcProspectingStartMonth(
@@ -84,7 +83,6 @@ export function calcWorkbackRow(
   const pipeline_month = calcPipelineMonth(
     closeMonth,
     motion.sales_cycle_months,
-    motion.buffer_months,
   );
   const prospecting_start_month = calcProspectingStartMonth(
     pipeline_month,

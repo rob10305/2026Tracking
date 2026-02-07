@@ -69,7 +69,7 @@ Each product's revenue is split into four components (must sum to 100%):
 ### Workback Plan
 For each product/month with quantity > 0:
 - `opps_needed = ceil(deals / (win_rate_pct / 100))`
-- `pipeline_month = close_month - sales_cycle_months - buffer_months`
+- `pipeline_month = close_month - sales_cycle_months`
 - `prospects_needed = ceil(opps_needed / (prospect_to_opp_pct / 100))`
 - `prospecting_start = pipeline_month - prospecting_lead_time_months`
 

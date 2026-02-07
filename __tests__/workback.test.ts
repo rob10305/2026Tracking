@@ -81,12 +81,12 @@ describe("calcProspectsNeeded", () => {
 });
 
 describe("calcPipelineMonth", () => {
-  it("offsets by sales cycle + buffer", () => {
-    expect(calcPipelineMonth("2026-06", 3, 1)).toBe("2026-02");
+  it("offsets by sales cycle", () => {
+    expect(calcPipelineMonth("2026-06", 3)).toBe("2026-03");
   });
 
   it("goes before Jan 2026 for early months", () => {
-    expect(calcPipelineMonth("2026-01", 3, 1)).toBe("2025-09");
+    expect(calcPipelineMonth("2026-01", 3)).toBe("2025-10");
   });
 });
 
@@ -103,7 +103,6 @@ describe("calcProspectingStartMonth", () => {
 describe("calcWorkbackRow", () => {
   const motion: SalesMotion = {
     sales_cycle_months: 3,
-    buffer_months: 1,
     opp_to_close_win_rate_pct: 25,
     prospect_to_opp_rate_pct: 15,
     prospecting_lead_time_months: 1,
@@ -114,14 +113,14 @@ describe("calcWorkbackRow", () => {
     expect(row.deals_needed).toBe(5);
     expect(row.opps_needed).toBe(20); // ceil(5/0.25)
     expect(row.prospects_needed).toBe(134); // ceil(20/0.15)
-    expect(row.pipeline_month).toBe("2026-02"); // 2026-06 - 4
-    expect(row.prospecting_start_month).toBe("2026-01"); // 2026-02 - 1
+    expect(row.pipeline_month).toBe("2026-03"); // 2026-06 - 3
+    expect(row.prospecting_start_month).toBe("2026-02"); // 2026-03 - 1
   });
 
   it("computes pre-FY workback for January close", () => {
     const row = calcWorkbackRow("p1", "Product 1", "2026-01", 2, motion);
     expect(row.opps_needed).toBe(8); // ceil(2/0.25)
-    expect(row.pipeline_month).toBe("2025-09"); // 2026-01 - 4
-    expect(row.prospecting_start_month).toBe("2025-08"); // 2025-09 - 1
+    expect(row.pipeline_month).toBe("2025-10"); // 2026-01 - 3
+    expect(row.prospecting_start_month).toBe("2025-09"); // 2025-10 - 1
   });
 });

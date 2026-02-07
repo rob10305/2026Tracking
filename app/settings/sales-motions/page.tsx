@@ -7,7 +7,6 @@ import NumberInput from "@/components/NumberInput";
 
 const DEFAULT_SALES_MOTION: SalesMotion = {
   sales_cycle_months: 3,
-  buffer_months: 1,
   opp_to_close_win_rate_pct: 25,
   prospect_to_opp_rate_pct: 15,
   prospecting_lead_time_months: 1,
@@ -108,9 +107,8 @@ function SalesMotionCard({
             </button>
           </div>
 
-          <div className="grid grid-cols-5 gap-x-6 gap-y-2">
+          <div className="grid grid-cols-4 gap-x-6 gap-y-2">
             <DetailRow label="Sales Cycle" value={`${salesMotion.sales_cycle_months} mo`} />
-            <DetailRow label="Buffer" value={`${salesMotion.buffer_months} mo`} />
             <DetailRow label="Win Rate" value={`${salesMotion.opp_to_close_win_rate_pct}%`} />
             <DetailRow label="Prospect to Opp" value={`${salesMotion.prospect_to_opp_rate_pct}%`} />
             <DetailRow label="Prospect Lead Time" value={`${salesMotion.prospecting_lead_time_months} mo`} />
@@ -135,21 +133,12 @@ function SalesMotionCard({
             </button>
           </div>
 
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             <NumberInput
               label="Sales Cycle"
               value={s.sales_cycle_months}
               onChange={(v) =>
                 updateS({ sales_cycle_months: Math.max(0, Math.round(v)) })
-              }
-              suffix="mo"
-              min={0}
-            />
-            <NumberInput
-              label="Buffer"
-              value={s.buffer_months}
-              onChange={(v) =>
-                updateS({ buffer_months: Math.max(0, Math.round(v)) })
               }
               suffix="mo"
               min={0}

@@ -50,21 +50,18 @@ export function createSeedData(): AppState {
   const salesMotionByProductId: AppState["salesMotionByProductId"] = {
     "prod-managed-cloud": {
       sales_cycle_months: 3,
-      buffer_months: 1,
       opp_to_close_win_rate_pct: 25,
       prospect_to_opp_rate_pct: 15,
       prospecting_lead_time_months: 1,
     },
     "prod-devops-accelerator": {
       sales_cycle_months: 2,
-      buffer_months: 1,
       opp_to_close_win_rate_pct: 30,
       prospect_to_opp_rate_pct: 20,
       prospecting_lead_time_months: 1,
     },
     "prod-security-suite": {
       sales_cycle_months: 4,
-      buffer_months: 1,
       opp_to_close_win_rate_pct: 20,
       prospect_to_opp_rate_pct: 12,
       prospecting_lead_time_months: 1,

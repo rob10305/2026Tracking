@@ -24,7 +24,6 @@ export interface Margins {
 
 export interface SalesMotion {
   sales_cycle_months: number;
-  buffer_months: number;
   opp_to_close_win_rate_pct: number;
   prospect_to_opp_rate_pct: number;
   prospecting_lead_time_months: number;

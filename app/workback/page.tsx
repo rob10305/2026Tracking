@@ -83,8 +83,7 @@ export default function WorkbackPage() {
       {selectedMotion && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
           <span className="font-semibold">Assumptions:</span>{" "}
-          Sales cycle {selectedMotion.sales_cycle_months}mo, buffer{" "}
-          {selectedMotion.buffer_months}mo, win rate{" "}
+          Sales cycle {selectedMotion.sales_cycle_months}mo, win rate{" "}
           {selectedMotion.opp_to_close_win_rate_pct}%, prospect→opp{" "}
           {selectedMotion.prospect_to_opp_rate_pct}%, prospecting lead{" "}
           {selectedMotion.prospecting_lead_time_months}mo
