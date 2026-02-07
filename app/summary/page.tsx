@@ -249,7 +249,7 @@ export default function SummaryPage() {
               <th className="px-3 py-2 font-medium text-right">PS $</th>
               <th className="px-3 py-2 font-medium text-right">Resale $</th>
               <th className="px-3 py-2 font-medium text-right">Cloud $</th>
-              <th className="px-3 py-2 font-medium text-right">EPSS $</th>
+              <th className="px-3 py-2 font-medium text-right">EPS $</th>
               <th className="px-3 py-2 font-medium text-right">GP$</th>
               <th className="px-3 py-2 font-medium text-right">Margin</th>
             </tr>

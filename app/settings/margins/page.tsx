@@ -76,7 +76,7 @@ function MarginCard({
           max={100}
         />
         <NumberInput
-          label="EPSS Margin"
+          label="EPS Margin"
           value={m.epss_margin_pct}
           onChange={(v) => updateM({ epss_margin_pct: v })}
           suffix="%"

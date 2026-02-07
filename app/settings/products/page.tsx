@@ -208,14 +208,14 @@ function ProductCard({
                   <DetailRow label="Prof. Services" value={`${product.professional_services_pct}%`} />
                   <DetailRow label="Software Resale" value={`${product.software_resale_pct}%`} />
                   <DetailRow label="Cloud Consumption" value={`${product.cloud_consumption_pct}%`} />
-                  <DetailRow label="EPSS" value={`${product.epss_pct}%`} />
+                  <DetailRow label="EPS" value={`${product.epss_pct}%`} />
                 </>
               ) : (
                 <>
                   <DetailRow label="Prof. Services" value={formatPrice(product.professional_services_pct)} />
                   <DetailRow label="Software Resale" value={formatPrice(product.software_resale_pct)} />
                   <DetailRow label="Cloud Consumption" value={formatPrice(product.cloud_consumption_pct)} />
-                  <DetailRow label="EPSS" value={formatPrice(product.epss_pct)} />
+                  <DetailRow label="EPS" value={formatPrice(product.epss_pct)} />
                 </>
               )}
             </div>
@@ -352,7 +352,7 @@ function ProductCard({
                 max={mode === "pct" ? 100 : undefined}
               />
               <NumberInput
-                label="EPSS"
+                label="EPS"
                 value={p.epss_pct}
                 onChange={(v) => updateP({ epss_pct: v })}
                 suffix={mode === "pct" ? "%" : "$"}

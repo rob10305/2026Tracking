@@ -58,7 +58,7 @@ All CSVs use clean headers and are immediately usable in Excel.
 
 ### Component Split
 Each product's revenue is split into four components (must sum to 100%):
-- Professional Services, Software Resale, Cloud Consumption, EPSS
+- Professional Services, Software Resale, Cloud Consumption, EPS
 - `component_revenue = total_revenue × component_pct / 100`
 
 ### Gross Profit

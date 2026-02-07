@@ -101,7 +101,7 @@ export default function SidePanel({ productId, mode }: SidePanelProps) {
               ["Prof. Services", "professional_services"],
               ["Software Resale", "software_resale"],
               ["Cloud Consumption", "cloud_consumption"],
-              ["EPSS", "epss"],
+              ["EPS", "epss"],
             ] as const
           ).map(([label, key]) => (
             <tr key={key} className="border-b border-gray-100">
