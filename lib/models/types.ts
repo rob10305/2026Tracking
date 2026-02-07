@@ -1,12 +1,14 @@
 // ── Core domain types ──
 
+export type ComponentMixMode = "pct" | "dollar";
+
 export interface Product {
   id: string;
   name: string;
   description: string;
   gross_unit_price: number;
   default_discount_pct: number;
-  /** Revenue component mix — must sum to 100 */
+  component_mix_mode: ComponentMixMode;
   professional_services_pct: number;
   software_resale_pct: number;
   cloud_consumption_pct: number;

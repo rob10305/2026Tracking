@@ -17,6 +17,7 @@ const sampleProduct: Product = {
   description: "test",
   gross_unit_price: 10000,
   default_discount_pct: 10,
+  component_mix_mode: "pct",
   professional_services_pct: 25,
   software_resale_pct: 25,
   cloud_consumption_pct: 25,

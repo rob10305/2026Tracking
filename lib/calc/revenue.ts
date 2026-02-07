@@ -17,15 +17,44 @@ export function calcNetRevenue(product: Product, qty: number): number {
   return qty * calcNetUnitPrice(product);
 }
 
+export function getComponentPcts(product: Product): {
+  ps: number;
+  sr: number;
+  cc: number;
+  epss: number;
+} {
+  if (product.component_mix_mode === "dollar") {
+    const total =
+      product.professional_services_pct +
+      product.software_resale_pct +
+      product.cloud_consumption_pct +
+      product.epss_pct;
+    if (total === 0) return { ps: 0, sr: 0, cc: 0, epss: 0 };
+    return {
+      ps: (product.professional_services_pct / total) * 100,
+      sr: (product.software_resale_pct / total) * 100,
+      cc: (product.cloud_consumption_pct / total) * 100,
+      epss: (product.epss_pct / total) * 100,
+    };
+  }
+  return {
+    ps: product.professional_services_pct,
+    sr: product.software_resale_pct,
+    cc: product.cloud_consumption_pct,
+    epss: product.epss_pct,
+  };
+}
+
 export function calcComponentSplit(
   revenue: number,
   product: Product,
 ): ComponentBreakdown {
+  const pcts = getComponentPcts(product);
   return {
-    professional_services: revenue * (product.professional_services_pct / 100),
-    software_resale: revenue * (product.software_resale_pct / 100),
-    cloud_consumption: revenue * (product.cloud_consumption_pct / 100),
-    epss: revenue * (product.epss_pct / 100),
+    professional_services: revenue * (pcts.ps / 100),
+    software_resale: revenue * (pcts.sr / 100),
+    cloud_consumption: revenue * (pcts.cc / 100),
+    epss: revenue * (pcts.epss / 100),
   };
 }
 

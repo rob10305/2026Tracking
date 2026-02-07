@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useStore } from "@/lib/store/context";
-import type { Product, Margins, SalesMotion } from "@/lib/models/types";
+import type { Product, Margins, SalesMotion, ComponentMixMode } from "@/lib/models/types";
 import NumberInput from "@/components/NumberInput";
 
 const DEFAULT_MARGINS: Margins = {
@@ -51,15 +51,46 @@ function ProductCard({
   const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   const [editing, setEditing] = useState(false);
 
+  const mode = p.component_mix_mode ?? "pct";
   const componentSum =
     p.professional_services_pct +
     p.software_resale_pct +
     p.cloud_consumption_pct +
     p.epss_pct;
-  const validMix = Math.abs(componentSum - 100) < 0.01;
+  const validMix =
+    mode === "pct"
+      ? Math.abs(componentSum - 100) < 0.01
+      : Math.abs(componentSum - p.gross_unit_price) < 0.01;
 
   const updateP = (patch: Partial<Product>) => {
     setP((prev) => ({ ...prev, ...patch }));
+    setDirty(true);
+  };
+
+  const switchMode = (newMode: ComponentMixMode) => {
+    if (newMode === mode) return;
+    const price = p.gross_unit_price;
+    if (newMode === "dollar" && mode === "pct") {
+      setP((prev) => ({
+        ...prev,
+        component_mix_mode: "dollar",
+        professional_services_pct: Math.round(price * prev.professional_services_pct / 100),
+        software_resale_pct: Math.round(price * prev.software_resale_pct / 100),
+        cloud_consumption_pct: Math.round(price * prev.cloud_consumption_pct / 100),
+        epss_pct: Math.round(price * prev.epss_pct / 100),
+      }));
+    } else {
+      const total = p.professional_services_pct + p.software_resale_pct + p.cloud_consumption_pct + p.epss_pct;
+      const toPct = (v: number) => total === 0 ? 25 : Math.round((v / total) * 10000) / 100;
+      setP((prev) => ({
+        ...prev,
+        component_mix_mode: "pct",
+        professional_services_pct: toPct(prev.professional_services_pct),
+        software_resale_pct: toPct(prev.software_resale_pct),
+        cloud_consumption_pct: toPct(prev.cloud_consumption_pct),
+        epss_pct: toPct(prev.epss_pct),
+      }));
+    }
     setDirty(true);
   };
 
@@ -165,12 +196,28 @@ function ProductCard({
           </div>
 
           <div>
-            <span className="text-sm font-medium text-gray-700 block mb-2">Revenue Component Mix</span>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-sm font-medium text-gray-700">Revenue Component Mix</span>
+              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
+                {(product.component_mix_mode ?? "pct") === "pct" ? "Percentage" : "Dollar"}
+              </span>
+            </div>
             <div className="grid grid-cols-4 gap-x-6 gap-y-2">
-              <DetailRow label="Prof. Services" value={`${product.professional_services_pct}%`} />
-              <DetailRow label="Software Resale" value={`${product.software_resale_pct}%`} />
-              <DetailRow label="Cloud Consumption" value={`${product.cloud_consumption_pct}%`} />
-              <DetailRow label="EPSS" value={`${product.epss_pct}%`} />
+              {(product.component_mix_mode ?? "pct") === "pct" ? (
+                <>
+                  <DetailRow label="Prof. Services" value={`${product.professional_services_pct}%`} />
+                  <DetailRow label="Software Resale" value={`${product.software_resale_pct}%`} />
+                  <DetailRow label="Cloud Consumption" value={`${product.cloud_consumption_pct}%`} />
+                  <DetailRow label="EPSS" value={`${product.epss_pct}%`} />
+                </>
+              ) : (
+                <>
+                  <DetailRow label="Prof. Services" value={formatPrice(product.professional_services_pct)} />
+                  <DetailRow label="Software Resale" value={formatPrice(product.software_resale_pct)} />
+                  <DetailRow label="Cloud Consumption" value={formatPrice(product.cloud_consumption_pct)} />
+                  <DetailRow label="EPSS" value={formatPrice(product.epss_pct)} />
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -241,6 +288,30 @@ function ProductCard({
               <span className="text-sm font-medium text-gray-700">
                 Revenue Component Mix
               </span>
+              <div className="flex rounded overflow-hidden border border-gray-300 text-xs">
+                <button
+                  type="button"
+                  onClick={() => switchMode("pct")}
+                  className={`px-2.5 py-1 font-medium transition-colors ${
+                    mode === "pct"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  %
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchMode("dollar")}
+                  className={`px-2.5 py-1 font-medium transition-colors border-l border-gray-300 ${
+                    mode === "dollar"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  $
+                </button>
+              </div>
               <span
                 className={`text-xs px-2 py-0.5 rounded ${
                   validMix
@@ -248,8 +319,11 @@ function ProductCard({
                     : "bg-red-100 text-red-700"
                 }`}
               >
-                Sum: {componentSum.toFixed(1)}%{" "}
-                {validMix ? "OK" : "(must = 100%)"}
+                {mode === "pct" ? (
+                  <>Sum: {componentSum.toFixed(1)}% {validMix ? "OK" : "(must = 100%)"}</>
+                ) : (
+                  <>Sum: {formatPrice(componentSum)} {validMix ? "OK" : `(must = ${formatPrice(p.gross_unit_price)})`}</>
+                )}
               </span>
             </div>
             <div className="grid grid-cols-4 gap-2">
@@ -257,33 +331,33 @@ function ProductCard({
                 label="Prof. Services"
                 value={p.professional_services_pct}
                 onChange={(v) => updateP({ professional_services_pct: v })}
-                suffix="%"
+                suffix={mode === "pct" ? "%" : "$"}
                 min={0}
-                max={100}
+                max={mode === "pct" ? 100 : undefined}
               />
               <NumberInput
                 label="Software Resale"
                 value={p.software_resale_pct}
                 onChange={(v) => updateP({ software_resale_pct: v })}
-                suffix="%"
+                suffix={mode === "pct" ? "%" : "$"}
                 min={0}
-                max={100}
+                max={mode === "pct" ? 100 : undefined}
               />
               <NumberInput
                 label="Cloud Consumption"
                 value={p.cloud_consumption_pct}
                 onChange={(v) => updateP({ cloud_consumption_pct: v })}
-                suffix="%"
+                suffix={mode === "pct" ? "%" : "$"}
                 min={0}
-                max={100}
+                max={mode === "pct" ? 100 : undefined}
               />
               <NumberInput
                 label="EPSS"
                 value={p.epss_pct}
                 onChange={(v) => updateP({ epss_pct: v })}
-                suffix="%"
+                suffix={mode === "pct" ? "%" : "$"}
                 min={0}
-                max={100}
+                max={mode === "pct" ? 100 : undefined}
               />
             </div>
           </div>
@@ -305,6 +379,7 @@ export default function ProductsPage() {
       description: "",
       gross_unit_price: 10000,
       default_discount_pct: 10,
+      component_mix_mode: "pct",
       professional_services_pct: 25,
       software_resale_pct: 25,
       cloud_consumption_pct: 25,
