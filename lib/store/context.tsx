@@ -79,6 +79,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           abm_thought_leadership: 15,
         };
       }
+      for (const p of saved.products) {
+        if (!p.status) {
+          p.status = "live";
+        }
+      }
       skipNextSave.current = true;
       setState(saved);
     }

@@ -2,6 +2,17 @@
 
 export type ComponentMixMode = "pct" | "dollar";
 
+export type ProductStatus = "live" | "in_development";
+
+export interface ProductReadiness {
+  mvp_date: string;
+  release_date: string;
+  prospecting: boolean;
+  website_content: boolean;
+  pricing: boolean;
+  sales_collateral: boolean;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -13,6 +24,8 @@ export interface Product {
   software_resale_pct: number;
   cloud_consumption_pct: number;
   epss_pct: number;
+  status: ProductStatus;
+  readiness?: ProductReadiness;
 }
 
 export interface Margins {

@@ -13,6 +13,7 @@ export function createSeedData(): AppState {
       software_resale_pct: 15,
       cloud_consumption_pct: 50,
       epss_pct: 15,
+      status: "live" as const,
     },
     {
       id: "prod-devops-accelerator",
@@ -25,6 +26,7 @@ export function createSeedData(): AppState {
       software_resale_pct: 25,
       cloud_consumption_pct: 15,
       epss_pct: 15,
+      status: "live" as const,
     },
     {
       id: "prod-security-suite",
@@ -37,6 +39,15 @@ export function createSeedData(): AppState {
       software_resale_pct: 35,
       cloud_consumption_pct: 20,
       epss_pct: 20,
+      status: "in_development" as const,
+      readiness: {
+        mvp_date: "2026-04-01",
+        release_date: "2026-07-01",
+        prospecting: false,
+        website_content: false,
+        pricing: true,
+        sales_collateral: false,
+      },
     },
   ];
 
