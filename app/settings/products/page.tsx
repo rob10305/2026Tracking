@@ -28,11 +28,13 @@ function ProductCard({
   product,
   onSave,
   onDelete,
+  onClone,
   defaultExpanded,
 }: {
   product: Product;
   onSave: (p: Product) => void;
   onDelete: () => void;
+  onClone: () => void;
   defaultExpanded?: boolean;
 }) {
   const [p, setP] = useState<Product>({ ...product });
@@ -62,9 +64,12 @@ function ProductCard({
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors text-left"
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setExpanded(!expanded); }}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors text-left cursor-pointer select-none"
       >
         <div className="flex items-center gap-3 min-w-0">
           <svg
@@ -89,19 +94,33 @@ function ProductCard({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           {dirty && (
             <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
               Unsaved
             </span>
           )}
           {!expanded && (
-            <span className="text-sm text-gray-500">
-              {formatPrice(p.gross_unit_price)}
-            </span>
+            <>
+              <span className="text-sm text-gray-500 mr-2">
+                {formatPrice(p.gross_unit_price)}
+              </span>
+              <button
+                onClick={() => setExpanded(true)}
+                className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={onClone}
+                className="px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+              >
+                Clone
+              </button>
+            </>
           )}
         </div>
-      </button>
+      </div>
 
       {expanded && (
         <div className="px-5 pb-5 space-y-4 border-t border-gray-100">
@@ -115,6 +134,12 @@ function ProductCard({
                 Save
               </button>
             )}
+            <button
+              onClick={onClone}
+              className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+            >
+              Clone
+            </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -240,6 +265,18 @@ export default function ProductsPage() {
     setExpandAll(false);
   };
 
+  const handleCloneProduct = (sourceProduct: Product) => {
+    const id = generateId();
+    const cloned: Product = {
+      ...sourceProduct,
+      id,
+      name: `${sourceProduct.name} (Copy)`,
+    };
+    const margins = state.marginsByProductId[sourceProduct.id] ?? { ...DEFAULT_MARGINS };
+    const salesMotion = state.salesMotionByProductId[sourceProduct.id] ?? { ...DEFAULT_SALES_MOTION };
+    addProduct(cloned, { ...margins }, { ...salesMotion });
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
@@ -274,6 +311,7 @@ export default function ProductsPage() {
             product={product}
             onSave={updateProduct}
             defaultExpanded={expandAll}
+            onClone={() => handleCloneProduct(product)}
             onDelete={() => {
               if (
                 confirm(
