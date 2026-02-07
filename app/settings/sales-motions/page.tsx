@@ -220,50 +220,59 @@ export default function SalesMotionsPage() {
   const [expandAll, setExpandAll] = useState(false);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">RevOps Performance Metrics</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Configure sales cycle timing, win rates, and prospecting parameters for each product.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {state.products.length > 1 && (
-            <button
-              onClick={() => setExpandAll(!expandAll)}
-              className="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              {expandAll ? "Collapse All" : "Expand All"}
-            </button>
-          )}
-        </div>
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold">RevOps Performance Metrics</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Configure sales cycle timing, win rates, and prospecting parameters.
+        </p>
       </div>
 
-      <div className="space-y-2">
-        {state.products.map((product) => (
-          <SalesMotionCard
-            key={product.id + (expandAll ? "-expanded" : "-collapsed")}
-            productName={product.name}
-            productId={product.id}
-            salesMotion={
-              state.salesMotionByProductId[product.id] ?? DEFAULT_SALES_MOTION
-            }
-            industryAverages={state.industryAverages}
-            onSave={updateSalesMotion}
-            defaultExpanded={expandAll}
-          />
-        ))}
-      </div>
-
-      {state.products.length === 0 && (
-        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-500">
-          <p className="mb-2">No products configured yet.</p>
-          <p className="text-sm">
-            Add products first to configure their sales motions.
-          </p>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800">Manual Overrides</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Override default metrics on a per-product basis.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {state.products.length > 1 && (
+              <button
+                onClick={() => setExpandAll(!expandAll)}
+                className="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                {expandAll ? "Collapse All" : "Expand All"}
+              </button>
+            )}
+          </div>
         </div>
-      )}
+
+        <div className="space-y-2">
+          {state.products.map((product) => (
+            <SalesMotionCard
+              key={product.id + (expandAll ? "-expanded" : "-collapsed")}
+              productName={product.name}
+              productId={product.id}
+              salesMotion={
+                state.salesMotionByProductId[product.id] ?? DEFAULT_SALES_MOTION
+              }
+              industryAverages={state.industryAverages}
+              onSave={updateSalesMotion}
+              defaultExpanded={expandAll}
+            />
+          ))}
+        </div>
+
+        {state.products.length === 0 && (
+          <div className="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-500">
+            <p className="mb-2">No products configured yet.</p>
+            <p className="text-sm">
+              Add products first to configure their metrics.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
