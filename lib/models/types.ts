@@ -35,6 +35,7 @@ export type ForecastMap = Record<string, number>;
 export interface AppState {
   products: Product[];
   margins: Margins;
+  industryAverages: SalesMotion;
   salesMotionByProductId: Record<string, SalesMotion>;
   forecastByProductIdMonth: ForecastMap;
 }

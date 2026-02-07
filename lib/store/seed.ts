@@ -68,6 +68,13 @@ export function createSeedData(): AppState {
     },
   };
 
+  const industryAverages: AppState["industryAverages"] = {
+    sales_cycle_months: 3,
+    opp_to_close_win_rate_pct: 20,
+    prospect_to_opp_rate_pct: 15,
+    prospecting_lead_time_months: 1,
+  };
+
   // Seed some forecast data for Q1/Q2
   const forecastByProductIdMonth: AppState["forecastByProductIdMonth"] = {
     "prod-managed-cloud::2026-01": 2,
@@ -111,6 +118,7 @@ export function createSeedData(): AppState {
   return {
     products,
     margins,
+    industryAverages,
     salesMotionByProductId,
     forecastByProductIdMonth,
   };

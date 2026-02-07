@@ -25,12 +25,14 @@ function SalesMotionCard({
   productName,
   productId,
   salesMotion,
+  industryAverages,
   onSave,
   defaultExpanded,
 }: {
   productName: string;
   productId: string;
   salesMotion: SalesMotion;
+  industryAverages: SalesMotion;
   onSave: (productId: string, s: SalesMotion) => void;
   defaultExpanded?: boolean;
 }) {
@@ -38,22 +40,37 @@ function SalesMotionCard({
   const [dirty, setDirty] = useState(false);
   const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   const [editing, setEditing] = useState(false);
+  const [useIndustryAvg, setUseIndustryAvg] = useState(false);
 
   const updateS = (patch: Partial<SalesMotion>) => {
     setS((prev) => ({ ...prev, ...patch }));
     setDirty(true);
+    setUseIndustryAvg(false);
+  };
+
+  const toggleIndustryAverages = () => {
+    if (!useIndustryAvg) {
+      setS({ ...industryAverages });
+      setDirty(true);
+    } else {
+      setS({ ...salesMotion });
+      setDirty(false);
+    }
+    setUseIndustryAvg(!useIndustryAvg);
   };
 
   const save = () => {
     onSave(productId, s);
     setDirty(false);
     setEditing(false);
+    setUseIndustryAvg(false);
   };
 
   const cancel = () => {
     setS({ ...salesMotion });
     setDirty(false);
     setEditing(false);
+    setUseIndustryAvg(false);
   };
 
   return (
@@ -118,19 +135,40 @@ function SalesMotionCard({
 
       {expanded && editing && (
         <div className="px-5 pb-5 space-y-4 border-t border-gray-100">
-          <div className="flex justify-end gap-2 pt-3">
-            <button
-              onClick={save}
-              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Save
-            </button>
-            <button
-              onClick={cancel}
-              className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
-            >
-              Cancel
-            </button>
+          <div className="flex items-center justify-between pt-3">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <div
+                role="switch"
+                aria-checked={useIndustryAvg}
+                tabIndex={0}
+                onClick={toggleIndustryAverages}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleIndustryAverages(); } }}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  useIndustryAvg ? "bg-orange-500" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                    useIndustryAvg ? "translate-x-4" : "translate-x-0.5"
+                  }`}
+                />
+              </div>
+              <span className="text-sm text-gray-600">Use Industry Averages</span>
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={save}
+                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Save
+              </button>
+              <button
+                onClick={cancel}
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-4 gap-3">
@@ -211,6 +249,7 @@ export default function SalesMotionsPage() {
             salesMotion={
               state.salesMotionByProductId[product.id] ?? DEFAULT_SALES_MOTION
             }
+            industryAverages={state.industryAverages}
             onSave={updateSalesMotion}
             defaultExpanded={expandAll}
           />

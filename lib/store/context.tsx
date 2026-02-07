@@ -27,6 +27,8 @@ interface AppStore {
   deleteProduct: (id: string) => void;
   // Margins
   updateMargins: (m: Margins) => void;
+  // Industry Averages
+  updateIndustryAverages: (s: SalesMotion) => void;
   // Sales Motion
   updateSalesMotion: (productId: string, s: SalesMotion) => void;
   // Forecast
@@ -49,6 +51,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const saved = loadState();
     if (saved) {
+      if (!saved.industryAverages) {
+        saved.industryAverages = {
+          sales_cycle_months: 3,
+          opp_to_close_win_rate_pct: 20,
+          prospect_to_opp_rate_pct: 15,
+          prospecting_lead_time_months: 1,
+        };
+      }
       skipNextSave.current = true;
       setState(saved);
     }
@@ -121,6 +131,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [update],
   );
 
+  const updateIndustryAverages = useCallback(
+    (s: SalesMotion) => {
+      update((prev) => ({
+        ...prev,
+        industryAverages: s,
+      }));
+    },
+    [update],
+  );
+
   const updateSalesMotion = useCallback(
     (productId: string, s: SalesMotion) => {
       update((prev) => ({
@@ -182,6 +202,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         updateProduct,
         deleteProduct,
         updateMargins,
+        updateIndustryAverages,
         updateSalesMotion,
         setForecastQty,
         setForecastBulk,

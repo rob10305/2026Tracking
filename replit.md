@@ -36,6 +36,14 @@ __tests__/       - Vitest test files
 - **Dev Origins**: Configured to allow *.replit.dev origins
 
 ## Recent Changes
+- 2026-02-07: Added Industry Averages feature
+  - New `industryAverages` field in AppState (SalesMotion type)
+  - New settings page at /settings/industry-averages
+  - "Use Industry Averages" toggle on Sales Motions edit view
+  - Migration guard for existing saved states without industryAverages
+- 2026-02-07: Removed buffer_months from SalesMotion
+  - Removed from type, UI, calculations, seed data, and tests
+  - Pipeline month now calculated as close_month - sales_cycle_months only
 - 2026-02-07: Initial Replit setup
   - Switched Prisma from SQLite to PostgreSQL
   - Configured Next.js allowedDevOrigins for Replit proxy
