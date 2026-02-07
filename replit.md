@@ -36,19 +36,22 @@ __tests__/       - Vitest test files
 - **Dev Origins**: Configured to allow *.replit.dev origins
 
 ## Recent Changes
+- 2026-02-07: Interactive forecast builder UI redesign
+  - Replaced spreadsheet grid with interactive product cards (stepper +/- controls)
+  - KPI summary cards at top (Revenue, Units, Gross Profit, Blended Margin)
+  - Tabbed analysis navigation (Revenue, Components, Profit & Margin, Pipeline, Channels)
+  - Recharts bar charts for monthly revenue and pie charts for component/channel breakdowns
+  - Modern card grid on forecast list page with mini sparklines and KPI stats
+  - Gradient hero section for creating new forecasts
+  - Dropdown action menus (rename, duplicate, delete)
+  - lucide-react icons throughout
+  - Pipeline Summary by Month table restored in Pipeline tab
 - 2026-02-07: Build Forecast feature (multiple named forecasts)
   - SavedForecast type with id, name, timestamps, quantities map
   - Separate localStorage persistence (forecast-app-saved-forecasts)
   - SavedForecastsProvider context for CRUD operations
   - /forecast list page: create, rename, duplicate, delete forecasts
-  - /forecast/[id] detail page with:
-    - Handsontable quantity grid (12 months x products)
-    - Revenue by Product table (gross/net toggle)
-    - Revenue Component Breakdown (PS, Software Resale, Cloud, EPS)
-    - Gross Profit & Margin with blended margin %
-    - Pipeline Requirements table (deals, opps, prospects needed + timing)
-    - Pipeline Contribution by Channel breakdown
-  - All tables are collapsible sections
+  - /forecast/[id] detail page with interactive quantity input + 5 analysis tabs
   - Navigation updated to "Build Forecast"
 - 2026-02-07: Added Pipeline Contribution to Industry Averages
   - New `PipelineContribution` type with mode (pct/num) and 4 channels

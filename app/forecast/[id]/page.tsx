@@ -1,10 +1,8 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-import type Handsontable from "handsontable";
 import { useStore } from "@/lib/store/context";
 import { useSavedForecasts } from "@/lib/store/saved-forecasts-context";
 import {
@@ -16,18 +14,33 @@ import type { RevenueMode, Product, RevenueResult } from "@/lib/models/types";
 import { calcFullRevenue } from "@/lib/calc/revenue";
 import { calcWorkbackRow } from "@/lib/calc/workback";
 import { formatMonth } from "@/lib/calc/workback";
-
-const HotTable = dynamic(
-  () =>
-    import("handsontable/registry").then((reg) => {
-      reg.registerAllModules();
-      return import("@handsontable/react").then((mod) => mod.HotTable);
-    }),
-  {
-    ssr: false,
-    loading: () => <div className="p-8 text-gray-400">Loading grid...</div>,
-  }
-);
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
+import {
+  ArrowLeft,
+  DollarSign,
+  Package,
+  TrendingUp,
+  Target,
+  Minus,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  BarChart3,
+  PieChart as PieChartIcon,
+  Users,
+  Layers,
+} from "lucide-react";
 
 function fmt(n: number): string {
   return n.toLocaleString("en-US", {
@@ -38,13 +51,26 @@ function fmt(n: number): string {
   });
 }
 
+function fmtCompact(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
+  return `$${n.toFixed(0)}`;
+}
+
 function pct(n: number): string {
   return `${n.toFixed(1)}%`;
 }
 
-function num(n: number): string {
+function numFmt(n: number): string {
   return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
+
+const PRODUCT_COLORS = [
+  "#3B82F6", "#8B5CF6", "#EC4899", "#F59E0B", "#10B981",
+  "#06B6D4", "#EF4444", "#84CC16", "#F97316", "#6366F1",
+];
+
+const CHANNEL_COLORS = ["#3B82F6", "#8B5CF6", "#F59E0B", "#10B981"];
 
 interface MonthlyProductData {
   product: Product;
@@ -53,105 +79,42 @@ interface MonthlyProductData {
   annualResult: RevenueResult | null;
 }
 
+type TabKey = "revenue" | "components" | "gp" | "pipeline" | "contribution";
+
 export default function ForecastDetailPage() {
   const params = useParams();
   const router = useRouter();
   const forecastId = params.id as string;
   const { state } = useStore();
-  const { getForecast, setQtyBulk, isLoaded } = useSavedForecasts();
+  const { getForecast, setQty, isLoaded } = useSavedForecasts();
   const [mode, setMode] = useState<RevenueMode>("net");
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    revenue: true,
-    components: false,
-    gp: false,
-    pipeline: true,
-    contribution: false,
-  });
-  const hotRef = useRef<InstanceType<typeof import("@handsontable/react").HotTable> | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>("revenue");
+  const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
 
   const forecast = getForecast(forecastId);
-
-  const toggleSection = (key: string) => {
-    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
   const products = state.products;
   const quantities = forecast?.quantities ?? {};
 
-  const gridData = useMemo(() => {
-    const rows: (string | number)[][] = [];
-    for (const p of products) {
-      const row: (string | number)[] = [p.name];
-      let total = 0;
-      for (const m of MONTHS_2026) {
-        const qty = quantities[forecastKey(p.id, m)] ?? 0;
-        row.push(qty);
-        total += qty;
-      }
-      row.push(total);
-      rows.push(row);
-    }
-    const totalRow: (string | number)[] = ["TOTAL"];
-    let grandTotal = 0;
-    for (let col = 0; col < 12; col++) {
-      let colSum = 0;
-      for (const r of rows) {
-        colSum += (r[col + 1] as number) || 0;
-      }
-      totalRow.push(colSum);
-      grandTotal += colSum;
-    }
-    totalRow.push(grandTotal);
-    rows.push(totalRow);
-    return rows;
-  }, [products, quantities]);
+  const toggleProduct = (pid: string) => {
+    setExpandedProducts((prev) => ({ ...prev, [pid]: !prev[pid] }));
+  };
 
-  const colHeaders = useMemo(() => ["Product", ...MONTH_LABELS, "Total"], []);
-
-  const columns = useMemo(() => {
-    const cols: Handsontable.ColumnSettings[] = [
-      { type: "text", readOnly: true, width: 180 },
-    ];
-    for (let i = 0; i < 12; i++) {
-      cols.push({ type: "numeric", width: 65 });
-    }
-    cols.push({ type: "numeric", readOnly: true, width: 70 });
-    return cols;
-  }, []);
-
-  const handleAfterChange = useCallback(
-    (changes: Handsontable.CellChange[] | null, source: Handsontable.ChangeSource) => {
-      if (!changes || source === "loadData" || !forecast) return;
-      const entries: { productId: string; month: string; qty: number }[] = [];
-      for (const [row, col, , newVal] of changes) {
-        if (row >= products.length) continue;
-        if (typeof col !== "number" || col < 1 || col > 12) continue;
-        const product = products[row];
-        const month = MONTHS_2026[col - 1];
-        const qty = parseInt(String(newVal), 10);
-        entries.push({
-          productId: product.id,
-          month,
-          qty: isNaN(qty) ? 0 : qty,
-        });
-      }
-      if (entries.length > 0) {
-        setQtyBulk(forecastId, entries);
-      }
+  const handleQtyChange = useCallback(
+    (productId: string, month: string, delta: number) => {
+      const key = forecastKey(productId, month);
+      const current = quantities[key] ?? 0;
+      const newVal = Math.max(0, current + delta);
+      setQty(forecastId, productId, month, newVal);
     },
-    [products, forecast, forecastId, setQtyBulk]
+    [forecastId, quantities, setQty]
   );
 
-  const cells = useCallback(
-    (row: number, col: number): Handsontable.CellProperties => {
-      const props: Partial<Handsontable.CellProperties> = {};
-      if (row === products.length) {
-        props.readOnly = true;
-        props.className = "font-semibold bg-gray-100";
-      }
-      return props as Handsontable.CellProperties;
+  const handleQtyDirect = useCallback(
+    (productId: string, month: string, value: string) => {
+      const parsed = parseInt(value, 10);
+      setQty(forecastId, productId, month, isNaN(parsed) ? 0 : Math.max(0, parsed));
     },
-    [products.length]
+    [forecastId, setQty]
   );
 
   const monthlyProductData: MonthlyProductData[] = useMemo(() => {
@@ -179,7 +142,6 @@ export default function ForecastDetailPage() {
       let grossRev = 0, netRev = 0, grossGP = 0, netGP = 0;
       let ps = 0, sr = 0, cc = 0, epss = 0;
       let gpPs = 0, gpSr = 0, gpCc = 0, gpEpss = 0;
-
       for (const pd of monthlyProductData) {
         const r = pd.months[mi].result;
         if (!r) continue;
@@ -198,7 +160,6 @@ export default function ForecastDetailPage() {
         gpCc += gp.cloud_consumption;
         gpEpss += gp.epss;
       }
-
       const rev = mode === "gross" ? grossRev : netRev;
       const totalGP = mode === "gross" ? grossGP : netGP;
       return { grossRev, netRev, grossGP, netGP, ps, sr, cc, epss, gpPs, gpSr, gpCc, gpEpss, rev, totalGP };
@@ -235,7 +196,6 @@ export default function ForecastDetailPage() {
       pipelineMonth: string;
       prospectingStart: string;
     }[] = [];
-
     for (const p of products) {
       const motion = state.salesMotionByProductId[p.id];
       if (!motion) continue;
@@ -273,12 +233,11 @@ export default function ForecastDetailPage() {
     const pc = state.pipelineContribution;
     const totalProspects = pipelineData.reduce((sum, r) => sum + r.prospectsNeeded, 0);
     const totalOpps = pipelineData.reduce((sum, r) => sum + r.oppsNeeded, 0);
-
     if (pc.mode === "pct") {
       return {
         channels: [
           { label: "Website Inbound", pct: pc.website_inbound, prospects: Math.ceil(totalProspects * pc.website_inbound / 100), opps: Math.ceil(totalOpps * pc.website_inbound / 100) },
-          { label: "Sales Team Generated", pct: pc.sales_team_generated, prospects: Math.ceil(totalProspects * pc.sales_team_generated / 100), opps: Math.ceil(totalOpps * pc.sales_team_generated / 100) },
+          { label: "Sales Team", pct: pc.sales_team_generated, prospects: Math.ceil(totalProspects * pc.sales_team_generated / 100), opps: Math.ceil(totalOpps * pc.sales_team_generated / 100) },
           { label: "Event Sourced", pct: pc.event_sourced, prospects: Math.ceil(totalProspects * pc.event_sourced / 100), opps: Math.ceil(totalOpps * pc.event_sourced / 100) },
           { label: "ABM/Thought Leadership", pct: pc.abm_thought_leadership, prospects: Math.ceil(totalProspects * pc.abm_thought_leadership / 100), opps: Math.ceil(totalOpps * pc.abm_thought_leadership / 100) },
         ],
@@ -291,7 +250,7 @@ export default function ForecastDetailPage() {
     return {
       channels: [
         { label: "Website Inbound", pct: pctOf(pc.website_inbound), prospects: Math.ceil(totalProspects * pctOf(pc.website_inbound) / 100), opps: Math.ceil(totalOpps * pctOf(pc.website_inbound) / 100) },
-        { label: "Sales Team Generated", pct: pctOf(pc.sales_team_generated), prospects: Math.ceil(totalProspects * pctOf(pc.sales_team_generated) / 100), opps: Math.ceil(totalOpps * pctOf(pc.sales_team_generated) / 100) },
+        { label: "Sales Team", pct: pctOf(pc.sales_team_generated), prospects: Math.ceil(totalProspects * pctOf(pc.sales_team_generated) / 100), opps: Math.ceil(totalOpps * pctOf(pc.sales_team_generated) / 100) },
         { label: "Event Sourced", pct: pctOf(pc.event_sourced), prospects: Math.ceil(totalProspects * pctOf(pc.event_sourced) / 100), opps: Math.ceil(totalOpps * pctOf(pc.event_sourced) / 100) },
         { label: "ABM/Thought Leadership", pct: pctOf(pc.abm_thought_leadership), prospects: Math.ceil(totalProspects * pctOf(pc.abm_thought_leadership) / 100), opps: Math.ceil(totalOpps * pctOf(pc.abm_thought_leadership) / 100) },
       ],
@@ -301,16 +260,26 @@ export default function ForecastDetailPage() {
   }, [pipelineData, state.pipelineContribution]);
 
   if (!isLoaded) {
-    return <div className="p-8 text-gray-400">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-pulse flex flex-col items-center gap-3">
+          <div className="w-10 h-10 bg-blue-100 rounded-full" />
+          <div className="h-3 w-24 bg-gray-200 rounded" />
+        </div>
+      </div>
+    );
   }
 
   if (!forecast) {
     return (
       <div className="max-w-4xl mx-auto p-8 text-center">
-        <h2 className="font-semibold text-gray-700 mb-2">Forecast not found</h2>
+        <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <BarChart3 className="w-8 h-8 text-red-400" />
+        </div>
+        <h2 className="font-semibold text-gray-700 text-lg mb-2">Forecast not found</h2>
         <p className="text-sm text-gray-500 mb-4">This forecast may have been deleted.</p>
-        <Link href="/forecast" className="text-blue-600 hover:underline text-sm">
-          Back to forecasts
+        <Link href="/forecast" className="text-blue-600 hover:underline text-sm inline-flex items-center gap-1">
+          <ArrowLeft className="w-4 h-4" /> Back to forecasts
         </Link>
       </div>
     );
@@ -319,366 +288,670 @@ export default function ForecastDetailPage() {
   if (products.length === 0) {
     return (
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-2 mb-4">
-          <Link href="/forecast" className="text-blue-600 hover:underline text-sm">&larr; All Forecasts</Link>
-          <span className="text-gray-300">/</span>
-          <h1 className="text-xl font-bold">{forecast.name}</h1>
+        <div className="flex items-center gap-3 mb-6">
+          <Link href="/forecast" className="text-gray-400 hover:text-gray-600 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <h1 className="text-2xl font-bold">{forecast.name}</h1>
         </div>
-        <div className="text-gray-500 p-8 text-center bg-white border border-gray-200 rounded-lg">
-          No products configured. Go to{" "}
-          <a href="/settings/products" className="text-blue-600 underline">Settings &gt; Products</a>{" "}
-          to add products first.
+        <div className="text-gray-500 p-12 text-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl">
+          <Package className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+          <p className="font-medium mb-1">No products configured</p>
+          <p className="text-sm">
+            Go to{" "}
+            <a href="/settings/products" className="text-blue-600 underline">Settings &gt; Products</a>{" "}
+            to add products first.
+          </p>
         </div>
       </div>
     );
   }
 
   const hasData = Object.values(quantities).some((v) => v > 0);
+  const totalUnits = Object.values(quantities).reduce((s, v) => s + v, 0);
+  const marginPct = annualTotals.rev > 0 ? (annualTotals.totalGP / annualTotals.rev) * 100 : 0;
+
+  const revenueChartData = MONTH_LABELS.map((label, i) => ({
+    month: label,
+    revenue: monthlyTotals[i].rev,
+    gp: monthlyTotals[i].totalGP,
+  }));
+
+  const componentChartData = [
+    { name: "Prof. Services", value: annualTotals.ps, color: "#3B82F6" },
+    { name: "Software Resale", value: annualTotals.sr, color: "#8B5CF6" },
+    { name: "Cloud", value: annualTotals.cc, color: "#F59E0B" },
+    { name: "EPS", value: annualTotals.epss, color: "#10B981" },
+  ].filter(d => d.value > 0);
+
+  const contributionChartData = contributionData.channels
+    .map((ch, i) => ({ name: ch.label, value: ch.prospects, color: CHANNEL_COLORS[i] }))
+    .filter(d => d.value > 0);
+
+  const tabs: { key: TabKey; label: string; icon: React.ReactNode }[] = [
+    { key: "revenue", label: "Revenue", icon: <DollarSign className="w-4 h-4" /> },
+    { key: "components", label: "Components", icon: <Layers className="w-4 h-4" /> },
+    { key: "gp", label: "Profit & Margin", icon: <TrendingUp className="w-4 h-4" /> },
+    { key: "pipeline", label: "Pipeline", icon: <Users className="w-4 h-4" /> },
+    { key: "contribution", label: "Channels", icon: <PieChartIcon className="w-4 h-4" /> },
+  ];
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Link href="/forecast" className="text-blue-600 hover:underline text-sm">&larr; All Forecasts</Link>
-          <span className="text-gray-300">/</span>
-          <h1 className="text-xl font-bold">{forecast.name}</h1>
+        <div className="flex items-center gap-3">
+          <Link href="/forecast" className="text-gray-400 hover:text-gray-600 transition-colors p-1">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{forecast.name}</h1>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Last updated {new Date(forecast.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">Mode:</span>
+        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
           <button
             onClick={() => setMode("gross")}
-            className={`px-3 py-1 text-sm rounded ${mode === "gross" ? "bg-gray-900 text-white" : "bg-gray-200 text-gray-700"}`}
+            className={`px-4 py-2 text-sm rounded-lg font-medium transition-all ${mode === "gross" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
           >
             Gross
           </button>
           <button
             onClick={() => setMode("net")}
-            className={`px-3 py-1 text-sm rounded ${mode === "net" ? "bg-gray-900 text-white" : "bg-gray-200 text-gray-700"}`}
+            className={`px-4 py-2 text-sm rounded-lg font-medium transition-all ${mode === "net" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
           >
             Net
           </button>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <h2 className="font-semibold text-sm mb-3">Unit Quantity by Month</h2>
-        <HotTable
-          ref={hotRef as React.RefObject<never>}
-          data={gridData}
-          colHeaders={colHeaders}
-          columns={columns}
-          rowHeaders={false}
-          width="100%"
-          height="auto"
-          stretchH="all"
-          licenseKey="non-commercial-and-evaluation"
-          afterChange={handleAfterChange}
-          cells={cells}
-          contextMenu={false}
-          manualColumnResize={true}
-          autoWrapRow={true}
-          autoWrapCol={true}
-          fillHandle={true}
-          undo={true}
-          className="htLeft"
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <KpiCard
+          icon={<DollarSign className="w-5 h-5" />}
+          label={`${mode === "gross" ? "Gross" : "Net"} Revenue`}
+          value={hasData ? fmtCompact(annualTotals.rev) : "--"}
+          color="blue"
         />
-        <p className="text-xs text-gray-400 mt-2">
-          Enter the number of units expected to close each month. All tables below update automatically.
-        </p>
+        <KpiCard
+          icon={<Package className="w-5 h-5" />}
+          label="Total Units"
+          value={hasData ? totalUnits.toLocaleString() : "--"}
+          color="purple"
+        />
+        <KpiCard
+          icon={<TrendingUp className="w-5 h-5" />}
+          label="Gross Profit"
+          value={hasData ? fmtCompact(annualTotals.totalGP) : "--"}
+          color="green"
+        />
+        <KpiCard
+          icon={<Target className="w-5 h-5" />}
+          label="Blended Margin"
+          value={hasData ? pct(marginPct) : "--"}
+          color="amber"
+        />
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-gray-900">Product Quantities</h2>
+          <p className="text-xs text-gray-400">Set units per month per product</p>
+        </div>
+        <div className="space-y-3">
+          {products.map((product, pi) => {
+            const isExpanded = expandedProducts[product.id] ?? true;
+            const pd = monthlyProductData[pi];
+            const annualRev = pd.annualResult
+              ? (mode === "gross" ? pd.annualResult.gross_revenue : pd.annualResult.net_revenue)
+              : 0;
+
+            return (
+              <div key={product.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all">
+                <button
+                  onClick={() => toggleProduct(product.id)}
+                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: PRODUCT_COLORS[pi % PRODUCT_COLORS.length] }}
+                    />
+                    <span className="font-semibold text-gray-900">{product.name}</span>
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                      {pd.annualQty} units
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {annualRev > 0 && (
+                      <span className="text-sm font-medium text-gray-600">{fmtCompact(annualRev)}</span>
+                    )}
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    )}
+                  </div>
+                </button>
+
+                {isExpanded && (
+                  <div className="px-5 pb-5 border-t border-gray-100">
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 mt-4">
+                      {MONTHS_2026.map((m, mi) => {
+                        const qty = quantities[forecastKey(product.id, m)] ?? 0;
+                        return (
+                          <div key={m} className="flex flex-col items-center">
+                            <span className="text-[10px] font-medium text-gray-400 mb-1.5 uppercase">
+                              {MONTH_LABELS[mi]}
+                            </span>
+                            <div className="flex flex-col items-center gap-1">
+                              <button
+                                onClick={() => handleQtyChange(product.id, m, 1)}
+                                className="w-8 h-6 flex items-center justify-center rounded-md bg-gray-100 hover:bg-blue-100 hover:text-blue-600 text-gray-500 transition-colors"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                              <input
+                                type="number"
+                                min={0}
+                                value={qty}
+                                onChange={(e) => handleQtyDirect(product.id, m, e.target.value)}
+                                className="w-10 text-center text-sm font-medium border border-gray-200 rounded-lg py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                              <button
+                                onClick={() => handleQtyChange(product.id, m, -1)}
+                                className="w-8 h-6 flex items-center justify-center rounded-md bg-gray-100 hover:bg-red-100 hover:text-red-600 text-gray-500 transition-colors"
+                                disabled={qty === 0}
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {hasData && (
-        <>
-          <SectionToggle title={`${mode === "gross" ? "Gross" : "Net"} Revenue by Product`} sectionKey="revenue" expanded={expandedSections.revenue} onToggle={toggleSection}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b text-left">
-                    <th className="px-3 py-2 font-medium sticky left-0 bg-gray-50 min-w-[160px]">Product</th>
-                    {MONTH_LABELS.map((m) => (
-                      <th key={m} className="px-3 py-2 font-medium text-right min-w-[90px]">{m}</th>
-                    ))}
-                    <th className="px-3 py-2 font-medium text-right min-w-[100px]">Annual</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {monthlyProductData.map((pd, i) => (
-                    <tr key={pd.product.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <td className={`px-3 py-2 font-medium sticky left-0 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>{pd.product.name}</td>
-                      {pd.months.map((m, mi) => {
-                        const rev = m.result ? (mode === "gross" ? m.result.gross_revenue : m.result.net_revenue) : 0;
-                        return (
-                          <td key={mi} className="px-3 py-2 text-right">
-                            {m.qty > 0 ? fmt(rev) : <span className="text-gray-300">-</span>}
-                          </td>
-                        );
-                      })}
-                      <td className="px-3 py-2 text-right font-semibold">
-                        {pd.annualResult ? fmt(mode === "gross" ? pd.annualResult.gross_revenue : pd.annualResult.net_revenue) : <span className="text-gray-300">-</span>}
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="font-semibold bg-gray-100 border-t">
-                    <td className="px-3 py-2 sticky left-0 bg-gray-100">TOTAL</td>
-                    {monthlyTotals.map((mt, mi) => (
-                      <td key={mi} className="px-3 py-2 text-right">{fmt(mt.rev)}</td>
-                    ))}
-                    <td className="px-3 py-2 text-right">{fmt(annualTotals.rev)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </SectionToggle>
+        <div>
+          <div className="flex items-center gap-2 border-b border-gray-200 mb-0 overflow-x-auto">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === tab.key
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-          <SectionToggle title="Revenue Component Breakdown" sectionKey="components" expanded={expandedSections.components} onToggle={toggleSection}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b text-left">
-                    <th className="px-3 py-2 font-medium sticky left-0 bg-gray-50 min-w-[160px]">Component</th>
-                    {MONTH_LABELS.map((m) => (
-                      <th key={m} className="px-3 py-2 font-medium text-right min-w-[90px]">{m}</th>
-                    ))}
-                    <th className="px-3 py-2 font-medium text-right min-w-[100px]">Annual</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { label: "Professional Services", key: "ps" as const },
-                    { label: "Software Resale", key: "sr" as const },
-                    { label: "Cloud Consumption", key: "cc" as const },
-                    { label: "EPS", key: "epss" as const },
-                  ].map((comp, i) => (
-                    <tr key={comp.key} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <td className={`px-3 py-2 font-medium sticky left-0 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>{comp.label}</td>
-                      {monthlyTotals.map((mt, mi) => (
-                        <td key={mi} className="px-3 py-2 text-right">{fmt(mt[comp.key])}</td>
-                      ))}
-                      <td className="px-3 py-2 text-right font-semibold">{fmt(annualTotals[comp.key])}</td>
-                    </tr>
-                  ))}
-                  <tr className="font-semibold bg-gray-100 border-t">
-                    <td className="px-3 py-2 sticky left-0 bg-gray-100">Total Revenue</td>
-                    {monthlyTotals.map((mt, mi) => (
-                      <td key={mi} className="px-3 py-2 text-right">{fmt(mt.rev)}</td>
-                    ))}
-                    <td className="px-3 py-2 text-right">{fmt(annualTotals.rev)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </SectionToggle>
+          <div className="bg-white rounded-b-2xl rounded-tr-2xl border border-t-0 border-gray-200">
+            {activeTab === "revenue" && (
+              <div className="p-5 space-y-6">
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={revenueChartData} barCategoryGap="20%">
+                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => fmtCompact(v)} />
+                      <Tooltip
+                        formatter={(value: number) => fmt(value)}
+                        labelStyle={{ fontWeight: 600 }}
+                        contentStyle={{ borderRadius: 12, border: "1px solid #e5e7eb" }}
+                      />
+                      <Bar dataKey="revenue" name={`${mode === "gross" ? "Gross" : "Net"} Revenue`} fill="#3B82F6" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="gp" name="Gross Profit" fill="#10B981" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
 
-          <SectionToggle title="Gross Profit & Margin" sectionKey="gp" expanded={expandedSections.gp} onToggle={toggleSection}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b text-left">
-                    <th className="px-3 py-2 font-medium sticky left-0 bg-gray-50 min-w-[160px]">Metric</th>
-                    {MONTH_LABELS.map((m) => (
-                      <th key={m} className="px-3 py-2 font-medium text-right min-w-[90px]">{m}</th>
-                    ))}
-                    <th className="px-3 py-2 font-medium text-right min-w-[100px]">Annual</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { label: "PS GP$", key: "gpPs" as const },
-                    { label: "Resale GP$", key: "gpSr" as const },
-                    { label: "Cloud GP$", key: "gpCc" as const },
-                    { label: "EPS GP$", key: "gpEpss" as const },
-                  ].map((row, i) => (
-                    <tr key={row.key} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <td className={`px-3 py-2 font-medium sticky left-0 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>{row.label}</td>
-                      {monthlyTotals.map((mt, mi) => (
-                        <td key={mi} className="px-3 py-2 text-right">{fmt(mt[row.key])}</td>
-                      ))}
-                      <td className="px-3 py-2 text-right font-semibold">{fmt(annualTotals[row.key])}</td>
-                    </tr>
-                  ))}
-                  <tr className="font-semibold bg-gray-100 border-t">
-                    <td className="px-3 py-2 sticky left-0 bg-gray-100">Total GP$</td>
-                    {monthlyTotals.map((mt, mi) => (
-                      <td key={mi} className="px-3 py-2 text-right">{fmt(mt.totalGP)}</td>
-                    ))}
-                    <td className="px-3 py-2 text-right">{fmt(annualTotals.totalGP)}</td>
-                  </tr>
-                  <tr className="font-semibold bg-blue-50 border-t">
-                    <td className="px-3 py-2 sticky left-0 bg-blue-50">Blended Margin %</td>
-                    {monthlyTotals.map((mt, mi) => (
-                      <td key={mi} className="px-3 py-2 text-right">
-                        {mt.rev > 0 ? pct((mt.totalGP / mt.rev) * 100) : <span className="text-gray-300">-</span>}
-                      </td>
-                    ))}
-                    <td className="px-3 py-2 text-right">
-                      {annualTotals.rev > 0 ? pct((annualTotals.totalGP / annualTotals.rev) * 100) : "-"}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </SectionToggle>
-
-          <SectionToggle title="Pipeline Requirements" sectionKey="pipeline" expanded={expandedSections.pipeline} onToggle={toggleSection}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b text-left">
-                    <th className="px-3 py-2 font-medium">Product</th>
-                    <th className="px-3 py-2 font-medium">Close Month</th>
-                    <th className="px-3 py-2 font-medium text-right">Deals</th>
-                    <th className="px-3 py-2 font-medium text-right">Opps Needed</th>
-                    <th className="px-3 py-2 font-medium text-right">Prospects Needed</th>
-                    <th className="px-3 py-2 font-medium">Pipeline Must Start</th>
-                    <th className="px-3 py-2 font-medium">Prospecting Start</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pipelineData.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-3 py-6 text-center text-gray-400">
-                        Enter quantities above to see pipeline requirements.
-                      </td>
-                    </tr>
-                  ) : (
-                    pipelineData.map((r, i) => {
-                      const pipelineBefore = r.pipelineMonth < "2026-01";
-                      const prospectBefore = r.prospectingStart < "2026-01";
-                      return (
-                        <tr key={`${r.productName}-${r.closeMonth}`} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                          <td className="px-3 py-2">{r.productName}</td>
-                          <td className="px-3 py-2">{formatMonth(r.closeMonth)}</td>
-                          <td className="px-3 py-2 text-right">{num(r.dealsNeeded)}</td>
-                          <td className="px-3 py-2 text-right">{num(r.oppsNeeded)}</td>
-                          <td className="px-3 py-2 text-right">{num(r.prospectsNeeded)}</td>
-                          <td className={`px-3 py-2 ${pipelineBefore ? "text-orange-600 font-medium" : ""}`}>
-                            {formatMonth(r.pipelineMonth)}
-                            {pipelineBefore && <span className="text-xs ml-1">(pre-FY)</span>}
-                          </td>
-                          <td className={`px-3 py-2 ${prospectBefore ? "text-orange-600 font-medium" : ""}`}>
-                            {formatMonth(r.prospectingStart)}
-                            {prospectBefore && <span className="text-xs ml-1">(pre-FY)</span>}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {Object.keys(pipelineByMonth).length > 0 && (
-              <div className="border-t mt-4 pt-4 px-4 pb-4">
-                <h3 className="font-semibold text-sm mb-2">Pipeline Summary by Month</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="bg-gray-50 border-b text-left">
-                        <th className="px-3 py-2 font-medium">Pipeline Month</th>
-                        <th className="px-3 py-2 font-medium text-right">Total Opps Needed</th>
-                        <th className="px-3 py-2 font-medium text-right">Total Prospects Needed</th>
+                      <tr className="border-b border-gray-100">
+                        <th className="px-3 py-2.5 text-left font-medium text-gray-500 sticky left-0 bg-white min-w-[160px]">Product</th>
+                        {MONTH_LABELS.map((m) => (
+                          <th key={m} className="px-3 py-2.5 text-right font-medium text-gray-500 min-w-[90px]">{m}</th>
+                        ))}
+                        <th className="px-3 py-2.5 text-right font-medium text-gray-500 min-w-[100px] bg-gray-50">Annual</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {Object.entries(pipelineByMonth)
-                        .sort(([a], [b]) => a.localeCompare(b))
-                        .map(([month, data], i) => {
-                          const before = month < "2026-01";
-                          return (
-                            <tr key={month} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                              <td className={`px-3 py-2 ${before ? "text-orange-600 font-medium" : ""}`}>
-                                {formatMonth(month)}
-                                {before && <span className="text-xs ml-1">(pre-FY)</span>}
+                      {monthlyProductData.map((pd, i) => (
+                        <tr key={pd.product.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                          <td className="px-3 py-2.5 font-medium sticky left-0 bg-white">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: PRODUCT_COLORS[i % PRODUCT_COLORS.length] }} />
+                              {pd.product.name}
+                            </div>
+                          </td>
+                          {pd.months.map((m, mi) => {
+                            const rev = m.result ? (mode === "gross" ? m.result.gross_revenue : m.result.net_revenue) : 0;
+                            return (
+                              <td key={mi} className="px-3 py-2.5 text-right tabular-nums">
+                                {m.qty > 0 ? fmt(rev) : <span className="text-gray-300">-</span>}
                               </td>
-                              <td className="px-3 py-2 text-right">{num(data.opps)}</td>
-                              <td className="px-3 py-2 text-right">{num(data.prospects)}</td>
-                            </tr>
-                          );
-                        })}
+                            );
+                          })}
+                          <td className="px-3 py-2.5 text-right font-semibold bg-gray-50 tabular-nums">
+                            {pd.annualResult ? fmt(mode === "gross" ? pd.annualResult.gross_revenue : pd.annualResult.net_revenue) : <span className="text-gray-300">-</span>}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="font-semibold bg-gray-50">
+                        <td className="px-3 py-2.5 sticky left-0 bg-gray-50">Total</td>
+                        {monthlyTotals.map((mt, mi) => (
+                          <td key={mi} className="px-3 py-2.5 text-right tabular-nums">{fmt(mt.rev)}</td>
+                        ))}
+                        <td className="px-3 py-2.5 text-right tabular-nums bg-gray-100">{fmt(annualTotals.rev)}</td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
               </div>
             )}
-          </SectionToggle>
 
-          <SectionToggle title="Pipeline Contribution by Channel" sectionKey="contribution" expanded={expandedSections.contribution} onToggle={toggleSection}>
-            <div className="p-4">
-              <p className="text-xs text-gray-500 mb-3">
-                Based on your pipeline contribution settings, here is how the total pipeline requirement breaks down by channel.
-              </p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 border-b text-left">
-                      <th className="px-3 py-2 font-medium">Channel</th>
-                      <th className="px-3 py-2 font-medium text-right">Contribution %</th>
-                      <th className="px-3 py-2 font-medium text-right">Prospects to Generate</th>
-                      <th className="px-3 py-2 font-medium text-right">Opps to Generate</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {contributionData.channels.map((ch, i) => (
-                      <tr key={ch.label} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                        <td className="px-3 py-2 font-medium">{ch.label}</td>
-                        <td className="px-3 py-2 text-right">{pct(ch.pct)}</td>
-                        <td className="px-3 py-2 text-right">{num(ch.prospects)}</td>
-                        <td className="px-3 py-2 text-right">{num(ch.opps)}</td>
+            {activeTab === "components" && (
+              <div className="p-5 space-y-6">
+                {componentChartData.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={componentChartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={90}
+                            paddingAngle={3}
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            labelLine={false}
+                          >
+                            {componentChartData.map((entry, index) => (
+                              <Cell key={index} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: number) => fmt(value)} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex flex-col justify-center gap-3">
+                      {componentChartData.map((comp) => (
+                        <div key={comp.name} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: comp.color }} />
+                            <span className="text-sm text-gray-700">{comp.name}</span>
+                          </div>
+                          <span className="font-semibold text-sm">{fmt(comp.value)}</span>
+                        </div>
+                      ))}
+                      <hr className="border-gray-200" />
+                      <div className="flex items-center justify-between font-semibold">
+                        <span className="text-sm text-gray-700">Total</span>
+                        <span className="text-sm">{fmt(annualTotals.rev)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="px-3 py-2.5 text-left font-medium text-gray-500 sticky left-0 bg-white min-w-[160px]">Component</th>
+                        {MONTH_LABELS.map((m) => (
+                          <th key={m} className="px-3 py-2.5 text-right font-medium text-gray-500 min-w-[90px]">{m}</th>
+                        ))}
+                        <th className="px-3 py-2.5 text-right font-medium text-gray-500 min-w-[100px] bg-gray-50">Annual</th>
                       </tr>
-                    ))}
-                    <tr className="font-semibold bg-gray-100 border-t">
-                      <td className="px-3 py-2">Total</td>
-                      <td className="px-3 py-2 text-right">100.0%</td>
-                      <td className="px-3 py-2 text-right">{num(contributionData.totalProspects)}</td>
-                      <td className="px-3 py-2 text-right">{num(contributionData.totalOpps)}</td>
-                    </tr>
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {[
+                        { label: "Professional Services", key: "ps" as const, color: "#3B82F6" },
+                        { label: "Software Resale", key: "sr" as const, color: "#8B5CF6" },
+                        { label: "Cloud Consumption", key: "cc" as const, color: "#F59E0B" },
+                        { label: "EPS", key: "epss" as const, color: "#10B981" },
+                      ].map((comp) => (
+                        <tr key={comp.key} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                          <td className="px-3 py-2.5 font-medium sticky left-0 bg-white">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: comp.color }} />
+                              {comp.label}
+                            </div>
+                          </td>
+                          {monthlyTotals.map((mt, mi) => (
+                            <td key={mi} className="px-3 py-2.5 text-right tabular-nums">{fmt(mt[comp.key])}</td>
+                          ))}
+                          <td className="px-3 py-2.5 text-right font-semibold bg-gray-50 tabular-nums">{fmt(annualTotals[comp.key])}</td>
+                        </tr>
+                      ))}
+                      <tr className="font-semibold bg-gray-50">
+                        <td className="px-3 py-2.5 sticky left-0 bg-gray-50">Total Revenue</td>
+                        {monthlyTotals.map((mt, mi) => (
+                          <td key={mi} className="px-3 py-2.5 text-right tabular-nums">{fmt(mt.rev)}</td>
+                        ))}
+                        <td className="px-3 py-2.5 text-right tabular-nums bg-gray-100">{fmt(annualTotals.rev)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          </SectionToggle>
-        </>
+            )}
+
+            {activeTab === "gp" && (
+              <div className="p-5 space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { label: "PS GP$", value: annualTotals.gpPs, color: "#3B82F6" },
+                    { label: "Resale GP$", value: annualTotals.gpSr, color: "#8B5CF6" },
+                    { label: "Cloud GP$", value: annualTotals.gpCc, color: "#F59E0B" },
+                    { label: "EPS GP$", value: annualTotals.gpEpss, color: "#10B981" },
+                  ].map((item) => (
+                    <div key={item.label} className="bg-gray-50 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-xs text-gray-500">{item.label}</span>
+                      </div>
+                      <div className="font-semibold text-lg">{fmtCompact(item.value)}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="px-3 py-2.5 text-left font-medium text-gray-500 sticky left-0 bg-white min-w-[160px]">Metric</th>
+                        {MONTH_LABELS.map((m) => (
+                          <th key={m} className="px-3 py-2.5 text-right font-medium text-gray-500 min-w-[90px]">{m}</th>
+                        ))}
+                        <th className="px-3 py-2.5 text-right font-medium text-gray-500 min-w-[100px] bg-gray-50">Annual</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { label: "PS GP$", key: "gpPs" as const },
+                        { label: "Resale GP$", key: "gpSr" as const },
+                        { label: "Cloud GP$", key: "gpCc" as const },
+                        { label: "EPS GP$", key: "gpEpss" as const },
+                      ].map((row) => (
+                        <tr key={row.key} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                          <td className="px-3 py-2.5 font-medium sticky left-0 bg-white">{row.label}</td>
+                          {monthlyTotals.map((mt, mi) => (
+                            <td key={mi} className="px-3 py-2.5 text-right tabular-nums">{fmt(mt[row.key])}</td>
+                          ))}
+                          <td className="px-3 py-2.5 text-right font-semibold bg-gray-50 tabular-nums">{fmt(annualTotals[row.key])}</td>
+                        </tr>
+                      ))}
+                      <tr className="font-semibold bg-gray-50">
+                        <td className="px-3 py-2.5 sticky left-0 bg-gray-50">Total GP$</td>
+                        {monthlyTotals.map((mt, mi) => (
+                          <td key={mi} className="px-3 py-2.5 text-right tabular-nums">{fmt(mt.totalGP)}</td>
+                        ))}
+                        <td className="px-3 py-2.5 text-right tabular-nums bg-gray-100">{fmt(annualTotals.totalGP)}</td>
+                      </tr>
+                      <tr className="font-semibold bg-blue-50/50">
+                        <td className="px-3 py-2.5 sticky left-0 bg-blue-50/50">Blended Margin %</td>
+                        {monthlyTotals.map((mt, mi) => (
+                          <td key={mi} className="px-3 py-2.5 text-right tabular-nums">
+                            {mt.rev > 0 ? pct((mt.totalGP / mt.rev) * 100) : <span className="text-gray-300">-</span>}
+                          </td>
+                        ))}
+                        <td className="px-3 py-2.5 text-right tabular-nums bg-blue-100/50">
+                          {annualTotals.rev > 0 ? pct((annualTotals.totalGP / annualTotals.rev) * 100) : "-"}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "pipeline" && (
+              <div className="p-5 space-y-6">
+                {pipelineData.length > 0 && (
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-blue-50 rounded-xl p-4 text-center">
+                      <div className="text-xs text-blue-600 font-medium mb-1">Total Deals</div>
+                      <div className="text-2xl font-bold text-blue-700">
+                        {numFmt(pipelineData.reduce((s, r) => s + r.dealsNeeded, 0))}
+                      </div>
+                    </div>
+                    <div className="bg-purple-50 rounded-xl p-4 text-center">
+                      <div className="text-xs text-purple-600 font-medium mb-1">Opps Needed</div>
+                      <div className="text-2xl font-bold text-purple-700">
+                        {numFmt(pipelineData.reduce((s, r) => s + r.oppsNeeded, 0))}
+                      </div>
+                    </div>
+                    <div className="bg-amber-50 rounded-xl p-4 text-center">
+                      <div className="text-xs text-amber-600 font-medium mb-1">Prospects Needed</div>
+                      <div className="text-2xl font-bold text-amber-700">
+                        {numFmt(pipelineData.reduce((s, r) => s + r.prospectsNeeded, 0))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="px-3 py-2.5 text-left font-medium text-gray-500">Product</th>
+                        <th className="px-3 py-2.5 text-left font-medium text-gray-500">Close Month</th>
+                        <th className="px-3 py-2.5 text-right font-medium text-gray-500">Deals</th>
+                        <th className="px-3 py-2.5 text-right font-medium text-gray-500">Opps Needed</th>
+                        <th className="px-3 py-2.5 text-right font-medium text-gray-500">Prospects</th>
+                        <th className="px-3 py-2.5 text-left font-medium text-gray-500">Pipeline Start</th>
+                        <th className="px-3 py-2.5 text-left font-medium text-gray-500">Prospecting Start</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pipelineData.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-3 py-8 text-center text-gray-400">
+                            Enter quantities above to see pipeline requirements.
+                          </td>
+                        </tr>
+                      ) : (
+                        pipelineData.map((r, i) => {
+                          const pipelineBefore = r.pipelineMonth < "2026-01";
+                          const prospectBefore = r.prospectingStart < "2026-01";
+                          return (
+                            <tr key={`${r.productName}-${r.closeMonth}`} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                              <td className="px-3 py-2.5 font-medium">{r.productName}</td>
+                              <td className="px-3 py-2.5">{formatMonth(r.closeMonth)}</td>
+                              <td className="px-3 py-2.5 text-right tabular-nums">{numFmt(r.dealsNeeded)}</td>
+                              <td className="px-3 py-2.5 text-right tabular-nums">{numFmt(r.oppsNeeded)}</td>
+                              <td className="px-3 py-2.5 text-right tabular-nums">{numFmt(r.prospectsNeeded)}</td>
+                              <td className={`px-3 py-2.5 ${pipelineBefore ? "text-orange-600 font-medium" : ""}`}>
+                                {formatMonth(r.pipelineMonth)}
+                                {pipelineBefore && <span className="text-[10px] ml-1 bg-orange-100 px-1.5 py-0.5 rounded-full">pre-FY</span>}
+                              </td>
+                              <td className={`px-3 py-2.5 ${prospectBefore ? "text-orange-600 font-medium" : ""}`}>
+                                {formatMonth(r.prospectingStart)}
+                                {prospectBefore && <span className="text-[10px] ml-1 bg-orange-100 px-1.5 py-0.5 rounded-full">pre-FY</span>}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {Object.keys(pipelineByMonth).length > 0 && (
+                  <div className="border-t border-gray-100 pt-5">
+                    <h3 className="font-semibold text-sm mb-3 text-gray-700">Pipeline Summary by Month</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-100">
+                            <th className="px-3 py-2.5 text-left font-medium text-gray-500">Pipeline Month</th>
+                            <th className="px-3 py-2.5 text-right font-medium text-gray-500">Total Opps</th>
+                            <th className="px-3 py-2.5 text-right font-medium text-gray-500">Total Prospects</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(pipelineByMonth)
+                            .sort(([a], [b]) => a.localeCompare(b))
+                            .map(([month, data], i) => {
+                              const before = month < "2026-01";
+                              return (
+                                <tr key={month} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                  <td className={`px-3 py-2.5 ${before ? "text-orange-600 font-medium" : ""}`}>
+                                    {formatMonth(month)}
+                                    {before && <span className="text-[10px] ml-1 bg-orange-100 px-1.5 py-0.5 rounded-full">pre-FY</span>}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right tabular-nums">{numFmt(data.opps)}</td>
+                                  <td className="px-3 py-2.5 text-right tabular-nums">{numFmt(data.prospects)}</td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "contribution" && (
+              <div className="p-5 space-y-6">
+                <p className="text-sm text-gray-500">
+                  Pipeline requirements broken down by channel based on your contribution settings.
+                </p>
+
+                {contributionChartData.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={contributionChartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={90}
+                            paddingAngle={3}
+                            dataKey="value"
+                            label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                          >
+                            {contributionChartData.map((entry, index) => (
+                              <Cell key={index} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: number) => numFmt(value)} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex flex-col justify-center gap-3">
+                      {contributionData.channels.map((ch, i) => (
+                        <div key={ch.label} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHANNEL_COLORS[i] }} />
+                            <span className="text-sm font-medium text-gray-700">{ch.label}</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold text-sm">{numFmt(ch.prospects)} prospects</div>
+                            <div className="text-xs text-gray-500">{pct(ch.pct)} share</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="px-3 py-2.5 text-left font-medium text-gray-500">Channel</th>
+                        <th className="px-3 py-2.5 text-right font-medium text-gray-500">Contribution %</th>
+                        <th className="px-3 py-2.5 text-right font-medium text-gray-500">Prospects</th>
+                        <th className="px-3 py-2.5 text-right font-medium text-gray-500">Opps</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {contributionData.channels.map((ch, i) => (
+                        <tr key={ch.label} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                          <td className="px-3 py-2.5 font-medium">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: CHANNEL_COLORS[i] }} />
+                              {ch.label}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5 text-right tabular-nums">{pct(ch.pct)}</td>
+                          <td className="px-3 py-2.5 text-right tabular-nums">{numFmt(ch.prospects)}</td>
+                          <td className="px-3 py-2.5 text-right tabular-nums">{numFmt(ch.opps)}</td>
+                        </tr>
+                      ))}
+                      <tr className="font-semibold bg-gray-50">
+                        <td className="px-3 py-2.5">Total</td>
+                        <td className="px-3 py-2.5 text-right tabular-nums">100.0%</td>
+                        <td className="px-3 py-2.5 text-right tabular-nums">{numFmt(contributionData.totalProspects)}</td>
+                        <td className="px-3 py-2.5 text-right tabular-nums">{numFmt(contributionData.totalOpps)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {!hasData && (
-        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-400">
-          Enter product quantities in the grid above to see revenue breakdown, pipeline requirements, and contribution analysis.
+        <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-12 text-center">
+          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <BarChart3 className="w-6 h-6 text-blue-500" />
+          </div>
+          <p className="text-gray-500 font-medium">Set product quantities above to see your forecast analysis</p>
+          <p className="text-gray-400 text-sm mt-1">Revenue, profit, pipeline, and channel breakdowns will appear here</p>
         </div>
       )}
     </div>
   );
 }
 
-function SectionToggle({
-  title,
-  sectionKey,
-  expanded,
-  onToggle,
-  children,
+function KpiCard({
+  icon,
+  label,
+  value,
+  color,
 }: {
-  title: string;
-  sectionKey: string;
-  expanded: boolean;
-  onToggle: (key: string) => void;
-  children: React.ReactNode;
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  color: "blue" | "purple" | "green" | "amber";
 }) {
+  const colorMap = {
+    blue: "bg-blue-50 text-blue-600",
+    purple: "bg-purple-50 text-purple-600",
+    green: "bg-green-50 text-green-600",
+    amber: "bg-amber-50 text-amber-600",
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-      <button
-        onClick={() => onToggle(sectionKey)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
-      >
-        <h2 className="font-semibold text-sm">{title}</h2>
-        <svg
-          className={`w-5 h-5 text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {expanded && <div className="border-t">{children}</div>}
+    <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${colorMap[color]}`}>
+        {icon}
+      </div>
+      <div className="text-xs text-gray-500 font-medium">{label}</div>
+      <div className="text-2xl font-bold text-gray-900 mt-0.5">{value}</div>
     </div>
   );
 }
