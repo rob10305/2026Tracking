@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
-  { href: "/forecast", label: "Forecasts" },
+  { href: "/forecasts", label: "Forecasts" },
+  { href: "/forecast", label: "Build Forecast" },
   { href: "/performance", label: "Performance Tracker" },
   { href: "/summary", label: "Summary" },
   { href: "/workback", label: "Workback" },
