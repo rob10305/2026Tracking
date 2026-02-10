@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@handsontable/react": "^15.0.0",
+    "@octokit/rest": "^22.0.1",
     "@prisma/client": "^6.19.2",
     "dotenv": "^17.2.4",
     "handsontable": "^15.0.0",
