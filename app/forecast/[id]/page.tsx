@@ -549,7 +549,7 @@ export default function ForecastDetailPage() {
                             outerRadius={90}
                             paddingAngle={3}
                             dataKey="value"
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            label={({ name, percent }: { name: string; percent?: number }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                             labelLine={false}
                           >
                             {componentChartData.map((entry, index) => (
@@ -819,7 +819,7 @@ export default function ForecastDetailPage() {
                             outerRadius={90}
                             paddingAngle={3}
                             dataKey="value"
-                            label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                            label={({ name, percent }: { name: string; percent?: number }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
                           >
                             {contributionChartData.map((entry, index) => (
                               <Cell key={index} fill={entry.color} />
