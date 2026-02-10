@@ -88,6 +88,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           p.status = "live";
         }
       }
+      const oldDemoIds = new Set(["prod-managed-cloud", "prod-devops-accelerator", "prod-security-suite"]);
+      const hasOldDemo = saved.products.some((p) => oldDemoIds.has(p.id));
+      if (hasOldDemo) {
+        const seed = createSeedData();
+        saved.products = seed.products;
+        saved.salesMotionByProductId = seed.salesMotionByProductId;
+        saved.forecastByProductIdMonth = {};
+      }
       skipNextSave.current = true;
       setState(saved);
     }
