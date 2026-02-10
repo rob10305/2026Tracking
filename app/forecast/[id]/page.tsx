@@ -478,7 +478,7 @@ export default function ForecastDetailPage() {
                       <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                       <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => fmtCompact(v)} />
                       <Tooltip
-                        formatter={(value: number) => fmt(value)}
+                        formatter={(value: number | undefined) => value != null ? fmt(value) : ""}
                         labelStyle={{ fontWeight: 600 }}
                         contentStyle={{ borderRadius: 12, border: "1px solid #e5e7eb" }}
                       />
@@ -556,7 +556,7 @@ export default function ForecastDetailPage() {
                               <Cell key={index} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value: number) => fmt(value)} />
+                          <Tooltip formatter={(value: number | undefined) => value != null ? fmt(value) : ""} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -825,7 +825,7 @@ export default function ForecastDetailPage() {
                               <Cell key={index} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value: number) => numFmt(value)} />
+                          <Tooltip formatter={(value: number | undefined) => value != null ? numFmt(value) : ""} />
                           <Legend />
                         </PieChart>
                       </ResponsiveContainer>
