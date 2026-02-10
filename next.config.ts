@@ -3,6 +3,15 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   allowedDevOrigins: ["*"],
+  async redirects() {
+    return [
+      {
+        source: "/forecasts",
+        destination: "/forecast",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
