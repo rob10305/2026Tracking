@@ -249,6 +249,13 @@ export function createSeedData(): AppState {
     prospecting_lead_time_months: 1,
   };
 
+  const itmHistoricalAverages: AppState["itmHistoricalAverages"] = {
+    sales_cycle_months: 4,
+    opp_to_close_win_rate_pct: 25,
+    prospect_to_opp_rate_pct: 18,
+    prospecting_lead_time_months: 1,
+  };
+
   const pipelineContribution: PipelineContribution = {
     mode: "pct",
     website_inbound: 25,
@@ -264,6 +271,7 @@ export function createSeedData(): AppState {
     products,
     margins,
     industryAverages,
+    itmHistoricalAverages,
     pipelineContribution,
     salesMotionByProductId,
     forecastByProductIdMonth,

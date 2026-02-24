@@ -14,9 +14,12 @@ const PIPELINE_CHANNELS: { key: keyof Omit<PipelineContribution, "mode">; label:
 ];
 
 export default function IndustryAveragesPage() {
-  const { state, updateIndustryAverages, updatePipelineContribution } = useStore();
+  const { state, updateIndustryAverages, updateItmHistoricalAverages, updatePipelineContribution } = useStore();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<SalesMotion>({ ...state.industryAverages });
+
+  const [itmEditing, setItmEditing] = useState(false);
+  const [itmDraft, setItmDraft] = useState<SalesMotion>({ ...state.itmHistoricalAverages });
 
   const [pipeEditing, setPipeEditing] = useState(false);
   const [pipeDraft, setPipeDraft] = useState<PipelineContribution>({ ...state.pipelineContribution });
@@ -33,6 +36,20 @@ export default function IndustryAveragesPage() {
   const cancel = () => {
     setDraft({ ...state.industryAverages });
     setEditing(false);
+  };
+
+  const updateItmDraft = (patch: Partial<SalesMotion>) => {
+    setItmDraft((prev) => ({ ...prev, ...patch }));
+  };
+
+  const saveItm = () => {
+    updateItmHistoricalAverages(itmDraft);
+    setItmEditing(false);
+  };
+
+  const cancelItm = () => {
+    setItmDraft({ ...state.itmHistoricalAverages });
+    setItmEditing(false);
   };
 
   const updatePipeDraft = (patch: Partial<PipelineContribution>) => {
@@ -143,6 +160,89 @@ export default function IndustryAveragesPage() {
               label="Lead Time to Close"
               value={draft.prospecting_lead_time_months}
               onChange={(v) => updateDraft({ prospecting_lead_time_months: Math.max(0, Math.round(v)) })}
+              suffix="mo"
+              min={0}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-base">ITM Historical Averages</h2>
+          {!itmEditing ? (
+            <button
+              onClick={() => { setItmDraft({ ...state.itmHistoricalAverages }); setItmEditing(true); }}
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Edit
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={saveItm}
+                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Save
+              </button>
+              <button
+                onClick={cancelItm}
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+
+        {!itmEditing ? (
+          <div className="grid grid-cols-4 gap-x-6 gap-y-2">
+            <div>
+              <span className="text-xs text-gray-400">Sales Cycle</span>
+              <p className="text-sm font-medium text-gray-800">{state.itmHistoricalAverages.sales_cycle_months} mo</p>
+            </div>
+            <div>
+              <span className="text-xs text-gray-400">Win Rate</span>
+              <p className="text-sm font-medium text-gray-800">{state.itmHistoricalAverages.opp_to_close_win_rate_pct}%</p>
+            </div>
+            <div>
+              <span className="text-xs text-gray-400">Prospect to Opp</span>
+              <p className="text-sm font-medium text-gray-800">{state.itmHistoricalAverages.prospect_to_opp_rate_pct}%</p>
+            </div>
+            <div>
+              <span className="text-xs text-gray-400">Lead Time to Close</span>
+              <p className="text-sm font-medium text-gray-800">{state.itmHistoricalAverages.prospecting_lead_time_months} mo</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-3">
+            <NumberInput
+              label="Sales Cycle"
+              value={itmDraft.sales_cycle_months}
+              onChange={(v) => updateItmDraft({ sales_cycle_months: Math.max(0, Math.round(v)) })}
+              suffix="mo"
+              min={0}
+            />
+            <NumberInput
+              label="Win Rate"
+              value={itmDraft.opp_to_close_win_rate_pct}
+              onChange={(v) => updateItmDraft({ opp_to_close_win_rate_pct: v })}
+              suffix="%"
+              min={0}
+              max={100}
+            />
+            <NumberInput
+              label="Prospect to Opp"
+              value={itmDraft.prospect_to_opp_rate_pct}
+              onChange={(v) => updateItmDraft({ prospect_to_opp_rate_pct: v })}
+              suffix="%"
+              min={0}
+              max={100}
+            />
+            <NumberInput
+              label="Lead Time to Close"
+              value={itmDraft.prospecting_lead_time_months}
+              onChange={(v) => updateItmDraft({ prospecting_lead_time_months: Math.max(0, Math.round(v)) })}
               suffix="mo"
               min={0}
             />

@@ -30,6 +30,8 @@ interface AppStore {
   updateMargins: (m: Margins) => void;
   // Industry Averages
   updateIndustryAverages: (s: SalesMotion) => void;
+  // ITM Historical Averages
+  updateItmHistoricalAverages: (s: SalesMotion) => void;
   // Pipeline Contribution
   updatePipelineContribution: (p: PipelineContribution) => void;
   // Sales Motion
@@ -70,6 +72,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           sales_cycle_months: 3,
           opp_to_close_win_rate_pct: 20,
           prospect_to_opp_rate_pct: 15,
+          prospecting_lead_time_months: 1,
+        };
+      }
+      if (!saved.itmHistoricalAverages) {
+        saved.itmHistoricalAverages = {
+          sales_cycle_months: 4,
+          opp_to_close_win_rate_pct: 25,
+          prospect_to_opp_rate_pct: 18,
           prospecting_lead_time_months: 1,
         };
       }
@@ -182,6 +192,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [update],
   );
 
+  const updateItmHistoricalAverages = useCallback(
+    (s: SalesMotion) => {
+      update((prev) => ({
+        ...prev,
+        itmHistoricalAverages: s,
+      }));
+    },
+    [update],
+  );
+
   const updatePipelineContribution = useCallback(
     (p: PipelineContribution) => {
       update((prev) => ({
@@ -254,6 +274,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         deleteProduct,
         updateMargins,
         updateIndustryAverages,
+        updateItmHistoricalAverages,
         updatePipelineContribution,
         updateSalesMotion,
         setForecastQty,

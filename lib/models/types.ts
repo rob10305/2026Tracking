@@ -74,6 +74,7 @@ export interface AppState {
   products: Product[];
   margins: Margins;
   industryAverages: SalesMotion;
+  itmHistoricalAverages: SalesMotion;
   pipelineContribution: PipelineContribution;
   salesMotionByProductId: Record<string, SalesMotion>;
   forecastByProductIdMonth: ForecastMap;
