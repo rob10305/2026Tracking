@@ -14,7 +14,7 @@ export function getEffectivePricing(product: Product) {
       professional_services_pct: v.professional_services_pct,
       software_resale_pct: v.software_resale_pct,
       cloud_consumption_pct: v.cloud_consumption_pct,
-      eps_pct: v.eps_pct,
+      pss_pct: v.pss_pct,
       user_count: v.user_count,
     };
   }
@@ -24,7 +24,7 @@ export function getEffectivePricing(product: Product) {
     professional_services_pct: product.professional_services_pct,
     software_resale_pct: product.software_resale_pct,
     cloud_consumption_pct: product.cloud_consumption_pct,
-    eps_pct: product.eps_pct,
+    pss_pct: product.pss_pct,
     user_count: product.user_count,
   };
 }
@@ -44,19 +44,19 @@ export function calcNetUnitPrice(product: Product): number {
 }
 
 export function getComponentPcts(product: Product): {
-  pss: number;
+  platSupport: number;
   ps: number;
   sr: number;
   cc: number;
-  eps: number;
+  pss: number;
 } {
   const p = getEffectivePricing(product);
   return {
-    pss: p.platform_support_services_pct,
+    platSupport: p.platform_support_services_pct,
     ps: p.professional_services_pct,
     sr: p.software_resale_pct,
     cc: p.cloud_consumption_pct,
-    eps: p.eps_pct,
+    pss: p.pss_pct,
   };
 }
 
@@ -69,7 +69,7 @@ export function calcComponentSplit(
     professional_services: revenue * (pcts.ps / 100),
     software_resale: revenue * (pcts.sr / 100),
     cloud_consumption: revenue * (pcts.cc / 100),
-    epss: revenue * (pcts.eps / 100),
+    pss: revenue * (pcts.pss / 100),
   };
 }
 
@@ -87,13 +87,13 @@ export function calcComponentGP(
     cloud_consumption:
       components.cloud_consumption *
       (margins.cloud_consumption_margin_pct / 100),
-    epss: components.epss * (margins.epss_margin_pct / 100),
+    pss: components.pss * (margins.pss_margin_pct / 100),
   };
 }
 
 export function sumComponents(c: ComponentBreakdown): number {
   return (
-    c.professional_services + c.software_resale + c.cloud_consumption + c.epss
+    c.professional_services + c.software_resale + c.cloud_consumption + c.pss
   );
 }
 

@@ -95,9 +95,9 @@ export default function MarginsPage() {
             disabled={!editing}
           />
           <NumberInput
-            label="EPS Margin"
-            value={m.epss_margin_pct}
-            onChange={(v) => update({ epss_margin_pct: v })}
+            label="PSS Margin"
+            value={m.pss_margin_pct}
+            onChange={(v) => update({ pss_margin_pct: v })}
             suffix="%"
             min={0}
             max={100}

@@ -29,7 +29,7 @@ const DEFAULT_VARIANT_PRICING: VariantPricing = {
   professional_services_pct: 25,
   software_resale_pct: 25,
   cloud_consumption_pct: 25,
-  eps_pct: 25,
+  pss_pct: 25,
   user_count: "",
 };
 
@@ -189,7 +189,7 @@ function ProductCard({
     effective.professional_services_pct +
     effective.software_resale_pct +
     effective.cloud_consumption_pct +
-    effective.eps_pct;
+    effective.pss_pct;
   const validMix = Math.abs(componentSum - 100) < 0.01;
 
   const updateP = (patch: Partial<Product>) => {
@@ -355,7 +355,7 @@ function ProductCard({
               <DetailRow label="Prof. Services" value={`${effective.professional_services_pct}%`} />
               <DetailRow label="Software Resale" value={`${effective.software_resale_pct}%`} />
               <DetailRow label="Cloud Consumption" value={`${effective.cloud_consumption_pct}%`} />
-              <DetailRow label="EPS" value={`${effective.eps_pct}%`} />
+              <DetailRow label="PSS" value={`${effective.pss_pct}%`} />
             </div>
           </div>
 
@@ -431,7 +431,7 @@ function ProductCard({
                       professional_services_pct: p.professional_services_pct,
                       software_resale_pct: p.software_resale_pct,
                       cloud_consumption_pct: p.cloud_consumption_pct,
-                      eps_pct: p.eps_pct,
+                      pss_pct: p.pss_pct,
                       user_count: p.user_count,
                     };
                     updateP({
@@ -530,9 +530,9 @@ function ProductCard({
                 max={100}
               />
               <NumberInput
-                label="EPS"
-                value={effective.eps_pct}
-                onChange={(v) => updateEffective({ eps_pct: v })}
+                label="PSS"
+                value={effective.pss_pct}
+                onChange={(v) => updateEffective({ pss_pct: v })}
                 suffix="%"
                 min={0}
                 max={100}
@@ -561,7 +561,7 @@ export default function ProductsPage() {
       professional_services_pct: 25,
       software_resale_pct: 25,
       cloud_consumption_pct: 25,
-      eps_pct: 25,
+      pss_pct: 25,
       user_count: "",
       has_variants: false,
       status: "live",
@@ -583,7 +583,7 @@ export default function ProductsPage() {
       "Professional Services %",
       "Software Resale %",
       "Cloud Consumption %",
-      "EPS %",
+      "PSS %",
       "User Count",
     ];
     const rows = state.products.map((p) => {
@@ -600,7 +600,7 @@ export default function ProductsPage() {
         `${eff.professional_services_pct}%`,
         `${eff.software_resale_pct}%`,
         `${eff.cloud_consumption_pct}%`,
-        `${eff.eps_pct}%`,
+        `${eff.pss_pct}%`,
         `"${eff.user_count || ""}"`,
       ].join(",");
     });

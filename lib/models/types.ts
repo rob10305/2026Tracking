@@ -19,7 +19,7 @@ export interface VariantPricing {
   professional_services_pct: number;
   software_resale_pct: number;
   cloud_consumption_pct: number;
-  eps_pct: number;
+  pss_pct: number;
   user_count: string;
 }
 
@@ -33,7 +33,7 @@ export interface Product {
   professional_services_pct: number;
   software_resale_pct: number;
   cloud_consumption_pct: number;
-  eps_pct: number;
+  pss_pct: number;
   user_count: string;
   has_variants: boolean;
   selected_variant?: ProductVariant;
@@ -46,7 +46,7 @@ export interface Margins {
   professional_services_margin_pct: number;
   software_resale_margin_pct: number;
   cloud_consumption_margin_pct: number;
-  epss_margin_pct: number;
+  pss_margin_pct: number;
 }
 
 export interface SalesMotion {
@@ -97,7 +97,7 @@ export interface ComponentBreakdown {
   professional_services: number;
   software_resale: number;
   cloud_consumption: number;
-  epss: number;
+  pss: number;
 }
 
 export interface RevenueResult {

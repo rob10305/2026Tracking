@@ -38,12 +38,12 @@ __tests__/       - Vitest test files
 ## Recent Changes
 - 2026-02-24: Product schema redesign
   - Replaced gross_unit_price/default_discount_pct with gross_annual_price
-  - Added fields: generally_available, platform_support_services_pct, eps_pct (renamed from epss_pct), user_count
+  - Added fields: generally_available, platform_support_services_pct, pss_pct, user_count
   - Added variant system (has_variants, selected_variant, variants map with S/M/L VariantPricing)
   - Removed component_mix_mode (all percentages now)
   - Products with variants: MCP Server, AI Gateway, MCP Hub, AI Insights, Managed Plane
   - Products without variants: AI Services (PS), Developer Portal, Fast Shift Migration
-  - Revenue component mix now has 5 columns: Platform Support, Prof Services, Software Resale, Cloud Consumption, EPS
+  - Revenue component mix now has 5 columns: Platform Support, Prof Services, Software Resale, Cloud Consumption, PSS
   - Updated seed data, revenue calculations, products page UI, tests, and CSV export
 - 2026-02-07: Performance Tracker page
   - New /performance page with pipeline coverage, channel performance, and monthly trends

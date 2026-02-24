@@ -120,8 +120,8 @@ export default function ForecastDetailPage() {
   const monthlyTotals = useMemo(() => {
     return MONTHS_2026.map((_, mi) => {
       let grossRev = 0, netRev = 0, grossGP = 0, netGP = 0;
-      let ps = 0, sr = 0, cc = 0, epss = 0;
-      let gpPs = 0, gpSr = 0, gpCc = 0, gpEpss = 0;
+      let ps = 0, sr = 0, cc = 0, pss = 0;
+      let gpPs = 0, gpSr = 0, gpCc = 0, gpPss = 0;
       for (const pd of monthlyProductData) {
         const r = pd.months[mi].result;
         if (!r) continue;
@@ -134,20 +134,20 @@ export default function ForecastDetailPage() {
         ps += comp.professional_services;
         sr += comp.software_resale;
         cc += comp.cloud_consumption;
-        epss += comp.epss;
+        pss += comp.pss;
         gpPs += gp.professional_services;
         gpSr += gp.software_resale;
         gpCc += gp.cloud_consumption;
-        gpEpss += gp.epss;
+        gpPss += gp.pss;
       }
       const rev = mode === "gross" ? grossRev : netRev;
       const totalGP = mode === "gross" ? grossGP : netGP;
-      return { grossRev, netRev, grossGP, netGP, ps, sr, cc, epss, gpPs, gpSr, gpCc, gpEpss, rev, totalGP };
+      return { grossRev, netRev, grossGP, netGP, ps, sr, cc, pss, gpPs, gpSr, gpCc, gpPss, rev, totalGP };
     });
   }, [monthlyProductData, mode]);
 
   const annualTotals = useMemo(() => {
-    const t = { grossRev: 0, netRev: 0, grossGP: 0, netGP: 0, ps: 0, sr: 0, cc: 0, epss: 0, gpPs: 0, gpSr: 0, gpCc: 0, gpEpss: 0 };
+    const t = { grossRev: 0, netRev: 0, grossGP: 0, netGP: 0, ps: 0, sr: 0, cc: 0, pss: 0, gpPs: 0, gpSr: 0, gpCc: 0, gpPss: 0 };
     for (const mt of monthlyTotals) {
       t.grossRev += mt.grossRev;
       t.netRev += mt.netRev;
@@ -156,11 +156,11 @@ export default function ForecastDetailPage() {
       t.ps += mt.ps;
       t.sr += mt.sr;
       t.cc += mt.cc;
-      t.epss += mt.epss;
+      t.pss += mt.pss;
       t.gpPs += mt.gpPs;
       t.gpSr += mt.gpSr;
       t.gpCc += mt.gpCc;
-      t.gpEpss += mt.gpEpss;
+      t.gpPss += mt.gpPss;
     }
     return { ...t, rev: mode === "gross" ? t.grossRev : t.netRev, totalGP: mode === "gross" ? t.grossGP : t.netGP };
   }, [monthlyTotals, mode]);
@@ -303,7 +303,7 @@ export default function ForecastDetailPage() {
     { name: "Prof. Services", value: annualTotals.ps, color: "#3B82F6" },
     { name: "Software Resale", value: annualTotals.sr, color: "#8B5CF6" },
     { name: "Cloud", value: annualTotals.cc, color: "#F59E0B" },
-    { name: "EPS", value: annualTotals.epss, color: "#10B981" },
+    { name: "PSS", value: annualTotals.pss, color: "#10B981" },
   ].filter(d => d.value > 0);
 
   const contributionChartData = contributionData.channels
@@ -595,7 +595,7 @@ export default function ForecastDetailPage() {
                         { label: "Professional Services", key: "ps" as const, color: "#3B82F6" },
                         { label: "Software Resale", key: "sr" as const, color: "#8B5CF6" },
                         { label: "Cloud Consumption", key: "cc" as const, color: "#F59E0B" },
-                        { label: "EPS", key: "epss" as const, color: "#10B981" },
+                        { label: "PSS", key: "pss" as const, color: "#10B981" },
                       ].map((comp) => (
                         <tr key={comp.key} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                           <td className="px-3 py-2.5 font-medium sticky left-0 bg-white">
@@ -630,7 +630,7 @@ export default function ForecastDetailPage() {
                     { label: "PS GP$", value: annualTotals.gpPs, color: "#3B82F6" },
                     { label: "Resale GP$", value: annualTotals.gpSr, color: "#8B5CF6" },
                     { label: "Cloud GP$", value: annualTotals.gpCc, color: "#F59E0B" },
-                    { label: "EPS GP$", value: annualTotals.gpEpss, color: "#10B981" },
+                    { label: "PSS GP$", value: annualTotals.gpPss, color: "#10B981" },
                   ].map((item) => (
                     <div key={item.label} className="bg-gray-50 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-1">
@@ -658,7 +658,7 @@ export default function ForecastDetailPage() {
                         { label: "PS GP$", key: "gpPs" as const },
                         { label: "Resale GP$", key: "gpSr" as const },
                         { label: "Cloud GP$", key: "gpCc" as const },
-                        { label: "EPS GP$", key: "gpEpss" as const },
+                        { label: "PSS GP$", key: "gpPss" as const },
                       ].map((row) => (
                         <tr key={row.key} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                           <td className="px-3 py-2.5 font-medium sticky left-0 bg-white">{row.label}</td>

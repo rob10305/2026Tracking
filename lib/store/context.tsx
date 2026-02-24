@@ -59,8 +59,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           professional_services_margin_pct: 45,
           software_resale_margin_pct: 20,
           cloud_consumption_margin_pct: 30,
-          epss_margin_pct: 55,
+          pss_margin_pct: 55,
         };
+      } else if ((saved.margins as any).epss_margin_pct !== undefined) {
+        saved.margins.pss_margin_pct = (saved.margins as any).epss_margin_pct;
+        delete (saved.margins as any).epss_margin_pct;
       }
       if (!saved.industryAverages) {
         saved.industryAverages = {
@@ -89,7 +92,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
       }
       const needsMigration = saved.products.some((p: any) =>
-        p.gross_unit_price !== undefined || p.component_mix_mode !== undefined || p.epss_pct !== undefined
+        p.gross_unit_price !== undefined || p.component_mix_mode !== undefined || p.epss_pct !== undefined || p.eps_pct !== undefined
       );
       if (needsMigration) {
         const seed = createSeedData();

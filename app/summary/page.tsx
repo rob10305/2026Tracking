@@ -246,7 +246,7 @@ export default function SummaryPage() {
               <th className="px-3 py-2 font-medium text-right">PS $</th>
               <th className="px-3 py-2 font-medium text-right">Resale $</th>
               <th className="px-3 py-2 font-medium text-right">Cloud $</th>
-              <th className="px-3 py-2 font-medium text-right">EPS $</th>
+              <th className="px-3 py-2 font-medium text-right">PSS $</th>
               <th className="px-3 py-2 font-medium text-right">GP$</th>
               <th className="px-3 py-2 font-medium text-right">Margin</th>
             </tr>
@@ -312,7 +312,7 @@ export default function SummaryPage() {
                   <td className="px-3 py-2 text-right">
                     {fmt(comp.cloud_consumption)}
                   </td>
-                  <td className="px-3 py-2 text-right">{fmt(comp.epss)}</td>
+                  <td className="px-3 py-2 text-right">{fmt(comp.pss)}</td>
                   <td className="px-3 py-2 text-right">{fmt(gp)}</td>
                   <td className="px-3 py-2 text-right">{pct(margin)}</td>
                 </tr>

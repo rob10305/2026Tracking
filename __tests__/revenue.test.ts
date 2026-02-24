@@ -21,7 +21,7 @@ const sampleProduct: Product = {
   professional_services_pct: 25,
   software_resale_pct: 25,
   cloud_consumption_pct: 25,
-  eps_pct: 25,
+  pss_pct: 25,
   user_count: "",
   has_variants: false,
   status: "live",
@@ -31,7 +31,7 @@ const sampleMargins: Margins = {
   professional_services_margin_pct: 50,
   software_resale_margin_pct: 20,
   cloud_consumption_margin_pct: 30,
-  epss_margin_pct: 60,
+  pss_margin_pct: 60,
 };
 
 describe("calcNetUnitPrice", () => {
@@ -62,7 +62,7 @@ describe("calcComponentSplit", () => {
     expect(split.professional_services).toBe(10000);
     expect(split.software_resale).toBe(10000);
     expect(split.cloud_consumption).toBe(10000);
-    expect(split.epss).toBe(10000);
+    expect(split.pss).toBe(10000);
   });
 
   it("handles uneven splits", () => {
@@ -71,13 +71,13 @@ describe("calcComponentSplit", () => {
       professional_services_pct: 50,
       software_resale_pct: 30,
       cloud_consumption_pct: 15,
-      eps_pct: 5,
+      pss_pct: 5,
     };
     const split = calcComponentSplit(100000, p);
     expect(split.professional_services).toBe(50000);
     expect(split.software_resale).toBe(30000);
     expect(split.cloud_consumption).toBe(15000);
-    expect(split.epss).toBe(5000);
+    expect(split.pss).toBe(5000);
   });
 });
 
@@ -87,13 +87,13 @@ describe("calcComponentGP", () => {
       professional_services: 10000,
       software_resale: 10000,
       cloud_consumption: 10000,
-      epss: 10000,
+      pss: 10000,
     };
     const gp = calcComponentGP(components, sampleMargins);
     expect(gp.professional_services).toBe(5000);
     expect(gp.software_resale).toBe(2000);
     expect(gp.cloud_consumption).toBe(3000);
-    expect(gp.epss).toBe(6000);
+    expect(gp.pss).toBe(6000);
   });
 });
 
@@ -103,7 +103,7 @@ describe("sumComponents", () => {
       professional_services: 5000,
       software_resale: 2000,
       cloud_consumption: 3000,
-      epss: 6000,
+      pss: 6000,
     };
     expect(sumComponents(c)).toBe(16000);
   });
@@ -145,9 +145,9 @@ describe("calcFullRevenue", () => {
       has_variants: true,
       selected_variant: "large",
       variants: {
-        small: { ...sampleProduct, gross_annual_price: 5000, platform_support_services_pct: 0, eps_pct: 25, user_count: "" },
-        medium: { ...sampleProduct, gross_annual_price: 8000, platform_support_services_pct: 0, eps_pct: 25, user_count: "" },
-        large: { gross_annual_price: 20000, platform_support_services_pct: 0, professional_services_pct: 25, software_resale_pct: 25, cloud_consumption_pct: 25, eps_pct: 25, user_count: "" },
+        small: { ...sampleProduct, gross_annual_price: 5000, platform_support_services_pct: 0, pss_pct: 25, user_count: "" },
+        medium: { ...sampleProduct, gross_annual_price: 8000, platform_support_services_pct: 0, pss_pct: 25, user_count: "" },
+        large: { gross_annual_price: 20000, platform_support_services_pct: 0, professional_services_pct: 25, software_resale_pct: 25, cloud_consumption_pct: 25, pss_pct: 25, user_count: "" },
       },
     };
     const r = calcFullRevenue(variantProduct, sampleMargins, 2);
