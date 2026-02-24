@@ -293,17 +293,17 @@ export default function PerformanceTrackerPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-blue-50 border border-blue-100 rounded-lg p-5 text-center">
-          <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Total Deals</span>
-          <p className="text-3xl font-bold text-blue-700 mt-1">{numFmt(totals.totalDeals)}</p>
+        <div className="bg-amber-50 border border-amber-100 rounded-lg p-5 text-center">
+          <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Prospects Needed</span>
+          <p className="text-3xl font-bold text-amber-700 mt-1">{numFmt(totals.totalProspects)}</p>
         </div>
         <div className="bg-purple-50 border border-purple-100 rounded-lg p-5 text-center">
           <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Opps Needed</span>
           <p className="text-3xl font-bold text-purple-700 mt-1">{numFmt(totals.totalOpps)}</p>
         </div>
-        <div className="bg-amber-50 border border-amber-100 rounded-lg p-5 text-center">
-          <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Prospects Needed</span>
-          <p className="text-3xl font-bold text-amber-700 mt-1">{numFmt(totals.totalProspects)}</p>
+        <div className="bg-blue-50 border border-blue-100 rounded-lg p-5 text-center">
+          <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Total Deals</span>
+          <p className="text-3xl font-bold text-blue-700 mt-1">{numFmt(totals.totalDeals)}</p>
         </div>
       </div>
 
