@@ -34,13 +34,27 @@ export function calcGrossRevenue(product: Product, qty: number): number {
   return qty * p.gross_annual_price;
 }
 
-export function calcNetRevenue(product: Product, qty: number): number {
-  return calcGrossRevenue(product, qty);
+export function calcNetRevenue(product: Product, margins: Margins, qty: number): number {
+  const grossRev = calcGrossRevenue(product, qty);
+  const components = calcComponentSplit(grossRev, product);
+  const netPs = components.professional_services * (margins.professional_services_margin_pct / 100);
+  const netSr = components.software_resale * (margins.software_resale_margin_pct / 100);
+  const netCc = components.cloud_consumption * (margins.cloud_consumption_margin_pct / 100);
+  const netPss = components.pss * (margins.pss_margin_pct / 100);
+  return netPs + netSr + netCc + netPss;
 }
 
-export function calcNetUnitPrice(product: Product): number {
-  const p = getEffectivePricing(product);
-  return p.gross_annual_price;
+export function calcNetUnitPrice(product: Product, margins: Margins): number {
+  const grossPrice = getEffectivePricing(product).gross_annual_price;
+  if (grossPrice === 0) return 0;
+  const tempProduct = { ...product };
+  const grossRev = grossPrice;
+  const components = calcComponentSplit(grossRev, tempProduct);
+  const netPs = components.professional_services * (margins.professional_services_margin_pct / 100);
+  const netSr = components.software_resale * (margins.software_resale_margin_pct / 100);
+  const netCc = components.cloud_consumption * (margins.cloud_consumption_margin_pct / 100);
+  const netPss = components.pss * (margins.pss_margin_pct / 100);
+  return netPs + netSr + netCc + netPss;
 }
 
 export function getComponentPcts(product: Product): {
@@ -108,8 +122,8 @@ export function calcFullRevenue(
   qty: number,
 ): RevenueResult {
   const gross_revenue = calcGrossRevenue(product, qty);
-  const net_unit_price = calcNetUnitPrice(product);
-  const net_revenue = calcNetRevenue(product, qty);
+  const net_unit_price = calcNetUnitPrice(product, margins);
+  const net_revenue = calcNetRevenue(product, margins, qty);
 
   const gross_components = calcComponentSplit(gross_revenue, product);
   const net_components = calcComponentSplit(net_revenue, product);

@@ -35,8 +35,8 @@ const sampleMargins: Margins = {
 };
 
 describe("calcNetUnitPrice", () => {
-  it("returns gross annual price", () => {
-    expect(calcNetUnitPrice(sampleProduct)).toBe(10000);
+  it("returns margin-weighted net price", () => {
+    expect(calcNetUnitPrice(sampleProduct, sampleMargins)).toBe(4000);
   });
 });
 
@@ -51,8 +51,8 @@ describe("calcGrossRevenue", () => {
 });
 
 describe("calcNetRevenue", () => {
-  it("returns gross revenue (no discount)", () => {
-    expect(calcNetRevenue(sampleProduct, 5)).toBe(50000);
+  it("returns margin-weighted net revenue", () => {
+    expect(calcNetRevenue(sampleProduct, sampleMargins, 5)).toBe(20000);
   });
 });
 
