@@ -307,6 +307,45 @@ export default function PerformanceTrackerPage() {
         </div>
       </div>
 
+      {(() => {
+        const mqlChannels = channelBreakdown.filter((ch) =>
+          ["Website Inbound", "Event Sourced", "ABM/Thought Leadership"].includes(ch.label)
+        );
+        const mqlProspects = mqlChannels.reduce((s, ch) => s + ch.prospects, 0);
+        const mqlOpps = mqlChannels.reduce((s, ch) => s + ch.opps, 0);
+        const mqlPct = totals.totalProspects > 0 ? (mqlProspects / totals.totalProspects) * 100 : 0;
+        return (
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">MQL Contribution</h3>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-green-50 border border-green-100 rounded-lg p-5 text-center">
+                <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">MQL Prospects</span>
+                <p className="text-3xl font-bold text-green-700 mt-1">{numFmt(mqlProspects)}</p>
+              </div>
+              <div className="bg-cyan-50 border border-cyan-100 rounded-lg p-5 text-center">
+                <span className="text-xs font-semibold text-cyan-600 uppercase tracking-wide">MQL Opps</span>
+                <p className="text-3xl font-bold text-cyan-700 mt-1">{numFmt(mqlOpps)}</p>
+              </div>
+              <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-5 text-center">
+                <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">MQL Share</span>
+                <p className="text-3xl font-bold text-indigo-700 mt-1">{mqlPct.toFixed(1)}%</p>
+              </div>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">MQL Breakdown</span>
+                <div className="mt-2 space-y-1.5">
+                  {mqlChannels.map((ch) => (
+                    <div key={ch.label} className="flex items-center justify-between text-xs">
+                      <span className="text-gray-600">{ch.label}</span>
+                      <span className="font-semibold text-gray-800">{numFmt(ch.prospects)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="border-b border-gray-200">
         <div className="flex gap-1">
           {TABS.map((tab) => (
