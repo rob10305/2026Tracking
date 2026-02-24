@@ -289,13 +289,21 @@ function ProductCard({
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <span className="text-sm text-gray-500 mr-2">
+            {formatPrice(effective.gross_annual_price)}
+          </span>
           {!expanded && (
+            <button
+              onClick={() => { setExpanded(true); setEditing(true); }}
+              className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+            >
+              Edit
+            </button>
+          )}
+          {expanded && !editing && (
             <>
-              <span className="text-sm text-gray-500 mr-2">
-                {formatPrice(effective.gross_annual_price)}
-              </span>
               <button
-                onClick={() => { setExpanded(true); setEditing(true); }}
+                onClick={() => setEditing(true)}
                 className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
               >
                 Edit
@@ -306,35 +314,28 @@ function ProductCard({
               >
                 Clone
               </button>
+              <button
+                onClick={onDelete}
+                className="px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
+              >
+                Delete
+              </button>
             </>
+          )}
+          {!expanded && (
+            <button
+              onClick={onClone}
+              className="px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+            >
+              Clone
+            </button>
           )}
         </div>
       </div>
 
       {expanded && !editing && (
         <div className="px-5 pb-5 space-y-4 border-t border-gray-100">
-          <div className="flex justify-end gap-2 pt-3">
-            <button
-              onClick={() => setEditing(true)}
-              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Edit
-            </button>
-            <button
-              onClick={onClone}
-              className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
-            >
-              Clone
-            </button>
-            <button
-              onClick={onDelete}
-              className="px-3 py-1 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100"
-            >
-              Delete
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-3 pt-3">
             <DetailRow label="Name" value={product.name || "\u2014"} />
             <DetailRow label="Description" value={product.description || "\u2014"} />
             <DetailRow label="Generally Available" value={product.generally_available || "\u2014"} />
