@@ -46,7 +46,7 @@ const SUB_PAGES = [
   },
   {
     href: "/settings/industry-averages",
-    title: "Industry Averages",
+    title: "Opportunity Impact Factors",
     description: "Set default industry average values for sales motion parameters.",
     icon: (
       <svg className="w-8 h-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

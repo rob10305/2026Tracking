@@ -78,7 +78,7 @@ export default function IndustryAveragesPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Industry Averages</h1>
+        <h1 className="text-2xl font-bold">Opportunity Impact Factors</h1>
         <p className="text-sm text-gray-500 mt-1">
           Set default industry average values for sales motion parameters. These can be applied to individual products via the Sales Motions page.
         </p>
