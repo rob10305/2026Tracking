@@ -280,7 +280,6 @@ function ProductCard({
               <h3 className="font-bold text-base truncate">
                 {p.name || "New Product"}
               </h3>
-              <StatusBadge status={p.status ?? "live"} />
               {p.has_variants && <VariantBadge variant={p.selected_variant} />}
             </div>
             {!expanded && p.generally_available && (
@@ -360,9 +359,6 @@ function ProductCard({
             </div>
           </div>
 
-          {product.status === "in_development" && product.readiness && (
-            <ReadinessDisplay readiness={product.readiness} />
-          )}
         </div>
       )}
 
@@ -420,91 +416,6 @@ function ProductCard({
               />
             </label>
           </div>
-
-          <div>
-            <span className="text-sm font-medium text-gray-700 block mb-2">Product Status</span>
-            <div className="flex gap-1.5">
-              <button
-                type="button"
-                onClick={() => updateP({ status: "live" })}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-medium transition-all ${
-                  p.status === "live"
-                    ? "border-green-400 bg-green-50 text-green-700"
-                    : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
-                }`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${p.status === "live" ? "bg-green-500" : "bg-gray-300"}`} />
-                Live
-              </button>
-              <button
-                type="button"
-                onClick={() => updateP({ status: "in_development", readiness: p.readiness ?? { ...DEFAULT_READINESS } })}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-medium transition-all ${
-                  p.status === "in_development"
-                    ? "border-amber-400 bg-amber-50 text-amber-700"
-                    : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
-                }`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${p.status === "in_development" ? "bg-amber-500" : "bg-gray-300"}`} />
-                In Development
-              </button>
-            </div>
-          </div>
-
-          {p.status === "in_development" && (
-            <div className="bg-amber-50/50 border border-amber-200 rounded-lg p-4 space-y-4">
-              <div className="flex items-center gap-2 mb-1">
-                <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-sm font-semibold text-amber-800">Launch Readiness Checklist</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block text-sm">
-                  <span className="text-amber-700 font-medium">MVP Date</span>
-                  <input
-                    type="date"
-                    value={readiness.mvp_date}
-                    onChange={(e) => updateReadiness({ mvp_date: e.target.value })}
-                    className="w-full border border-amber-300 rounded px-2 py-1.5 text-sm mt-0.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                  />
-                </label>
-                <label className="block text-sm">
-                  <span className="text-amber-700 font-medium">Release Date</span>
-                  <input
-                    type="date"
-                    value={readiness.release_date}
-                    onChange={(e) => updateReadiness({ release_date: e.target.value })}
-                    className="w-full border border-amber-300 rounded px-2 py-1.5 text-sm mt-0.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                  />
-                </label>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <ReadinessCheckbox
-                  label="Prospecting"
-                  checked={readiness.prospecting}
-                  onChange={(v) => updateReadiness({ prospecting: v })}
-                />
-                <ReadinessCheckbox
-                  label="Website Content"
-                  checked={readiness.website_content}
-                  onChange={(v) => updateReadiness({ website_content: v })}
-                />
-                <ReadinessCheckbox
-                  label="Pricing"
-                  checked={readiness.pricing}
-                  onChange={(v) => updateReadiness({ pricing: v })}
-                />
-                <ReadinessCheckbox
-                  label="Sales Collateral"
-                  checked={readiness.sales_collateral}
-                  onChange={(v) => updateReadiness({ sales_collateral: v })}
-                />
-              </div>
-            </div>
-          )}
 
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 text-sm">
