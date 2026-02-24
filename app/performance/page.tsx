@@ -103,6 +103,32 @@ export default function PerformanceTrackerPage() {
   const [selectedForecastId, setSelectedForecastId] = useState<string>("default");
   const [averageSource, setAverageSource] = useState<AverageSource>("product");
   const [healthOpen, setHealthOpen] = useState(true);
+  const [selectedQuarters, setSelectedQuarters] = useState<Set<number>>(new Set([1, 2, 3, 4]));
+
+  const toggleQuarter = (q: number) => {
+    setSelectedQuarters((prev) => {
+      const next = new Set(prev);
+      if (next.has(q)) {
+        if (next.size > 1) next.delete(q);
+      } else {
+        next.add(q);
+      }
+      return next;
+    });
+  };
+
+  const filteredMonthIndices = useMemo(() => {
+    const indices: number[] = [];
+    for (let i = 0; i < 12; i++) {
+      const q = Math.floor(i / 3) + 1;
+      if (selectedQuarters.has(q)) indices.push(i);
+    }
+    return indices;
+  }, [selectedQuarters]);
+
+  const filteredMonths = useMemo(() => {
+    return filteredMonthIndices.map((i) => MONTHS_2026[i]);
+  }, [filteredMonthIndices]);
 
   const products = state.products;
 
@@ -115,7 +141,8 @@ export default function PerformanceTrackerPage() {
   }, [selectedForecastId, state.forecastByProductIdMonth, forecasts]);
 
   const monthlyTotals = useMemo(() => {
-    return MONTHS_2026.map((m, i) => {
+    return filteredMonthIndices.map((i) => {
+      const m = MONTHS_2026[i];
       let grossRev = 0;
       let totalUnits = 0;
       for (const p of products) {
@@ -140,7 +167,7 @@ export default function PerformanceTrackerPage() {
       }
       return { month: m, label: MONTH_LABELS[i], grossRev, totalUnits };
     });
-  }, [products, quantities, state.margins]);
+  }, [products, quantities, state.margins, filteredMonthIndices]);
 
   const annualRevenue = useMemo(() => {
     return monthlyTotals.reduce((sum, mt) => sum + mt.grossRev, 0);
@@ -169,7 +196,7 @@ export default function PerformanceTrackerPage() {
     for (const p of products) {
       const motion = activeMotion ?? state.salesMotionByProductId[p.id];
       if (!motion) continue;
-      for (const m of MONTHS_2026) {
+      for (const m of filteredMonths) {
         let qty = 0;
         if (p.has_variants) {
           for (const v of VARIANTS) qty += quantities[variantForecastKey(p.id, v, m)] ?? 0;
@@ -190,7 +217,7 @@ export default function PerformanceTrackerPage() {
       }
     }
     return rows;
-  }, [products, quantities, state.salesMotionByProductId, activeMotion]);
+  }, [products, quantities, state.salesMotionByProductId, activeMotion, filteredMonths]);
 
   const totals = useMemo(() => {
     const totalDeals = pipelineData.reduce((s, r) => s + r.dealsNeeded, 0);
@@ -321,6 +348,23 @@ export default function PerformanceTrackerPage() {
             ))}
           </select>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-gray-500">Filter:</span>
+        {[1, 2, 3, 4].map((q) => (
+          <button
+            key={q}
+            onClick={() => toggleQuarter(q)}
+            className={`px-3 py-1 text-xs font-medium rounded-md border transition-colors ${
+              selectedQuarters.has(q)
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-gray-500 border-gray-300 hover:border-gray-400"
+            }`}
+          >
+            Q{q}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-3 gap-4">
