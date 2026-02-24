@@ -447,20 +447,6 @@ export default function ForecastDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-          <button
-            onClick={() => setMode("gross")}
-            className={`px-4 py-2 text-sm rounded-lg font-medium transition-all ${mode === "gross" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-          >
-            Gross
-          </button>
-          <button
-            onClick={() => setMode("net")}
-            className={`px-4 py-2 text-sm rounded-lg font-medium transition-all ${mode === "net" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-          >
-            Net
-          </button>
-        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
