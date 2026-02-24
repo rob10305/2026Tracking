@@ -186,7 +186,9 @@ export default function PerformanceTrackerPage() {
     const totalDeals = pipelineData.reduce((s, r) => s + r.dealsNeeded, 0);
     const totalOpps = pipelineData.reduce((s, r) => s + r.oppsNeeded, 0);
     const totalProspects = pipelineData.reduce((s, r) => s + r.prospectsNeeded, 0);
-    return { totalDeals, totalOpps, totalProspects };
+    const blendedWinRate = totalOpps > 0 ? (totalDeals / totalOpps) * 100 : 0;
+    const blendedProspectRate = totalProspects > 0 ? (totalOpps / totalProspects) * 100 : 0;
+    return { totalDeals, totalOpps, totalProspects, blendedWinRate, blendedProspectRate };
   }, [pipelineData]);
 
   const channelBreakdown = useMemo(() => {
@@ -296,14 +298,23 @@ export default function PerformanceTrackerPage() {
         <div className="bg-amber-50 border border-amber-100 rounded-lg p-5 text-center">
           <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Prospects Needed</span>
           <p className="text-3xl font-bold text-amber-700 mt-1">{numFmt(totals.totalProspects)}</p>
+          <p className="text-[10px] text-amber-500 mt-2 leading-tight">
+            {numFmt(totals.totalOpps)} opps ÷ {totals.blendedProspectRate.toFixed(1)}% prospect-to-opp rate
+          </p>
         </div>
         <div className="bg-purple-50 border border-purple-100 rounded-lg p-5 text-center">
           <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Opps Needed</span>
           <p className="text-3xl font-bold text-purple-700 mt-1">{numFmt(totals.totalOpps)}</p>
+          <p className="text-[10px] text-purple-500 mt-2 leading-tight">
+            {numFmt(totals.totalDeals)} deals ÷ {totals.blendedWinRate.toFixed(1)}% win rate
+          </p>
         </div>
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-5 text-center">
           <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Total Deals</span>
           <p className="text-3xl font-bold text-blue-700 mt-1">{numFmt(totals.totalDeals)}</p>
+          <p className="text-[10px] text-blue-500 mt-2 leading-tight">
+            Sum of forecasted units across {products.filter(p => pipelineData.some(r => r.productName === p.name)).length} products
+          </p>
         </div>
       </div>
 
@@ -321,14 +332,23 @@ export default function PerformanceTrackerPage() {
               <div className="bg-green-50 border border-green-100 rounded-lg p-5 text-center">
                 <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">MQL Prospects</span>
                 <p className="text-3xl font-bold text-green-700 mt-1">{numFmt(mqlProspects)}</p>
+                <p className="text-[10px] text-green-500 mt-2 leading-tight">
+                  Website + Events + ABM channels ({mqlPct.toFixed(0)}% of total)
+                </p>
               </div>
               <div className="bg-cyan-50 border border-cyan-100 rounded-lg p-5 text-center">
                 <span className="text-xs font-semibold text-cyan-600 uppercase tracking-wide">MQL Opps</span>
                 <p className="text-3xl font-bold text-cyan-700 mt-1">{numFmt(mqlOpps)}</p>
+                <p className="text-[10px] text-cyan-500 mt-2 leading-tight">
+                  MQL prospects × prospect-to-opp conversion rate
+                </p>
               </div>
               <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-5 text-center">
                 <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">MQL Share</span>
                 <p className="text-3xl font-bold text-indigo-700 mt-1">{mqlPct.toFixed(1)}%</p>
+                <p className="text-[10px] text-indigo-500 mt-2 leading-tight">
+                  {numFmt(mqlProspects)} MQL of {numFmt(totals.totalProspects)} total prospects
+                </p>
               </div>
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">MQL Breakdown</span>
