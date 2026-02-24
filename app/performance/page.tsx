@@ -59,6 +59,7 @@ function numFmt(n: number): string {
 }
 
 type TabKey = "coverage" | "channels" | "monthly";
+type AverageSource = "product" | "industry" | "itm";
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: "coverage", label: "Pipeline Coverage", icon: <Target className="w-4 h-4" /> },
@@ -99,6 +100,7 @@ export default function PerformanceTrackerPage() {
   const { forecasts, isLoaded: fcLoaded } = useSavedForecasts();
   const [activeTab, setActiveTab] = useState<TabKey>("coverage");
   const [selectedForecastId, setSelectedForecastId] = useState<string>("default");
+  const [averageSource, setAverageSource] = useState<AverageSource>("product");
 
   const products = state.products;
 
@@ -146,6 +148,12 @@ export default function PerformanceTrackerPage() {
     return monthlyTotals.reduce((sum, mt) => sum + mt.totalUnits, 0);
   }, [monthlyTotals]);
 
+  const activeMotion = useMemo(() => {
+    if (averageSource === "industry") return state.industryAverages;
+    if (averageSource === "itm") return state.itmHistoricalAverages;
+    return null;
+  }, [averageSource, state.industryAverages, state.itmHistoricalAverages]);
+
   const pipelineData = useMemo(() => {
     const rows: {
       productName: string;
@@ -157,7 +165,7 @@ export default function PerformanceTrackerPage() {
       pipelineMonth: string;
     }[] = [];
     for (const p of products) {
-      const motion = state.salesMotionByProductId[p.id];
+      const motion = activeMotion ?? state.salesMotionByProductId[p.id];
       if (!motion) continue;
       for (const m of MONTHS_2026) {
         let qty = 0;
@@ -180,7 +188,7 @@ export default function PerformanceTrackerPage() {
       }
     }
     return rows;
-  }, [products, quantities, state.salesMotionByProductId]);
+  }, [products, quantities, state.salesMotionByProductId, activeMotion]);
 
   const totals = useMemo(() => {
     const totalDeals = pipelineData.reduce((s, r) => s + r.dealsNeeded, 0);
@@ -280,7 +288,26 @@ export default function PerformanceTrackerPage() {
             Pipeline coverage, channel performance, and forecast health indicators.
           </p>
         </div>
-        <div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+            {([
+              { key: "product" as AverageSource, label: "Per-Product" },
+              { key: "industry" as AverageSource, label: "Industry Avg" },
+              { key: "itm" as AverageSource, label: "ITM Historical" },
+            ]).map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setAverageSource(opt.key)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  averageSource === opt.key
+                    ? "bg-white text-blue-700 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <select
             value={selectedForecastId}
             onChange={(e) => setSelectedForecastId(e.target.value)}
