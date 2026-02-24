@@ -354,7 +354,7 @@ export default function PerformanceTrackerPage() {
         const mqlPct = totals.totalProspects > 0 ? (mqlProspects / totals.totalProspects) * 100 : 0;
         return (
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">MQL Contribution</h3>
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">MQL Contribution Needed</h3>
             <div className="grid grid-cols-4 gap-4">
               <div className="bg-green-50 border border-green-100 rounded-lg p-5 text-center">
                 <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">MQL Prospects</span>
