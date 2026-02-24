@@ -75,6 +75,15 @@ const VARIANTS: ProductVariant[] = ["small", "medium", "large"];
 const VARIANT_LABELS: Record<ProductVariant, string> = { small: "Small", medium: "Medium", large: "Large" };
 const VARIANT_SHORT: Record<ProductVariant, string> = { small: "S", medium: "M", large: "L" };
 
+const GA_MONTH_INDEX: Record<string, number> = {
+  January: 0, February: 1, March: 2, April: 3, May: 4, June: 5,
+  July: 6, August: 7, September: 8, October: 9, November: 10, December: 11,
+};
+
+function getGaMonthIndex(ga: string): number {
+  return GA_MONTH_INDEX[ga] ?? 0;
+}
+
 function mergeRevenueResults(results: RevenueResult[]): RevenueResult {
   const m: RevenueResult = {
     gross_revenue: 0, net_revenue: 0, net_unit_price: 0,
@@ -157,12 +166,13 @@ export default function ForecastDetailPage() {
 
   const monthlyProductData: MonthlyProductData[] = useMemo(() => {
     return products.map((product) => {
+      const gaIdx = getGaMonthIndex(product.generally_available);
       if (product.has_variants && product.variants) {
         const variantData: VariantMonthData[] = VARIANTS.map((variant) => {
           const variantProduct = { ...product, selected_variant: variant };
           let annualQty = 0;
-          const months = MONTHS_2026.map((m) => {
-            const qty = quantities[variantForecastKey(product.id, variant, m)] ?? 0;
+          const months = MONTHS_2026.map((m, mi) => {
+            const qty = mi < gaIdx ? 0 : (quantities[variantForecastKey(product.id, variant, m)] ?? 0);
             annualQty += qty;
             return {
               qty,
@@ -198,8 +208,8 @@ export default function ForecastDetailPage() {
       }
 
       let annualQty = 0;
-      const months = MONTHS_2026.map((m) => {
-        const qty = quantities[forecastKey(product.id, m)] ?? 0;
+      const months = MONTHS_2026.map((m, mi) => {
+        const qty = mi < gaIdx ? 0 : (quantities[forecastKey(product.id, m)] ?? 0);
         annualQty += qty;
         return {
           qty,
@@ -505,6 +515,7 @@ export default function ForecastDetailPage() {
                 const pd = monthlyProductData[pi];
                 const isExpanded = expandedProducts.has(product.id);
                 const hasVariants = product.has_variants && pd.variantData;
+                const gaIdx = getGaMonthIndex(product.generally_available);
                 return (
                   <React.Fragment key={product.id}>
                     <tr
@@ -526,24 +537,29 @@ export default function ForecastDetailPage() {
                           <span className="font-medium text-sm text-gray-900 truncate">{product.name}</span>
                         </div>
                       </td>
-                      {MONTHS_2026.map((m, mi) => (
-                        <td key={m} className="px-1 py-1.5 text-center">
-                          {hasVariants ? (
-                            <span className="text-sm font-medium text-gray-500 tabular-nums">
-                              {pd.months[mi].qty || <span className="text-gray-300">0</span>}
-                            </span>
-                          ) : (
-                            <input
-                              type="number"
-                              min={0}
-                              value={(quantities[forecastKey(product.id, m)] ?? 0) || ""}
-                              placeholder="0"
-                              onChange={(e) => handleQtyDirect(product.id, m, e.target.value)}
-                              className="w-14 text-center text-sm font-medium bg-gray-50 border border-gray-200 rounded-md py-1.5 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                          )}
-                        </td>
-                      ))}
+                      {MONTHS_2026.map((m, mi) => {
+                        const beforeGA = mi < gaIdx;
+                        return (
+                          <td key={m} className={`px-1 py-1.5 text-center ${beforeGA ? "bg-gray-100/50" : ""}`}>
+                            {beforeGA ? (
+                              <span className="text-[10px] font-medium text-gray-400">N/A</span>
+                            ) : hasVariants ? (
+                              <span className="text-sm font-medium text-gray-500 tabular-nums">
+                                {pd.months[mi].qty || <span className="text-gray-300">0</span>}
+                              </span>
+                            ) : (
+                              <input
+                                type="number"
+                                min={0}
+                                value={(quantities[forecastKey(product.id, m)] ?? 0) || ""}
+                                placeholder="0"
+                                onChange={(e) => handleQtyDirect(product.id, m, e.target.value)}
+                                className="w-14 text-center text-sm font-medium bg-gray-50 border border-gray-200 rounded-md py-1.5 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                            )}
+                          </td>
+                        );
+                      })}
                       <td className="px-3 py-3 text-center bg-gray-50">
                         <span className="font-semibold text-sm text-gray-900">{pd.annualQty}</span>
                       </td>
@@ -565,11 +581,14 @@ export default function ForecastDetailPage() {
                               )}
                             </div>
                           </td>
-                          {MONTHS_2026.map((m) => {
+                          {MONTHS_2026.map((m, mi) => {
+                            const beforeGA = mi < gaIdx;
                             const qty = quantities[variantForecastKey(product.id, vd.variant, m)] ?? 0;
                             return (
-                              <td key={m} className="px-1 py-1 text-center">
-                                {isNA ? (
+                              <td key={m} className={`px-1 py-1 text-center ${beforeGA ? "bg-gray-100/50" : ""}`}>
+                                {beforeGA ? (
+                                  <span className="text-[10px] font-medium text-gray-400">N/A</span>
+                                ) : isNA ? (
                                   <span className="text-gray-300 text-xs">-</span>
                                 ) : (
                                   <input
