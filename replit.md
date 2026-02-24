@@ -36,6 +36,15 @@ __tests__/       - Vitest test files
 - **Dev Origins**: Configured to allow *.replit.dev origins
 
 ## Recent Changes
+- 2026-02-24: Variant-level forecast builder
+  - Expandable product rows in forecast builder showing S/M/L variant sub-rows
+  - Each variant has individual quantity inputs per month
+  - Top-line product row shows aggregated total across all variants (read-only)
+  - Revenue calculations use per-variant pricing (different prices/component splits per variant)
+  - Added variantForecastKey() to types.ts for variant-specific quantity storage
+  - Added setVariantQty() to saved-forecasts-context for variant-aware quantity setting
+  - Pipeline data aggregates variant quantities for deals/opps/prospects calculations
+  - MCP Hub S variant shows N/A (non-inputtable), variant prices shown as badges
 - 2026-02-24: Product schema redesign
   - Replaced gross_unit_price/default_discount_pct with gross_annual_price
   - Added fields: generally_available, platform_support_services_pct, pss_pct, user_count

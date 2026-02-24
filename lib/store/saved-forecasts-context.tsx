@@ -8,8 +8,8 @@ import React, {
   useEffect,
   useRef,
 } from "react";
-import type { SavedForecast, ForecastMap } from "@/lib/models/types";
-import { forecastKey } from "@/lib/models/types";
+import type { SavedForecast, ForecastMap, ProductVariant } from "@/lib/models/types";
+import { forecastKey, variantForecastKey } from "@/lib/models/types";
 import {
   loadForecasts,
   saveForecasts,
@@ -25,6 +25,7 @@ interface SavedForecastsStore {
   renameForecast: (id: string, name: string) => void;
   getForecast: (id: string) => SavedForecast | undefined;
   setQty: (id: string, productId: string, month: string, qty: number) => void;
+  setVariantQty: (id: string, productId: string, variant: ProductVariant, month: string, qty: number) => void;
   setQtyBulk: (id: string, entries: { productId: string; month: string; qty: number }[]) => void;
 }
 
@@ -117,6 +118,25 @@ export function SavedForecastsProvider({ children }: { children: React.ReactNode
     []
   );
 
+  const setVariantQty = useCallback(
+    (id: string, productId: string, variant: ProductVariant, month: string, qty: number) => {
+      setForecasts((prev) =>
+        prev.map((f) => {
+          if (f.id !== id) return f;
+          return {
+            ...f,
+            updatedAt: new Date().toISOString(),
+            quantities: {
+              ...f.quantities,
+              [variantForecastKey(productId, variant, month)]: Math.max(0, Math.round(qty)),
+            },
+          };
+        })
+      );
+    },
+    []
+  );
+
   const setQtyBulk = useCallback(
     (id: string, entries: { productId: string; month: string; qty: number }[]) => {
       setForecasts((prev) =>
@@ -144,6 +164,7 @@ export function SavedForecastsProvider({ children }: { children: React.ReactNode
         renameForecast,
         getForecast,
         setQty,
+        setVariantQty,
         setQtyBulk,
       }}
     >

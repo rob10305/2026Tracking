@@ -9,8 +9,9 @@ import {
   MONTHS_2026,
   MONTH_LABELS,
   forecastKey,
+  variantForecastKey,
 } from "@/lib/models/types";
-import type { RevenueMode, Product, RevenueResult } from "@/lib/models/types";
+import type { RevenueMode, Product, RevenueResult, ProductVariant } from "@/lib/models/types";
 import { calcFullRevenue } from "@/lib/calc/revenue";
 import { calcWorkbackRow } from "@/lib/calc/workback";
 import { formatMonth } from "@/lib/calc/workback";
@@ -36,6 +37,8 @@ import {
   PieChart as PieChartIcon,
   Users,
   Layers,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 
 function fmt(n: number): string {
@@ -68,11 +71,48 @@ const PRODUCT_COLORS = [
 
 const CHANNEL_COLORS = ["#3B82F6", "#8B5CF6", "#F59E0B", "#10B981"];
 
+const VARIANTS: ProductVariant[] = ["small", "medium", "large"];
+const VARIANT_LABELS: Record<ProductVariant, string> = { small: "Small", medium: "Medium", large: "Large" };
+const VARIANT_SHORT: Record<ProductVariant, string> = { small: "S", medium: "M", large: "L" };
+
+function mergeRevenueResults(results: RevenueResult[]): RevenueResult {
+  const m: RevenueResult = {
+    gross_revenue: 0, net_revenue: 0, net_unit_price: 0,
+    gross_components: { professional_services: 0, software_resale: 0, cloud_consumption: 0, pss: 0 },
+    net_components: { professional_services: 0, software_resale: 0, cloud_consumption: 0, pss: 0 },
+    gross_gp: { professional_services: 0, software_resale: 0, cloud_consumption: 0, pss: 0 },
+    net_gp: { professional_services: 0, software_resale: 0, cloud_consumption: 0, pss: 0 },
+    total_gross_gp: 0, total_net_gp: 0, gross_margin_pct: 0, net_margin_pct: 0,
+  };
+  for (const r of results) {
+    m.gross_revenue += r.gross_revenue;
+    m.net_revenue += r.net_revenue;
+    for (const k of ["professional_services", "software_resale", "cloud_consumption", "pss"] as const) {
+      m.gross_components[k] += r.gross_components[k];
+      m.net_components[k] += r.net_components[k];
+      m.gross_gp[k] += r.gross_gp[k];
+      m.net_gp[k] += r.net_gp[k];
+    }
+    m.total_gross_gp += r.total_gross_gp;
+    m.total_net_gp += r.total_net_gp;
+  }
+  if (m.gross_revenue > 0) m.gross_margin_pct = (m.total_gross_gp / m.gross_revenue) * 100;
+  if (m.net_revenue > 0) m.net_margin_pct = (m.total_net_gp / m.net_revenue) * 100;
+  return m;
+}
+
+interface VariantMonthData {
+  variant: ProductVariant;
+  months: { qty: number; result: RevenueResult | null }[];
+  annualQty: number;
+}
+
 interface MonthlyProductData {
   product: Product;
   months: { qty: number; result: RevenueResult | null }[];
   annualQty: number;
   annualResult: RevenueResult | null;
+  variantData?: VariantMonthData[];
 }
 
 type TabKey = "revenue" | "components" | "gp" | "pipeline" | "contribution";
@@ -82,12 +122,22 @@ export default function ForecastDetailPage() {
   const router = useRouter();
   const forecastId = params.id as string;
   const { state } = useStore();
-  const { getForecast, setQty, isLoaded } = useSavedForecasts();
+  const { getForecast, setQty, setVariantQty, isLoaded } = useSavedForecasts();
   const [mode, setMode] = useState<RevenueMode>("net");
   const [activeTab, setActiveTab] = useState<TabKey>("revenue");
+  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const forecast = getForecast(forecastId);
   const products = state.products;
   const quantities = forecast?.quantities ?? {};
+
+  const toggleExpand = useCallback((productId: string) => {
+    setExpandedProducts((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  }, []);
 
   const handleQtyDirect = useCallback(
     (productId: string, month: string, value: string) => {
@@ -97,8 +147,56 @@ export default function ForecastDetailPage() {
     [forecastId, setQty]
   );
 
+  const handleVariantQtyDirect = useCallback(
+    (productId: string, variant: ProductVariant, month: string, value: string) => {
+      const parsed = parseInt(value, 10);
+      setVariantQty(forecastId, productId, variant, month, isNaN(parsed) ? 0 : Math.max(0, parsed));
+    },
+    [forecastId, setVariantQty]
+  );
+
   const monthlyProductData: MonthlyProductData[] = useMemo(() => {
     return products.map((product) => {
+      if (product.has_variants && product.variants) {
+        const variantData: VariantMonthData[] = VARIANTS.map((variant) => {
+          const variantProduct = { ...product, selected_variant: variant };
+          let annualQty = 0;
+          const months = MONTHS_2026.map((m) => {
+            const qty = quantities[variantForecastKey(product.id, variant, m)] ?? 0;
+            annualQty += qty;
+            return {
+              qty,
+              result: qty > 0 ? calcFullRevenue(variantProduct, state.margins, qty) : null,
+            };
+          });
+          return { variant, months, annualQty };
+        });
+
+        let annualQty = 0;
+        const months = MONTHS_2026.map((_, mi) => {
+          let totalQty = 0;
+          const results: RevenueResult[] = [];
+          for (const vd of variantData) {
+            totalQty += vd.months[mi].qty;
+            if (vd.months[mi].result) results.push(vd.months[mi].result!);
+          }
+          annualQty += totalQty;
+          return {
+            qty: totalQty,
+            result: results.length > 0 ? mergeRevenueResults(results) : null,
+          };
+        });
+
+        const allResults = months.filter((m) => m.result).map((m) => m.result!);
+        return {
+          product,
+          months,
+          annualQty,
+          annualResult: allResults.length > 0 ? mergeRevenueResults(allResults) : null,
+          variantData,
+        };
+      }
+
       let annualQty = 0;
       const months = MONTHS_2026.map((m) => {
         const qty = quantities[forecastKey(product.id, m)] ?? 0;
@@ -180,7 +278,12 @@ export default function ForecastDetailPage() {
       const motion = state.salesMotionByProductId[p.id];
       if (!motion) continue;
       for (const m of MONTHS_2026) {
-        const qty = quantities[forecastKey(p.id, m)] ?? 0;
+        let qty = 0;
+        if (p.has_variants) {
+          for (const v of VARIANTS) qty += quantities[variantForecastKey(p.id, v, m)] ?? 0;
+        } else {
+          qty = quantities[forecastKey(p.id, m)] ?? 0;
+        }
         if (qty === 0) continue;
         const wb = calcWorkbackRow(p.id, p.name, m, qty, motion);
         rows.push({
@@ -289,8 +392,8 @@ export default function ForecastDetailPage() {
     );
   }
 
-  const hasData = Object.values(quantities).some((v) => v > 0);
-  const totalUnits = Object.values(quantities).reduce((s, v) => s + v, 0);
+  const hasData = monthlyProductData.some((pd) => pd.annualQty > 0);
+  const totalUnits = monthlyProductData.reduce((s, pd) => s + pd.annualQty, 0);
   const marginPct = annualTotals.rev > 0 ? (annualTotals.totalGP / annualTotals.rev) * 100 : 0;
 
   const revenueChartData = MONTH_LABELS.map((label, i) => ({
@@ -400,49 +503,106 @@ export default function ForecastDetailPage() {
             <tbody>
               {products.map((product, pi) => {
                 const pd = monthlyProductData[pi];
+                const isExpanded = expandedProducts.has(product.id);
+                const hasVariants = product.has_variants && pd.variantData;
                 return (
-                  <tr key={product.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors">
-                    <td className="px-4 py-3 sticky left-0 bg-white z-10">
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: PRODUCT_COLORS[pi % PRODUCT_COLORS.length] }}
-                        />
-                        <span className="font-medium text-sm text-gray-900 truncate">{product.name}</span>
-                      </div>
-                    </td>
-                    {MONTHS_2026.map((m) => {
-                      const qty = quantities[forecastKey(product.id, m)] ?? 0;
-                      return (
-                        <td key={m} className="px-1 py-1.5 text-center">
-                          <input
-                            type="number"
-                            min={0}
-                            value={qty || ""}
-                            placeholder="0"
-                            onChange={(e) => handleQtyDirect(product.id, m, e.target.value)}
-                            className="w-14 text-center text-sm font-medium bg-gray-50 border border-gray-200 rounded-md py-1.5 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  <React.Fragment key={product.id}>
+                    <tr
+                      className={`border-b border-gray-50 hover:bg-blue-50/30 transition-colors ${hasVariants ? "cursor-pointer" : ""}`}
+                      onClick={hasVariants ? () => toggleExpand(product.id) : undefined}
+                    >
+                      <td className="px-4 py-3 sticky left-0 bg-white z-10">
+                        <div className="flex items-center gap-2">
+                          {hasVariants && (
+                            <span className="text-gray-400 shrink-0">
+                              {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            </span>
+                          )}
+                          {!hasVariants && <span className="w-4" />}
+                          <div
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: PRODUCT_COLORS[pi % PRODUCT_COLORS.length] }}
                           />
+                          <span className="font-medium text-sm text-gray-900 truncate">{product.name}</span>
+                        </div>
+                      </td>
+                      {MONTHS_2026.map((m, mi) => (
+                        <td key={m} className="px-1 py-1.5 text-center">
+                          {hasVariants ? (
+                            <span className="text-sm font-medium text-gray-500 tabular-nums">
+                              {pd.months[mi].qty || <span className="text-gray-300">0</span>}
+                            </span>
+                          ) : (
+                            <input
+                              type="number"
+                              min={0}
+                              value={(quantities[forecastKey(product.id, m)] ?? 0) || ""}
+                              placeholder="0"
+                              onChange={(e) => handleQtyDirect(product.id, m, e.target.value)}
+                              className="w-14 text-center text-sm font-medium bg-gray-50 border border-gray-200 rounded-md py-1.5 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                          )}
                         </td>
+                      ))}
+                      <td className="px-3 py-3 text-center bg-gray-50">
+                        <span className="font-semibold text-sm text-gray-900">{pd.annualQty}</span>
+                      </td>
+                    </tr>
+                    {hasVariants && isExpanded && pd.variantData!.map((vd) => {
+                      const variantPricing = product.variants![vd.variant];
+                      const isNA = variantPricing.gross_annual_price === 0 && variantPricing.user_count?.toLowerCase().includes("n/a");
+                      return (
+                        <tr key={`${product.id}-${vd.variant}`} className="border-b border-gray-50 bg-gray-50/40">
+                          <td className="pl-14 pr-4 py-2 sticky left-0 bg-gray-50/40 z-10">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold bg-gray-200 text-gray-600">
+                                {VARIANT_SHORT[vd.variant]}
+                              </span>
+                              <span className="text-xs text-gray-600">{VARIANT_LABELS[vd.variant]}</span>
+                              {isNA && <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">N/A</span>}
+                              {!isNA && variantPricing.gross_annual_price > 0 && (
+                                <span className="text-[10px] text-gray-400">{fmtCompact(variantPricing.gross_annual_price)}</span>
+                              )}
+                            </div>
+                          </td>
+                          {MONTHS_2026.map((m) => {
+                            const qty = quantities[variantForecastKey(product.id, vd.variant, m)] ?? 0;
+                            return (
+                              <td key={m} className="px-1 py-1 text-center">
+                                {isNA ? (
+                                  <span className="text-gray-300 text-xs">-</span>
+                                ) : (
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={qty || ""}
+                                    placeholder="0"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) => handleVariantQtyDirect(product.id, vd.variant, m, e.target.value)}
+                                    className="w-14 text-center text-xs font-medium bg-white border border-gray-200 rounded-md py-1 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  />
+                                )}
+                              </td>
+                            );
+                          })}
+                          <td className="px-3 py-2 text-center bg-gray-100/50">
+                            <span className="font-medium text-xs text-gray-600">{vd.annualQty}</span>
+                          </td>
+                        </tr>
                       );
                     })}
-                    <td className="px-3 py-3 text-center bg-gray-50">
-                      <span className="font-semibold text-sm text-gray-900">{pd.annualQty}</span>
-                    </td>
-                  </tr>
+                  </React.Fragment>
                 );
               })}
               <tr className="bg-gray-50 font-semibold">
-                <td className="px-4 py-3 sticky left-0 bg-gray-50 z-10 text-sm text-gray-700">Total</td>
-                {MONTHS_2026.map((m, mi) => {
-                  let monthSum = 0;
-                  for (const p of products) {
-                    monthSum += quantities[forecastKey(p.id, m)] ?? 0;
-                  }
-                  return (
-                    <td key={m} className="px-2 py-3 text-center text-sm text-gray-700">{monthSum}</td>
-                  );
-                })}
+                <td className="px-4 py-3 sticky left-0 bg-gray-50 z-10 text-sm text-gray-700">
+                  <div className="flex items-center gap-2"><span className="w-4" />Total</div>
+                </td>
+                {MONTHS_2026.map((m, mi) => (
+                  <td key={m} className="px-2 py-3 text-center text-sm text-gray-700">
+                    {monthlyProductData.reduce((s, pd) => s + pd.months[mi].qty, 0)}
+                  </td>
+                ))}
                 <td className="px-3 py-3 text-center text-sm text-gray-900 bg-gray-100">{totalUnits}</td>
               </tr>
             </tbody>

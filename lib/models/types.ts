@@ -162,3 +162,7 @@ export type Month2026 = (typeof MONTHS_2026)[number];
 export function forecastKey(productId: string, month: string): string {
   return `${productId}::${month}`;
 }
+
+export function variantForecastKey(productId: string, variant: ProductVariant, month: string): string {
+  return `${productId}::${variant}::${month}`;
+}
