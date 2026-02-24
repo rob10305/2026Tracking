@@ -7,6 +7,8 @@ import {
   MONTHS_2026,
   MONTH_LABELS,
   forecastKey,
+  variantForecastKey,
+  type ProductVariant,
 } from "@/lib/models/types";
 import { calcFullRevenue } from "@/lib/calc/revenue";
 import { calcWorkbackRow } from "@/lib/calc/workback";
@@ -35,6 +37,7 @@ import {
 } from "lucide-react";
 
 const CHANNEL_COLORS = ["#3B82F6", "#8B5CF6", "#F59E0B", "#10B981", "#EC4899"];
+const VARIANTS: ProductVariant[] = ["small", "medium", "large"];
 
 function fmt(n: number): string {
   return n.toLocaleString("en-US", {
@@ -112,11 +115,23 @@ export default function PerformanceTrackerPage() {
       let grossRev = 0;
       let totalUnits = 0;
       for (const p of products) {
-        const qty = quantities[forecastKey(p.id, m)] ?? 0;
-        totalUnits += qty;
-        if (qty > 0) {
-          const r = calcFullRevenue(p, state.margins, qty);
-          grossRev += r.gross_revenue;
+        if (p.has_variants && p.variants) {
+          for (const v of VARIANTS) {
+            const qty = quantities[variantForecastKey(p.id, v, m)] ?? 0;
+            totalUnits += qty;
+            if (qty > 0) {
+              const variantProduct = { ...p, selected_variant: v };
+              const r = calcFullRevenue(variantProduct, state.margins, qty);
+              grossRev += r.gross_revenue;
+            }
+          }
+        } else {
+          const qty = quantities[forecastKey(p.id, m)] ?? 0;
+          totalUnits += qty;
+          if (qty > 0) {
+            const r = calcFullRevenue(p, state.margins, qty);
+            grossRev += r.gross_revenue;
+          }
         }
       }
       return { month: m, label: MONTH_LABELS[i], grossRev, totalUnits };
@@ -145,7 +160,12 @@ export default function PerformanceTrackerPage() {
       const motion = state.salesMotionByProductId[p.id];
       if (!motion) continue;
       for (const m of MONTHS_2026) {
-        const qty = quantities[forecastKey(p.id, m)] ?? 0;
+        let qty = 0;
+        if (p.has_variants) {
+          for (const v of VARIANTS) qty += quantities[variantForecastKey(p.id, v, m)] ?? 0;
+        } else {
+          qty = quantities[forecastKey(p.id, m)] ?? 0;
+        }
         if (qty === 0) continue;
         const wb = calcWorkbackRow(p.id, p.name, m, qty, motion);
         rows.push({
