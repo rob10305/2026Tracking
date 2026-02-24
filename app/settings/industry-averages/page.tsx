@@ -69,7 +69,7 @@ export default function IndustryAveragesPage() {
 
       <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-5">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-base">Default Sales Motion Parameters</h2>
+          <h2 className="font-semibold text-base">Industry Averages</h2>
           {!editing ? (
             <button
               onClick={() => { setDraft({ ...state.industryAverages }); setEditing(true); }}
