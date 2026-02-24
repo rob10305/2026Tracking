@@ -291,7 +291,7 @@ export default function PerformanceTrackerPage() {
         <div className="flex items-center gap-3">
           <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
             {([
-              { key: "product" as AverageSource, label: "Per-Product" },
+              { key: "product" as AverageSource, label: "Product-Specific" },
               { key: "industry" as AverageSource, label: "Industry Avg" },
               { key: "itm" as AverageSource, label: "ITM Historical" },
             ]).map((opt) => (
