@@ -280,7 +280,6 @@ function ProductCard({
               <h3 className="font-bold text-base truncate">
                 {p.name || "New Product"}
               </h3>
-              {p.has_variants && <VariantBadge variant={p.selected_variant} />}
             </div>
             {!expanded && p.generally_available && (
               <p className="text-xs text-gray-400 truncate mt-0.5">
