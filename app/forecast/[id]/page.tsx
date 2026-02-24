@@ -404,7 +404,9 @@ export default function ForecastDetailPage() {
 
   const hasData = monthlyProductData.some((pd) => pd.annualQty > 0);
   const totalUnits = monthlyProductData.reduce((s, pd) => s + pd.annualQty, 0);
-  const marginPct = annualTotals.rev > 0 ? (annualTotals.totalGP / annualTotals.rev) * 100 : 0;
+  const grossMarginPct = annualTotals.grossRev > 0 ? (annualTotals.grossGP / annualTotals.grossRev) * 100 : 0;
+  const netMarginPct = annualTotals.netRev > 0 ? (annualTotals.netGP / annualTotals.netRev) * 100 : 0;
+  const marginPct = mode === "gross" ? grossMarginPct : netMarginPct;
 
   const revenueChartData = MONTH_LABELS.map((label, i) => ({
     month: label,
@@ -461,12 +463,18 @@ export default function ForecastDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <KpiCard
           icon={<DollarSign className="w-5 h-5" />}
-          label={`${mode === "gross" ? "Gross" : "Net"} Revenue`}
-          value={hasData ? fmtCompact(annualTotals.rev) : "--"}
+          label="Gross Revenue"
+          value={hasData ? fmtCompact(annualTotals.grossRev) : "--"}
           color="blue"
+        />
+        <KpiCard
+          icon={<DollarSign className="w-5 h-5" />}
+          label="Net Revenue"
+          value={hasData ? fmtCompact(annualTotals.netRev) : "--"}
+          color="cyan"
         />
         <KpiCard
           icon={<Package className="w-5 h-5" />}
@@ -476,13 +484,13 @@ export default function ForecastDetailPage() {
         />
         <KpiCard
           icon={<TrendingUp className="w-5 h-5" />}
-          label="Gross Profit"
+          label={`${mode === "gross" ? "Gross" : "Net"} Profit`}
           value={hasData ? fmtCompact(annualTotals.totalGP) : "--"}
           color="green"
         />
         <KpiCard
           icon={<Target className="w-5 h-5" />}
-          label="Blended Margin"
+          label={`${mode === "gross" ? "Gross" : "Net"} Margin`}
           value={hasData ? pct(marginPct) : "--"}
           color="amber"
         />
@@ -1087,10 +1095,11 @@ function KpiCard({
   icon: React.ReactNode;
   label: string;
   value: string;
-  color: "blue" | "purple" | "green" | "amber";
+  color: "blue" | "cyan" | "purple" | "green" | "amber";
 }) {
   const colorMap = {
     blue: "bg-blue-50 text-blue-600",
+    cyan: "bg-cyan-50 text-cyan-600",
     purple: "bg-purple-50 text-purple-600",
     green: "bg-green-50 text-green-600",
     amber: "bg-amber-50 text-amber-600",
