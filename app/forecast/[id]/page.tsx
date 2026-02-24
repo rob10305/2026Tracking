@@ -449,7 +449,7 @@ export default function ForecastDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
           icon={<DollarSign className="w-5 h-5" />}
           label="Gross Revenue"
@@ -469,15 +469,9 @@ export default function ForecastDetailPage() {
           color="purple"
         />
         <KpiCard
-          icon={<TrendingUp className="w-5 h-5" />}
-          label={`${mode === "gross" ? "Gross" : "Net"} Profit`}
-          value={hasData ? fmtCompact(annualTotals.totalGP) : "--"}
-          color="green"
-        />
-        <KpiCard
           icon={<Target className="w-5 h-5" />}
-          label={`${mode === "gross" ? "Gross" : "Net"} Margin`}
-          value={hasData ? pct(marginPct) : "--"}
+          label="Net Margin"
+          value={hasData ? pct(netMarginPct) : "--"}
           color="amber"
         />
       </div>
