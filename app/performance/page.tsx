@@ -32,8 +32,6 @@ import {
   Users,
   AlertTriangle,
   CheckCircle2,
-  ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
 
 const CHANNEL_COLORS = ["#3B82F6", "#8B5CF6", "#F59E0B", "#10B981", "#EC4899"];
@@ -274,52 +272,18 @@ export default function PerformanceTrackerPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="w-4 h-4 text-blue-600" />
-            <span className="text-xs font-medium text-gray-500">Annual Revenue</span>
-          </div>
-          <p className="text-xl font-bold text-gray-900">{fmtCompact(annualRevenue)}</p>
-          <div className="flex items-center gap-1 mt-1">
-            {h2Growth >= 0 ? (
-              <ArrowUpRight className="w-3.5 h-3.5 text-green-600" />
-            ) : (
-              <ArrowDownRight className="w-3.5 h-3.5 text-red-600" />
-            )}
-            <span className={`text-xs font-medium ${h2Growth >= 0 ? "text-green-600" : "text-red-600"}`}>
-              {h2Growth >= 0 ? "+" : ""}{h2Growth.toFixed(1)}% H2 vs H1
-            </span>
-          </div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-blue-50 border border-blue-100 rounded-lg p-5 text-center">
+          <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Total Deals</span>
+          <p className="text-3xl font-bold text-blue-700 mt-1">{numFmt(totals.totalDeals)}</p>
         </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Target className="w-4 h-4 text-purple-600" />
-            <span className="text-xs font-medium text-gray-500">Deals Required</span>
-          </div>
-          <p className="text-xl font-bold text-gray-900">{numFmt(totals.totalDeals)}</p>
-          <span className="text-xs text-gray-500">{numFmt(totalUnits)} units across {products.length} products</span>
+        <div className="bg-purple-50 border border-purple-100 rounded-lg p-5 text-center">
+          <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Opps Needed</span>
+          <p className="text-3xl font-bold text-purple-700 mt-1">{numFmt(totals.totalOpps)}</p>
         </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Users className="w-4 h-4 text-amber-600" />
-            <span className="text-xs font-medium text-gray-500">Prospects Needed</span>
-          </div>
-          <p className="text-xl font-bold text-gray-900">{numFmt(totals.totalProspects)}</p>
-          <span className="text-xs text-gray-500">{numFmt(totals.totalOpps)} opps required</span>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Activity className="w-4 h-4 text-green-600" />
-            <span className="text-xs font-medium text-gray-500">Top Channel</span>
-          </div>
-          <p className="text-lg font-bold text-gray-900 truncate">{topChannel?.label ?? "N/A"}</p>
-          <span className="text-xs text-gray-500">
-            {topChannel ? `${topChannel.pct.toFixed(0)}% of pipeline (${numFmt(topChannel.prospects)} prospects)` : "No data"}
-          </span>
+        <div className="bg-amber-50 border border-amber-100 rounded-lg p-5 text-center">
+          <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Prospects Needed</span>
+          <p className="text-3xl font-bold text-amber-700 mt-1">{numFmt(totals.totalProspects)}</p>
         </div>
       </div>
 
