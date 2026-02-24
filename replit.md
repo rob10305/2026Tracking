@@ -41,8 +41,12 @@ __tests__/       - Vitest test files
   - Added fields: generally_available, platform_support_services_pct, pss_pct, user_count
   - Added variant system (has_variants, selected_variant, variants map with S/M/L VariantPricing)
   - Removed component_mix_mode (all percentages now)
-  - Products with variants: MCP Server, AI Gateway, MCP Hub, AI Insights, Managed Plane
-  - Products without variants: AI Services (PS), Developer Portal, Fast Shift Migration
+  - All 8 products now have S/M/L variants
+  - MCP Hub: S is N/A (no small variant), default selected_variant is "medium", GA: July (Q3)
+  - AI Insights: All variants $0 (bundled with AI Gateway)
+  - Developer Portal: All variants $0 (TBD pricing)
+  - AI Services (PS): S=$10K, M=$25K, L=$50K (100% Prof Services)
+  - Fast Shift Migration: S=$25K, M=$50K, L=$100K (100% Prof Services)
   - Revenue component mix now has 5 columns: Platform Support, Prof Services, Software Resale, Cloud Consumption, PSS
   - Updated seed data, revenue calculations, products page UI, tests, and CSV export
 - 2026-02-07: Performance Tracker page

@@ -92,7 +92,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
       }
       const needsMigration = saved.products.some((p: any) =>
-        p.gross_unit_price !== undefined || p.component_mix_mode !== undefined || p.epss_pct !== undefined || p.eps_pct !== undefined
+        p.gross_unit_price !== undefined || p.component_mix_mode !== undefined || p.epss_pct !== undefined || p.eps_pct !== undefined || p.has_variants === false
       );
       if (needsMigration) {
         const seed = createSeedData();
