@@ -1,6 +1,6 @@
 // ── Core domain types ──
 
-export type ComponentMixMode = "pct" | "dollar";
+export type ProductVariant = "small" | "medium" | "large";
 
 export type ProductStatus = "live" | "in_development";
 
@@ -13,17 +13,31 @@ export interface ProductReadiness {
   sales_collateral: boolean;
 }
 
+export interface VariantPricing {
+  gross_annual_price: number;
+  platform_support_services_pct: number;
+  professional_services_pct: number;
+  software_resale_pct: number;
+  cloud_consumption_pct: number;
+  eps_pct: number;
+  user_count: string;
+}
+
 export interface Product {
   id: string;
   name: string;
   description: string;
-  gross_unit_price: number;
-  default_discount_pct: number;
-  component_mix_mode: ComponentMixMode;
+  generally_available: string;
+  gross_annual_price: number;
+  platform_support_services_pct: number;
   professional_services_pct: number;
   software_resale_pct: number;
   cloud_consumption_pct: number;
-  epss_pct: number;
+  eps_pct: number;
+  user_count: string;
+  has_variants: boolean;
+  selected_variant?: ProductVariant;
+  variants?: Record<ProductVariant, VariantPricing>;
   status: ProductStatus;
   readiness?: ProductReadiness;
 }

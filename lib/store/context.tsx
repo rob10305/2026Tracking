@@ -88,9 +88,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           p.status = "live";
         }
       }
-      const oldDemoIds = new Set(["prod-managed-cloud", "prod-devops-accelerator", "prod-security-suite"]);
-      const hasOldDemo = saved.products.some((p) => oldDemoIds.has(p.id));
-      if (hasOldDemo) {
+      const needsMigration = saved.products.some((p: any) =>
+        p.gross_unit_price !== undefined || p.component_mix_mode !== undefined || p.epss_pct !== undefined
+      );
+      if (needsMigration) {
         const seed = createSeedData();
         saved.products = seed.products;
         saved.salesMotionByProductId = seed.salesMotionByProductId;

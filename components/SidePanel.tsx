@@ -121,9 +121,10 @@ export default function SidePanel({ productId, mode }: SidePanelProps) {
       <hr className="border-gray-200" />
 
       <div className="text-xs text-gray-400 space-y-1">
-        <p>Unit price: {fmt(product.gross_unit_price)}</p>
-        <p>Discount: {product.default_discount_pct}%</p>
-        <p>Net unit price: {fmt(result.net_unit_price)}</p>
+        <p>Annual price: {fmt(product.gross_annual_price)}</p>
+        {product.has_variants && product.selected_variant && (
+          <p>Variant: {product.selected_variant.charAt(0).toUpperCase() + product.selected_variant.slice(1)}</p>
+        )}
       </div>
     </div>
   );

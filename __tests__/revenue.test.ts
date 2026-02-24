@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
-  calcNetUnitPrice,
   calcGrossRevenue,
   calcNetRevenue,
+  calcNetUnitPrice,
   calcComponentSplit,
   calcComponentGP,
   sumComponents,
@@ -15,13 +15,16 @@ const sampleProduct: Product = {
   id: "test-1",
   name: "Test Product",
   description: "test",
-  gross_unit_price: 10000,
-  default_discount_pct: 10,
-  component_mix_mode: "pct",
+  generally_available: "January",
+  gross_annual_price: 10000,
+  platform_support_services_pct: 0,
   professional_services_pct: 25,
   software_resale_pct: 25,
   cloud_consumption_pct: 25,
-  epss_pct: 25,
+  eps_pct: 25,
+  user_count: "",
+  has_variants: false,
+  status: "live",
 };
 
 const sampleMargins: Margins = {
@@ -32,23 +35,13 @@ const sampleMargins: Margins = {
 };
 
 describe("calcNetUnitPrice", () => {
-  it("applies discount correctly", () => {
-    expect(calcNetUnitPrice(sampleProduct)).toBe(9000);
-  });
-
-  it("returns gross price when no discount", () => {
-    const p = { ...sampleProduct, default_discount_pct: 0 };
-    expect(calcNetUnitPrice(p)).toBe(10000);
-  });
-
-  it("returns zero for 100% discount", () => {
-    const p = { ...sampleProduct, default_discount_pct: 100 };
-    expect(calcNetUnitPrice(p)).toBe(0);
+  it("returns gross annual price", () => {
+    expect(calcNetUnitPrice(sampleProduct)).toBe(10000);
   });
 });
 
 describe("calcGrossRevenue", () => {
-  it("multiplies unit price by quantity", () => {
+  it("multiplies annual price by quantity", () => {
     expect(calcGrossRevenue(sampleProduct, 5)).toBe(50000);
   });
 
@@ -58,8 +51,8 @@ describe("calcGrossRevenue", () => {
 });
 
 describe("calcNetRevenue", () => {
-  it("applies discount then multiplies by quantity", () => {
-    expect(calcNetRevenue(sampleProduct, 5)).toBe(45000);
+  it("returns gross revenue (no discount)", () => {
+    expect(calcNetRevenue(sampleProduct, 5)).toBe(50000);
   });
 });
 
@@ -78,7 +71,7 @@ describe("calcComponentSplit", () => {
       professional_services_pct: 50,
       software_resale_pct: 30,
       cloud_consumption_pct: 15,
-      epss_pct: 5,
+      eps_pct: 5,
     };
     const split = calcComponentSplit(100000, p);
     expect(split.professional_services).toBe(50000);
@@ -130,15 +123,11 @@ describe("calcFullRevenue", () => {
   it("produces complete revenue result for qty=5", () => {
     const r = calcFullRevenue(sampleProduct, sampleMargins, 5);
     expect(r.gross_revenue).toBe(50000);
-    expect(r.net_revenue).toBe(45000);
-    expect(r.net_unit_price).toBe(9000);
-    // Components (gross): 25% of 50000 = 12500 each
+    expect(r.net_revenue).toBe(50000);
+    expect(r.net_unit_price).toBe(10000);
     expect(r.gross_components.professional_services).toBe(12500);
-    // GP: 12500 * 50% = 6250
     expect(r.gross_gp.professional_services).toBe(6250);
-    // Total gross GP: 6250 + 2500 + 3750 + 7500 = 20000
     expect(r.total_gross_gp).toBe(20000);
-    // Gross margin: 20000/50000 = 40%
     expect(r.gross_margin_pct).toBe(40);
   });
 
@@ -148,5 +137,20 @@ describe("calcFullRevenue", () => {
     expect(r.net_revenue).toBe(0);
     expect(r.total_gross_gp).toBe(0);
     expect(r.gross_margin_pct).toBe(0);
+  });
+
+  it("uses variant pricing when variant is selected", () => {
+    const variantProduct: Product = {
+      ...sampleProduct,
+      has_variants: true,
+      selected_variant: "large",
+      variants: {
+        small: { ...sampleProduct, gross_annual_price: 5000, platform_support_services_pct: 0, eps_pct: 25, user_count: "" },
+        medium: { ...sampleProduct, gross_annual_price: 8000, platform_support_services_pct: 0, eps_pct: 25, user_count: "" },
+        large: { gross_annual_price: 20000, platform_support_services_pct: 0, professional_services_pct: 25, software_resale_pct: 25, cloud_consumption_pct: 25, eps_pct: 25, user_count: "" },
+      },
+    };
+    const r = calcFullRevenue(variantProduct, sampleMargins, 2);
+    expect(r.gross_revenue).toBe(40000);
   });
 });

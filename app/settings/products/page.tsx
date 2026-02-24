@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { useStore } from "@/lib/store/context";
-import type { Product, SalesMotion, ComponentMixMode, ProductStatus, ProductReadiness } from "@/lib/models/types";
+import type { Product, SalesMotion, ProductStatus, ProductReadiness, ProductVariant, VariantPricing } from "@/lib/models/types";
+import { getEffectivePricing } from "@/lib/calc/revenue";
 import { downloadCSV } from "@/lib/store/persistence";
 import NumberInput from "@/components/NumberInput";
 
@@ -20,6 +21,22 @@ const DEFAULT_READINESS: ProductReadiness = {
   website_content: false,
   pricing: false,
   sales_collateral: false,
+};
+
+const DEFAULT_VARIANT_PRICING: VariantPricing = {
+  gross_annual_price: 10000,
+  platform_support_services_pct: 0,
+  professional_services_pct: 25,
+  software_resale_pct: 25,
+  cloud_consumption_pct: 25,
+  eps_pct: 25,
+  user_count: "",
+};
+
+const VARIANT_LABELS: Record<ProductVariant, string> = {
+  small: "Small",
+  medium: "Medium",
+  large: "Large",
 };
 
 function generateId(): string {
@@ -48,6 +65,15 @@ function StatusBadge({ status }: { status: ProductStatus }) {
     <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
       <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
       In Development
+    </span>
+  );
+}
+
+function VariantBadge({ variant }: { variant?: ProductVariant }) {
+  if (!variant) return null;
+  return (
+    <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+      {VARIANT_LABELS[variant]}
     </span>
   );
 }
@@ -157,20 +183,45 @@ function ProductCard({
   const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   const [editing, setEditing] = useState(false);
 
-  const mode = p.component_mix_mode ?? "pct";
+  const effective = getEffectivePricing(p);
   const componentSum =
-    p.professional_services_pct +
-    p.software_resale_pct +
-    p.cloud_consumption_pct +
-    p.epss_pct;
-  const validMix =
-    mode === "pct"
-      ? Math.abs(componentSum - 100) < 0.01
-      : Math.abs(componentSum - p.gross_unit_price) < 0.01;
+    effective.platform_support_services_pct +
+    effective.professional_services_pct +
+    effective.software_resale_pct +
+    effective.cloud_consumption_pct +
+    effective.eps_pct;
+  const validMix = Math.abs(componentSum - 100) < 0.01;
 
   const updateP = (patch: Partial<Product>) => {
     setP((prev) => ({ ...prev, ...patch }));
     setDirty(true);
+  };
+
+  const updateVariant = (variant: ProductVariant, patch: Partial<VariantPricing>) => {
+    setP((prev) => {
+      const variants = prev.variants ?? {
+        small: { ...DEFAULT_VARIANT_PRICING },
+        medium: { ...DEFAULT_VARIANT_PRICING },
+        large: { ...DEFAULT_VARIANT_PRICING },
+      };
+      return {
+        ...prev,
+        variants: {
+          ...variants,
+          [variant]: { ...variants[variant], ...patch },
+        },
+      };
+    });
+    setDirty(true);
+  };
+
+  const updateEffective = (patch: Partial<VariantPricing>) => {
+    if (p.has_variants && p.selected_variant && p.variants) {
+      updateVariant(p.selected_variant, patch);
+    } else {
+      setP((prev) => ({ ...prev, ...patch }));
+      setDirty(true);
+    }
   };
 
   const updateReadiness = (patch: Partial<ProductReadiness>) => {
@@ -178,33 +229,6 @@ function ProductCard({
       ...prev,
       readiness: { ...(prev.readiness ?? DEFAULT_READINESS), ...patch },
     }));
-    setDirty(true);
-  };
-
-  const switchMode = (newMode: ComponentMixMode) => {
-    if (newMode === mode) return;
-    const price = p.gross_unit_price;
-    if (newMode === "dollar" && mode === "pct") {
-      setP((prev) => ({
-        ...prev,
-        component_mix_mode: "dollar",
-        professional_services_pct: Math.round(price * prev.professional_services_pct / 100),
-        software_resale_pct: Math.round(price * prev.software_resale_pct / 100),
-        cloud_consumption_pct: Math.round(price * prev.cloud_consumption_pct / 100),
-        epss_pct: Math.round(price * prev.epss_pct / 100),
-      }));
-    } else {
-      const total = p.professional_services_pct + p.software_resale_pct + p.cloud_consumption_pct + p.epss_pct;
-      const toPct = (v: number) => total === 0 ? 25 : Math.round((v / total) * 10000) / 100;
-      setP((prev) => ({
-        ...prev,
-        component_mix_mode: "pct",
-        professional_services_pct: toPct(prev.professional_services_pct),
-        software_resale_pct: toPct(prev.software_resale_pct),
-        cloud_consumption_pct: toPct(prev.cloud_consumption_pct),
-        epss_pct: toPct(prev.epss_pct),
-      }));
-    }
     setDirty(true);
   };
 
@@ -257,10 +281,11 @@ function ProductCard({
                 {p.name || "New Product"}
               </h3>
               <StatusBadge status={p.status ?? "live"} />
+              {p.has_variants && <VariantBadge variant={p.selected_variant} />}
             </div>
-            {!expanded && p.description && (
+            {!expanded && p.generally_available && (
               <p className="text-xs text-gray-400 truncate mt-0.5">
-                {p.description}
+                GA: {p.generally_available}
               </p>
             )}
           </div>
@@ -269,7 +294,7 @@ function ProductCard({
           {!expanded && (
             <>
               <span className="text-sm text-gray-500 mr-2">
-                {formatPrice(product.gross_unit_price)}
+                {formatPrice(effective.gross_annual_price)}
               </span>
               <button
                 onClick={() => { setExpanded(true); setEditing(true); }}
@@ -314,33 +339,24 @@ function ProductCard({
           <div className="grid grid-cols-2 gap-x-8 gap-y-3">
             <DetailRow label="Name" value={product.name || "\u2014"} />
             <DetailRow label="Description" value={product.description || "\u2014"} />
-            <DetailRow label="Gross Unit Price" value={formatPrice(product.gross_unit_price)} />
-            <DetailRow label="Default Discount" value={`${product.default_discount_pct}%`} />
+            <DetailRow label="Generally Available" value={product.generally_available || "\u2014"} />
+            <DetailRow label="Gross Annual Price" value={formatPrice(effective.gross_annual_price)} />
+            {product.has_variants && (
+              <DetailRow label="Variant" value={product.selected_variant ? VARIANT_LABELS[product.selected_variant] : "\u2014"} />
+            )}
+            <DetailRow label="User Count" value={effective.user_count || "\u2014"} />
           </div>
 
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm font-medium text-gray-700">Revenue Component Mix</span>
-              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
-                {(product.component_mix_mode ?? "pct") === "pct" ? "Percentage" : "Dollar"}
-              </span>
-            </div>
-            <div className="grid grid-cols-4 gap-x-6 gap-y-2">
-              {(product.component_mix_mode ?? "pct") === "pct" ? (
-                <>
-                  <DetailRow label="Prof. Services" value={`${product.professional_services_pct}%`} />
-                  <DetailRow label="Software Resale" value={`${product.software_resale_pct}%`} />
-                  <DetailRow label="Cloud Consumption" value={`${product.cloud_consumption_pct}%`} />
-                  <DetailRow label="EPS" value={`${product.epss_pct}%`} />
-                </>
-              ) : (
-                <>
-                  <DetailRow label="Prof. Services" value={formatPrice(product.professional_services_pct)} />
-                  <DetailRow label="Software Resale" value={formatPrice(product.software_resale_pct)} />
-                  <DetailRow label="Cloud Consumption" value={formatPrice(product.cloud_consumption_pct)} />
-                  <DetailRow label="EPS" value={formatPrice(product.epss_pct)} />
-                </>
+            <span className="text-sm font-medium text-gray-700 block mb-2">Revenue Component Mix (%)</span>
+            <div className="grid grid-cols-5 gap-x-6 gap-y-2">
+              {effective.platform_support_services_pct > 0 && (
+                <DetailRow label="Platform Support" value={`${effective.platform_support_services_pct}%`} />
               )}
+              <DetailRow label="Prof. Services" value={`${effective.professional_services_pct}%`} />
+              <DetailRow label="Software Resale" value={`${effective.software_resale_pct}%`} />
+              <DetailRow label="Cloud Consumption" value={`${effective.cloud_consumption_pct}%`} />
+              <DetailRow label="EPS" value={`${effective.eps_pct}%`} />
             </div>
           </div>
 
@@ -375,12 +391,22 @@ function ProductCard({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <label className="block text-sm col-span-2">
+            <label className="block text-sm">
               <span className="text-gray-600">Name</span>
               <input
                 type="text"
                 value={p.name}
                 onChange={(e) => updateP({ name: e.target.value })}
+                className="w-full border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="text-gray-600">Generally Available</span>
+              <input
+                type="text"
+                value={p.generally_available}
+                onChange={(e) => updateP({ generally_available: e.target.value })}
+                placeholder="e.g. April"
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
               />
             </label>
@@ -393,21 +419,6 @@ function ProductCard({
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
               />
             </label>
-            <NumberInput
-              label="Gross Unit Price"
-              value={p.gross_unit_price}
-              onChange={(v) => updateP({ gross_unit_price: v })}
-              suffix="$"
-              min={0}
-            />
-            <NumberInput
-              label="Default Discount"
-              value={p.default_discount_pct}
-              onChange={(v) => updateP({ default_discount_pct: v })}
-              suffix="%"
-              min={0}
-              max={100}
-            />
           </div>
 
           <div>
@@ -495,35 +506,75 @@ function ProductCard({
             </div>
           )}
 
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={p.has_variants}
+                onChange={(e) => {
+                  const hasV = e.target.checked;
+                  if (hasV && !p.variants) {
+                    const current: VariantPricing = {
+                      gross_annual_price: p.gross_annual_price,
+                      platform_support_services_pct: p.platform_support_services_pct,
+                      professional_services_pct: p.professional_services_pct,
+                      software_resale_pct: p.software_resale_pct,
+                      cloud_consumption_pct: p.cloud_consumption_pct,
+                      eps_pct: p.eps_pct,
+                      user_count: p.user_count,
+                    };
+                    updateP({
+                      has_variants: true,
+                      selected_variant: "small",
+                      variants: { small: { ...current }, medium: { ...current }, large: { ...current } },
+                    });
+                  } else {
+                    updateP({ has_variants: hasV, selected_variant: hasV ? (p.selected_variant ?? "small") : undefined });
+                  }
+                }}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="font-medium text-gray-700">Has Variants (S/M/L)</span>
+            </label>
+
+            {p.has_variants && (
+              <select
+                value={p.selected_variant ?? "small"}
+                onChange={(e) => updateP({ selected_variant: e.target.value as ProductVariant })}
+                className="border border-gray-300 rounded px-2 py-1 text-sm"
+              >
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <NumberInput
+              label="Gross Annual Price"
+              value={effective.gross_annual_price}
+              onChange={(v) => updateEffective({ gross_annual_price: v })}
+              suffix="$"
+              min={0}
+            />
+            <label className="block text-sm">
+              <span className="text-gray-600">User Count</span>
+              <input
+                type="text"
+                value={effective.user_count}
+                onChange={(e) => updateEffective({ user_count: e.target.value })}
+                placeholder="e.g. 50 or N/A"
+                className="w-full border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
+              />
+            </label>
+          </div>
+
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-sm font-medium text-gray-700">
-                Revenue Component Mix
+                Revenue Component Mix (%)
               </span>
-              <div className="flex rounded overflow-hidden border border-gray-300 text-xs">
-                <button
-                  type="button"
-                  onClick={() => switchMode("pct")}
-                  className={`px-2.5 py-1 font-medium transition-colors ${
-                    mode === "pct"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  %
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchMode("dollar")}
-                  className={`px-2.5 py-1 font-medium transition-colors border-l border-gray-300 ${
-                    mode === "dollar"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  $
-                </button>
-              </div>
               <span
                 className={`text-xs px-2 py-0.5 rounded ${
                   validMix
@@ -531,45 +582,49 @@ function ProductCard({
                     : "bg-red-100 text-red-700"
                 }`}
               >
-                {mode === "pct" ? (
-                  <>Sum: {componentSum.toFixed(1)}% {validMix ? "OK" : "(must = 100%)"}</>
-                ) : (
-                  <>Sum: {formatPrice(componentSum)} {validMix ? "OK" : `(must = ${formatPrice(p.gross_unit_price)})`}</>
-                )}
+                Sum: {componentSum.toFixed(1)}% {validMix ? "OK" : "(must = 100%)"}
               </span>
             </div>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-2">
+              <NumberInput
+                label="Platform Support"
+                value={effective.platform_support_services_pct}
+                onChange={(v) => updateEffective({ platform_support_services_pct: v })}
+                suffix="%"
+                min={0}
+                max={100}
+              />
               <NumberInput
                 label="Prof. Services"
-                value={p.professional_services_pct}
-                onChange={(v) => updateP({ professional_services_pct: v })}
-                suffix={mode === "pct" ? "%" : "$"}
+                value={effective.professional_services_pct}
+                onChange={(v) => updateEffective({ professional_services_pct: v })}
+                suffix="%"
                 min={0}
-                max={mode === "pct" ? 100 : undefined}
+                max={100}
               />
               <NumberInput
                 label="Software Resale"
-                value={p.software_resale_pct}
-                onChange={(v) => updateP({ software_resale_pct: v })}
-                suffix={mode === "pct" ? "%" : "$"}
+                value={effective.software_resale_pct}
+                onChange={(v) => updateEffective({ software_resale_pct: v })}
+                suffix="%"
                 min={0}
-                max={mode === "pct" ? 100 : undefined}
+                max={100}
               />
               <NumberInput
                 label="Cloud Consumption"
-                value={p.cloud_consumption_pct}
-                onChange={(v) => updateP({ cloud_consumption_pct: v })}
-                suffix={mode === "pct" ? "%" : "$"}
+                value={effective.cloud_consumption_pct}
+                onChange={(v) => updateEffective({ cloud_consumption_pct: v })}
+                suffix="%"
                 min={0}
-                max={mode === "pct" ? 100 : undefined}
+                max={100}
               />
               <NumberInput
                 label="EPS"
-                value={p.epss_pct}
-                onChange={(v) => updateP({ epss_pct: v })}
-                suffix={mode === "pct" ? "%" : "$"}
+                value={effective.eps_pct}
+                onChange={(v) => updateEffective({ eps_pct: v })}
+                suffix="%"
                 min={0}
-                max={mode === "pct" ? 100 : undefined}
+                max={100}
               />
             </div>
           </div>
@@ -589,13 +644,15 @@ export default function ProductsPage() {
       id,
       name: "New Product",
       description: "",
-      gross_unit_price: 10000,
-      default_discount_pct: 10,
-      component_mix_mode: "pct",
+      generally_available: "",
+      gross_annual_price: 10000,
+      platform_support_services_pct: 0,
       professional_services_pct: 25,
       software_resale_pct: 25,
       cloud_consumption_pct: 25,
-      epss_pct: 25,
+      eps_pct: 25,
+      user_count: "",
+      has_variants: false,
       status: "live",
     };
     addProduct(newProduct, { ...DEFAULT_SALES_MOTION });
@@ -606,29 +663,34 @@ export default function ProductsPage() {
     const headers = [
       "Name",
       "Description",
+      "Generally Available",
       "Status",
-      "Gross Unit Price",
-      "Default Discount %",
-      "Component Mix Mode",
-      "Professional Services",
-      "Software Resale",
-      "Cloud Consumption",
-      "EPS",
+      "Has Variants",
+      "Selected Variant",
+      "Gross Annual Price",
+      "Platform Support Services %",
+      "Professional Services %",
+      "Software Resale %",
+      "Cloud Consumption %",
+      "EPS %",
+      "User Count",
     ];
     const rows = state.products.map((p) => {
-      const mode = p.component_mix_mode ?? "pct";
-      const suffix = mode === "pct" ? "%" : "$";
+      const eff = getEffectivePricing(p);
       return [
         `"${p.name.replace(/"/g, '""')}"`,
         `"${(p.description || "").replace(/"/g, '""')}"`,
+        `"${p.generally_available || ""}"`,
         p.status === "in_development" ? "In Development" : "Live",
-        p.gross_unit_price,
-        p.default_discount_pct,
-        mode === "pct" ? "Percentage" : "Dollar",
-        `${p.professional_services_pct}${suffix}`,
-        `${p.software_resale_pct}${suffix}`,
-        `${p.cloud_consumption_pct}${suffix}`,
-        `${p.epss_pct}${suffix}`,
+        p.has_variants ? "Yes" : "No",
+        p.selected_variant ? VARIANT_LABELS[p.selected_variant] : "",
+        eff.gross_annual_price,
+        `${eff.platform_support_services_pct}%`,
+        `${eff.professional_services_pct}%`,
+        `${eff.software_resale_pct}%`,
+        `${eff.cloud_consumption_pct}%`,
+        `${eff.eps_pct}%`,
+        `"${eff.user_count || ""}"`,
       ].join(",");
     });
     const csv = [headers.join(","), ...rows].join("\n");
