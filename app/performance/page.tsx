@@ -34,6 +34,7 @@ import {
   Users,
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
 } from "lucide-react";
 
 const CHANNEL_COLORS = ["#3B82F6", "#8B5CF6", "#F59E0B", "#10B981", "#EC4899"];
@@ -101,6 +102,7 @@ export default function PerformanceTrackerPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("coverage");
   const [selectedForecastId, setSelectedForecastId] = useState<string>("default");
   const [averageSource, setAverageSource] = useState<AverageSource>("product");
+  const [healthOpen, setHealthOpen] = useState(true);
 
   const products = state.products;
 
@@ -439,8 +441,14 @@ export default function PerformanceTrackerPage() {
           </div>
 
           <div className="bg-white border border-gray-200 rounded-lg p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-1">Coverage Health Assessment</h3>
-            <div className="space-y-3 mt-4">
+            <button
+              onClick={() => setHealthOpen(!healthOpen)}
+              className="w-full flex items-center justify-between"
+            >
+              <h3 className="text-sm font-semibold text-gray-700">Coverage Health Assessment</h3>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${healthOpen ? "rotate-180" : ""}`} />
+            </button>
+            {healthOpen && <div className="space-y-3 mt-4">
               {coverageRatio.oppsToDeals >= 3 ? (
                 <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -496,7 +504,7 @@ export default function PerformanceTrackerPage() {
                   </p>
                 </div>
               </div>
-            </div>
+            </div>}
           </div>
 
           <div className="bg-white border border-gray-200 rounded-lg p-5">
