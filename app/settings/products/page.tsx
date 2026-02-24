@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useStore } from "@/lib/store/context";
 import type { Product, SalesMotion, ComponentMixMode, ProductStatus, ProductReadiness } from "@/lib/models/types";
+import { downloadCSV } from "@/lib/store/persistence";
 import NumberInput from "@/components/NumberInput";
 
 const DEFAULT_SALES_MOTION: SalesMotion = {
@@ -601,6 +602,39 @@ export default function ProductsPage() {
     setExpandAll(false);
   };
 
+  const handleExportCSV = () => {
+    const headers = [
+      "Name",
+      "Description",
+      "Status",
+      "Gross Unit Price",
+      "Default Discount %",
+      "Component Mix Mode",
+      "Professional Services",
+      "Software Resale",
+      "Cloud Consumption",
+      "EPS",
+    ];
+    const rows = state.products.map((p) => {
+      const mode = p.component_mix_mode ?? "pct";
+      const suffix = mode === "pct" ? "%" : "$";
+      return [
+        `"${p.name.replace(/"/g, '""')}"`,
+        `"${(p.description || "").replace(/"/g, '""')}"`,
+        p.status === "in_development" ? "In Development" : "Live",
+        p.gross_unit_price,
+        p.default_discount_pct,
+        mode === "pct" ? "Percentage" : "Dollar",
+        `${p.professional_services_pct}${suffix}`,
+        `${p.software_resale_pct}${suffix}`,
+        `${p.cloud_consumption_pct}${suffix}`,
+        `${p.epss_pct}${suffix}`,
+      ].join(",");
+    });
+    const csv = [headers.join(","), ...rows].join("\n");
+    downloadCSV(csv, `products-export-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
   const handleCloneProduct = (sourceProduct: Product) => {
     const id = generateId();
     const cloned: Product = {
@@ -622,6 +656,14 @@ export default function ProductsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {state.products.length > 0 && (
+            <button
+              onClick={handleExportCSV}
+              className="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Export CSV
+            </button>
+          )}
           {state.products.length > 1 && (
             <button
               onClick={() => setExpandAll(!expandAll)}
