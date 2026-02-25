@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { createSeedData } from "@/lib/store/seed";
 import { STANDARD_DELIVERABLES } from "@/lib/models/types";
@@ -31,9 +32,9 @@ export async function POST() {
         user_count: p.user_count,
         has_variants: p.has_variants,
         selected_variant: p.selected_variant ?? null,
-        variants: p.variants ?? null,
+        variants: (p.variants ?? Prisma.JsonNull) as any,
         status: p.status,
-        readiness: p.readiness ?? null,
+        readiness: (p.readiness ?? Prisma.JsonNull) as any,
         sort_order: i,
       },
     });

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { STANDARD_DELIVERABLES } from "@/lib/models/types";
 
@@ -25,9 +26,9 @@ export async function PUT(req: Request) {
         user_count: product.user_count ?? "",
         has_variants: product.has_variants ?? false,
         selected_variant: product.selected_variant ?? null,
-        variants: product.variants ?? null,
+        variants: product.variants ? (product.variants as Prisma.InputJsonValue) : Prisma.JsonNull,
         status: product.status ?? "live",
-        readiness: product.readiness ?? null,
+        readiness: product.readiness ? (product.readiness as Prisma.InputJsonValue) : Prisma.JsonNull,
         sort_order: sortOrder,
       },
     });
@@ -70,9 +71,9 @@ export async function PUT(req: Request) {
         user_count: product.user_count ?? "",
         has_variants: product.has_variants ?? false,
         selected_variant: product.selected_variant ?? null,
-        variants: product.variants ?? null,
+        variants: product.variants ? (product.variants as Prisma.InputJsonValue) : Prisma.JsonNull,
         status: product.status ?? "live",
-        readiness: product.readiness ?? null,
+        readiness: product.readiness ? (product.readiness as Prisma.InputJsonValue) : Prisma.JsonNull,
       },
     });
   }
