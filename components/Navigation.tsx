@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { href: "/forecast", label: "Forecast Modelling" },
   { href: "/performance", label: "Performance Tracker" },
   { href: "/workback", label: "Launch Readiness" },
-  { href: "/settings", label: "Critical Business Inputs" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export default function Navigation() {
