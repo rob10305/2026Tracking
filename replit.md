@@ -14,7 +14,8 @@ A Next.js financial forecasting application that allows users to create, manage,
 ## Project Structure
 ```
 app/             - Next.js app router pages and API routes
-  api/forecasts/ - REST API for forecasts, scenarios, time periods, line items
+  api/db/        - Database API routes (state, products, settings, forecasts, etc.)
+  api/forecasts/ - Legacy REST API (unused)
   forecast/      - Forecast detail page
   forecasts/     - Forecast list and creation pages
   settings/      - Settings page
@@ -24,7 +25,7 @@ components/      - React components (forms, grids, charts, navigation)
 lib/             - Core logic
   calc/          - Calculation engine (revenue, scenarios, time periods, CSV)
   models/        - TypeScript type definitions
-  store/         - State management (React context, persistence, seeding)
+  store/         - State management (React context, DB-backed persistence, seeding)
   db.ts          - Prisma client singleton
 prisma/          - Prisma schema (PostgreSQL)
 __tests__/       - Vitest test files
@@ -36,6 +37,15 @@ __tests__/       - Vitest test files
 - **Dev Origins**: Configured to allow *.replit.dev origins
 
 ## Recent Changes
+- 2026-02-25: Database backend migration
+  - Migrated all app state from localStorage to PostgreSQL database
+  - New Prisma schema: Product, SalesMotion, AppSettings, ForecastEntry, SavedForecast, SavedForecastEntry, LaunchRequirement
+  - API routes: GET /api/db/state (full state), PUT /api/db/products, PUT /api/db/settings, PUT /api/db/sales-motion, PUT /api/db/forecast-entry, PUT /api/db/launch-requirements, POST /api/db/reset
+  - Saved forecasts API: GET/POST/PUT/DELETE /api/db/saved-forecasts, PUT /api/db/saved-forecasts/quantity, POST /api/db/saved-forecasts/duplicate
+  - Context uses optimistic updates (instant local state + background API calls)
+  - Removed localStorage dependencies (persistence.ts now only has export/download utilities)
+  - Database seeded via prisma/seed.ts
+  - Data shared between dev and production environments
 - 2026-02-25: Product Launch Readiness page
   - Replaced Workback page with Product Launch Readiness tracker
   - Each product has 14 standard deliverables (Product, Marketing, Sales, Delivery, Support categories)
@@ -43,7 +53,7 @@ __tests__/       - Vitest test files
   - All fields inline-editable (click to edit, Enter to save, Escape to cancel)
   - Progress tracking per product (done/total) and overall completion percentage
   - Expand/Collapse All controls, per-product expand/collapse with chevron
-  - LaunchRequirement type added to AppState, persisted in localStorage
+  - LaunchRequirement type added to AppState, persisted in database
   - Default owners seeded per product (Paul, Phi, Rob, Virgil based on chart)
   - Navigation renamed from "Workback" to "Launch Readiness"
 - 2026-02-24: Variant-level forecast builder

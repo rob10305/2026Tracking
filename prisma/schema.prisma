@@ -7,65 +7,88 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Forecast {
-  id          String   @id @default(cuid())
-  name        String
-  description String   @default("")
-  type        String   @default("financial") // financial, pipeline, timeline
-  granularity String   @default("monthly")   // monthly, quarterly, weekly, custom
-  startDate   String                          // "YYYY-MM-DD"
-  endDate     String                          // "YYYY-MM-DD"
-  config      String   @default("{}")         // JSON blob for type-specific config
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Product {
+  id                          String  @id
+  name                        String
+  description                 String  @default("")
+  generally_available         String  @default("")
+  gross_annual_price          Float   @default(0)
+  platform_support_services_pct Float @default(0)
+  professional_services_pct   Float   @default(0)
+  software_resale_pct         Float   @default(0)
+  cloud_consumption_pct       Float   @default(0)
+  pss_pct                     Float   @default(0)
+  user_count                  String  @default("")
+  has_variants                Boolean @default(false)
+  selected_variant            String?
+  variants                    Json?
+  status                      String  @default("live")
+  readiness                   Json?
+  sort_order                  Int     @default(0)
 
-  scenarios   Scenario[]
-  timePeriods TimePeriod[]
+  salesMotion        SalesMotion?
+  forecastEntries    ForecastEntry[]
+  launchRequirements LaunchRequirement[]
 }
 
-model Scenario {
-  id         String   @id @default(cuid())
-  forecastId String
-  name       String
-  color      String   @default("#3b82f6")
-  isBaseline Boolean  @default(false)
-  sortOrder  Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+model SalesMotion {
+  id                           String @id @default(cuid())
+  product_id                   String @unique
+  sales_cycle_months           Int
+  opp_to_close_win_rate_pct    Float
+  prospect_to_opp_rate_pct     Float
+  prospecting_lead_time_months Int
 
-  forecast  Forecast   @relation(fields: [forecastId], references: [id], onDelete: Cascade)
-  lineItems LineItem[]
-
-  @@index([forecastId])
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
 }
 
-model TimePeriod {
+model AppSettings {
+  key   String @id
+  value Json
+}
+
+model ForecastEntry {
   id         String @id @default(cuid())
-  forecastId String
-  label      String
-  startDate  String // "YYYY-MM-DD"
-  endDate    String // "YYYY-MM-DD"
-  sortOrder  Int    @default(0)
+  product_id String
+  month      String
+  quantity   Int
 
-  forecast  Forecast   @relation(fields: [forecastId], references: [id], onDelete: Cascade)
-  lineItems LineItem[]
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
 
-  @@index([forecastId])
+  @@unique([product_id, month])
 }
 
-model LineItem {
+model SavedForecast {
+  id        String   @id
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries SavedForecastEntry[]
+}
+
+model SavedForecastEntry {
+  id          String @id @default(cuid())
+  forecast_id String
+  key         String
+  quantity    Int
+
+  forecast SavedForecast @relation(fields: [forecast_id], references: [id], onDelete: Cascade)
+
+  @@unique([forecast_id, key])
+}
+
+model LaunchRequirement {
   id           String @id @default(cuid())
-  scenarioId   String
-  timePeriodId String
-  category     String // e.g., "revenue", "cost", "pipeline-stage", "effort"
-  subcategory  String @default("") // e.g., product name, cost type
-  value        Float  @default(0)
-  metadata     String @default("{}") // JSON blob for type-specific data
+  product_id   String
+  deliverable  String
+  owner        String @default("")
+  criticalPath String @default("")
+  timeline     String @default("")
+  content      String @default("")
+  sort_order   Int    @default(0)
 
-  scenario   Scenario   @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
-  timePeriod TimePeriod @relation(fields: [timePeriodId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
 
-  @@unique([scenarioId, timePeriodId, category, subcategory])
-  @@index([scenarioId])
-  @@index([timePeriodId])
+  @@unique([product_id, deliverable])
 }

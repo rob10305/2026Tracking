@@ -6,15 +6,13 @@ import React, {
   useState,
   useCallback,
   useEffect,
-  useRef,
 } from "react";
-import type { SavedForecast, ForecastMap, ProductVariant } from "@/lib/models/types";
+import type { SavedForecast, ProductVariant } from "@/lib/models/types";
 import { forecastKey, variantForecastKey } from "@/lib/models/types";
-import {
-  loadForecasts,
-  saveForecasts,
-  createNewForecast,
-} from "./forecast-persistence";
+
+function generateId(): string {
+  return `fc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 interface SavedForecastsStore {
   forecasts: SavedForecast[];
@@ -34,32 +32,33 @@ const SavedForecastsContext = createContext<SavedForecastsStore | null>(null);
 export function SavedForecastsProvider({ children }: { children: React.ReactNode }) {
   const [forecasts, setForecasts] = useState<SavedForecast[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const skipNextSave = useRef(false);
 
   useEffect(() => {
-    const saved = loadForecasts();
-    if (saved.length > 0) {
-      skipNextSave.current = true;
-      setForecasts(saved);
-    }
-    setIsLoaded(true);
+    fetch("/api/db/saved-forecasts")
+      .then((r) => r.json())
+      .then((data: SavedForecast[]) => {
+        setForecasts(data);
+        setIsLoaded(true);
+      })
+      .catch(() => {
+        setIsLoaded(true);
+      });
   }, []);
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
-      return;
-    }
-    saveForecasts(forecasts);
-  }, [forecasts, isLoaded]);
-
   const addForecast = useCallback((name: string) => {
-    const fc = createNewForecast(name);
-    setForecasts((prev) => {
-      const updated = [...prev, fc];
-      saveForecasts(updated);
-      return updated;
+    const now = new Date().toISOString();
+    const fc: SavedForecast = {
+      id: generateId(),
+      name,
+      createdAt: now,
+      updatedAt: now,
+      quantities: {},
+    };
+    setForecasts((prev) => [...prev, fc]);
+    fetch("/api/db/saved-forecasts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: fc.id, name: fc.name }),
     });
     return fc;
   }, []);
@@ -71,19 +70,29 @@ export function SavedForecastsProvider({ children }: { children: React.ReactNode
       if (!source) return prev;
       const now = new Date().toISOString();
       newFc = {
-        id: `fc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id: generateId(),
         name: newName,
         createdAt: now,
         updatedAt: now,
         quantities: { ...source.quantities },
       };
-      return [...prev, newFc];
+      fetch("/api/db/saved-forecasts/duplicate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceId: id, newId: newFc!.id, newName }),
+      });
+      return [...prev, newFc!];
     });
     return newFc;
   }, []);
 
   const deleteForecast = useCallback((id: string) => {
     setForecasts((prev) => prev.filter((f) => f.id !== id));
+    fetch("/api/db/saved-forecasts", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
   }, []);
 
   const renameForecast = useCallback((id: string, name: string) => {
@@ -92,6 +101,11 @@ export function SavedForecastsProvider({ children }: { children: React.ReactNode
         f.id === id ? { ...f, name, updatedAt: new Date().toISOString() } : f
       )
     );
+    fetch("/api/db/saved-forecasts", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, name }),
+    });
   }, []);
 
   const getForecast = useCallback(
@@ -101,38 +115,46 @@ export function SavedForecastsProvider({ children }: { children: React.ReactNode
 
   const setQty = useCallback(
     (id: string, productId: string, month: string, qty: number) => {
+      const q = Math.max(0, Math.round(qty));
+      const key = forecastKey(productId, month);
       setForecasts((prev) =>
         prev.map((f) => {
           if (f.id !== id) return f;
           return {
             ...f,
             updatedAt: new Date().toISOString(),
-            quantities: {
-              ...f.quantities,
-              [forecastKey(productId, month)]: Math.max(0, Math.round(qty)),
-            },
+            quantities: { ...f.quantities, [key]: q },
           };
         })
       );
+      fetch("/api/db/saved-forecasts/quantity", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forecastId: id, key, quantity: q }),
+      });
     },
     []
   );
 
   const setVariantQty = useCallback(
     (id: string, productId: string, variant: ProductVariant, month: string, qty: number) => {
+      const q = Math.max(0, Math.round(qty));
+      const key = variantForecastKey(productId, variant, month);
       setForecasts((prev) =>
         prev.map((f) => {
           if (f.id !== id) return f;
           return {
             ...f,
             updatedAt: new Date().toISOString(),
-            quantities: {
-              ...f.quantities,
-              [variantForecastKey(productId, variant, month)]: Math.max(0, Math.round(qty)),
-            },
+            quantities: { ...f.quantities, [key]: q },
           };
         })
       );
+      fetch("/api/db/saved-forecasts/quantity", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forecastId: id, key, quantity: q }),
+      });
     },
     []
   );
@@ -149,6 +171,14 @@ export function SavedForecastsProvider({ children }: { children: React.ReactNode
           return { ...f, updatedAt: new Date().toISOString(), quantities: newQ };
         })
       );
+      for (const e of entries) {
+        const key = forecastKey(e.productId, e.month);
+        fetch("/api/db/saved-forecasts/quantity", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ forecastId: id, key, quantity: Math.max(0, Math.round(e.qty)) }),
+        });
+      }
     },
     []
   );

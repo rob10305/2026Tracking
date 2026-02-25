@@ -6,7 +6,6 @@ import React, {
   useState,
   useCallback,
   useEffect,
-  useRef,
 } from "react";
 import type {
   AppState,
@@ -17,32 +16,22 @@ import type {
   ForecastMap,
   LaunchRequirement,
 } from "@/lib/models/types";
-import { forecastKey, STANDARD_DELIVERABLES } from "@/lib/models/types";
-import { saveState, loadState, clearState } from "./persistence";
+import { forecastKey } from "@/lib/models/types";
 import { createSeedData } from "./seed";
 
 interface AppStore {
   state: AppState;
-  // Product CRUD
   addProduct: (p: Product, s: SalesMotion) => void;
   updateProduct: (p: Product) => void;
   deleteProduct: (id: string) => void;
-  // Margins
   updateMargins: (m: Margins) => void;
-  // Industry Averages
   updateIndustryAverages: (s: SalesMotion) => void;
-  // ITM Historical Averages
   updateItmHistoricalAverages: (s: SalesMotion) => void;
-  // Pipeline Contribution
   updatePipelineContribution: (p: PipelineContribution) => void;
-  // Sales Motion
   updateSalesMotion: (productId: string, s: SalesMotion) => void;
-  // Forecast
   setForecastQty: (productId: string, month: string, qty: number) => void;
   setForecastBulk: (entries: { productId: string; month: string; qty: number }[]) => void;
-  // Launch Requirements
   updateLaunchRequirements: (productId: string, reqs: LaunchRequirement[]) => void;
-  // State management
   resetToSeed: () => void;
   importState: (s: AppState) => void;
   isLoaded: boolean;
@@ -53,95 +42,18 @@ const StoreContext = createContext<AppStore | null>(null);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(createSeedData);
   const [isLoaded, setIsLoaded] = useState(false);
-  const skipNextSave = useRef(false);
 
-  // Load from localStorage on mount
   useEffect(() => {
-    const saved = loadState();
-    if (saved) {
-      if (!saved.margins) {
-        saved.margins = {
-          professional_services_margin_pct: 45,
-          software_resale_margin_pct: 20,
-          cloud_consumption_margin_pct: 30,
-          pss_margin_pct: 55,
-        };
-      } else if ((saved.margins as any).epss_margin_pct !== undefined) {
-        saved.margins.pss_margin_pct = (saved.margins as any).epss_margin_pct;
-        delete (saved.margins as any).epss_margin_pct;
-      }
-      if (!saved.industryAverages) {
-        saved.industryAverages = {
-          sales_cycle_months: 3,
-          opp_to_close_win_rate_pct: 20,
-          prospect_to_opp_rate_pct: 15,
-          prospecting_lead_time_months: 1,
-        };
-      }
-      if (!saved.itmHistoricalAverages) {
-        saved.itmHistoricalAverages = {
-          sales_cycle_months: 4,
-          opp_to_close_win_rate_pct: 25,
-          prospect_to_opp_rate_pct: 18,
-          prospecting_lead_time_months: 1,
-        };
-      }
-      if (!saved.pipelineContribution) {
-        saved.pipelineContribution = {
-          mode: "pct",
-          website_inbound: 25,
-          sales_team_generated: 30,
-          event_sourced: 15,
-          abm_thought_leadership: 15,
-          partner_referral: 15,
-        };
-      }
-      if (saved.pipelineContribution && saved.pipelineContribution.partner_referral === undefined) {
-        saved.pipelineContribution.partner_referral = 0;
-      }
-      for (const p of saved.products) {
-        if (!p.status) {
-          p.status = "live";
-        }
-      }
-      if (!saved.launchRequirements) {
-        saved.launchRequirements = {};
-      }
-      for (const p of saved.products) {
-        if (!saved.launchRequirements[p.id]) {
-          saved.launchRequirements[p.id] = STANDARD_DELIVERABLES.map((d) => ({
-            deliverable: d,
-            owner: "",
-            criticalPath: "",
-            timeline: "",
-            content: "",
-          }));
-        }
-      }
-      const needsMigration = saved.products.some((p: any) =>
-        p.gross_unit_price !== undefined || p.component_mix_mode !== undefined || p.epss_pct !== undefined || p.eps_pct !== undefined || p.has_variants === false
-      );
-      if (needsMigration) {
-        const seed = createSeedData();
-        saved.products = seed.products;
-        saved.salesMotionByProductId = seed.salesMotionByProductId;
-        saved.forecastByProductIdMonth = {};
-      }
-      skipNextSave.current = true;
-      setState(saved);
-    }
-    setIsLoaded(true);
+    fetch("/api/db/state")
+      .then((r) => r.json())
+      .then((data: AppState) => {
+        setState(data);
+        setIsLoaded(true);
+      })
+      .catch(() => {
+        setIsLoaded(true);
+      });
   }, []);
-
-  // Auto-save on every change
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
-      return;
-    }
-    saveState(state);
-  }, [state, isLoaded]);
 
   const update = useCallback((fn: (prev: AppState) => AppState) => {
     setState(fn);
@@ -154,6 +66,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         products: [...prev.products, p],
         salesMotionByProductId: { ...prev.salesMotionByProductId, [p.id]: s },
       }));
+      fetch("/api/db/products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product: p, salesMotion: s, isNew: true }),
+      });
     },
     [update],
   );
@@ -164,6 +81,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         products: prev.products.map((x) => (x.id === p.id ? p : x)),
       }));
+      fetch("/api/db/products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product: p, isNew: false }),
+      });
     },
     [update],
   );
@@ -185,46 +107,59 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           forecastByProductIdMonth: newForecast,
         };
       });
+      fetch("/api/db/products", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
     },
     [update],
   );
 
   const updateMargins = useCallback(
     (m: Margins) => {
-      update((prev) => ({
-        ...prev,
-        margins: m,
-      }));
+      update((prev) => ({ ...prev, margins: m }));
+      fetch("/api/db/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "margins", value: m }),
+      });
     },
     [update],
   );
 
   const updateIndustryAverages = useCallback(
     (s: SalesMotion) => {
-      update((prev) => ({
-        ...prev,
-        industryAverages: s,
-      }));
+      update((prev) => ({ ...prev, industryAverages: s }));
+      fetch("/api/db/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "industryAverages", value: s }),
+      });
     },
     [update],
   );
 
   const updateItmHistoricalAverages = useCallback(
     (s: SalesMotion) => {
-      update((prev) => ({
-        ...prev,
-        itmHistoricalAverages: s,
-      }));
+      update((prev) => ({ ...prev, itmHistoricalAverages: s }));
+      fetch("/api/db/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "itmHistoricalAverages", value: s }),
+      });
     },
     [update],
   );
 
   const updatePipelineContribution = useCallback(
     (p: PipelineContribution) => {
-      update((prev) => ({
-        ...prev,
-        pipelineContribution: p,
-      }));
+      update((prev) => ({ ...prev, pipelineContribution: p }));
+      fetch("/api/db/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "pipelineContribution", value: p }),
+      });
     },
     [update],
   );
@@ -238,19 +173,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           [productId]: s,
         },
       }));
+      fetch("/api/db/sales-motion", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, salesMotion: s }),
+      });
     },
     [update],
   );
 
   const setForecastQty = useCallback(
     (productId: string, month: string, qty: number) => {
+      const q = Math.max(0, Math.round(qty));
       update((prev) => ({
         ...prev,
         forecastByProductIdMonth: {
           ...prev.forecastByProductIdMonth,
-          [forecastKey(productId, month)]: Math.max(0, Math.round(qty)),
+          [forecastKey(productId, month)]: q,
         },
       }));
+      fetch("/api/db/forecast-entry", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, month, quantity: q }),
+      });
     },
     [update],
   );
@@ -260,12 +206,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       update((prev) => {
         const newForecast = { ...prev.forecastByProductIdMonth };
         for (const e of entries) {
-          newForecast[forecastKey(e.productId, e.month)] = Math.max(
-            0,
-            Math.round(e.qty),
-          );
+          newForecast[forecastKey(e.productId, e.month)] = Math.max(0, Math.round(e.qty));
         }
         return { ...prev, forecastByProductIdMonth: newForecast };
+      });
+      fetch("/api/db/forecast-entry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries }),
       });
     },
     [update],
@@ -280,15 +228,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           [productId]: reqs,
         },
       }));
+      fetch("/api/db/launch-requirements", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, requirements: reqs }),
+      });
     },
     [update],
   );
 
   const resetToSeed = useCallback(() => {
-    clearState();
     const seed = createSeedData();
-    skipNextSave.current = false;
     setState(seed);
+    fetch("/api/db/reset", { method: "POST" });
   }, []);
 
   const importState = useCallback((s: AppState) => {
