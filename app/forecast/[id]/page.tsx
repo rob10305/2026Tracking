@@ -551,7 +551,7 @@ export default function ForecastDetailPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <KpiCard
           icon={<DollarSign className="w-5 h-5" />}
           label="Gross Revenue"
@@ -563,6 +563,12 @@ export default function ForecastDetailPage() {
           label="Net Revenue"
           value={hasData ? fmtCompact(annualTotals.netRev) : "--"}
           color="cyan"
+        />
+        <KpiCard
+          icon={<DollarSign className="w-5 h-5" />}
+          label="One Time Revenue"
+          value={hasData ? fmtCompact(annualTotals.ps) : "--"}
+          color="orange"
         />
         <KpiCard
           icon={<Package className="w-5 h-5" />}
@@ -1177,7 +1183,7 @@ function KpiCard({
   icon: React.ReactNode;
   label: string;
   value: string;
-  color: "blue" | "cyan" | "purple" | "green" | "amber";
+  color: "blue" | "cyan" | "purple" | "green" | "amber" | "orange";
 }) {
   const colorMap = {
     blue: "bg-blue-50 text-blue-600",
@@ -1185,6 +1191,7 @@ function KpiCard({
     purple: "bg-purple-50 text-purple-600",
     green: "bg-green-50 text-green-600",
     amber: "bg-amber-50 text-amber-600",
+    orange: "bg-orange-50 text-orange-600",
   };
 
   return (

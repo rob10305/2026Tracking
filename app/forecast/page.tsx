@@ -88,6 +88,7 @@ export default function BuildForecastListPage() {
     let totalUnits = 0;
     let grossRevenue = 0;
     let netRevenue = 0;
+    let oneTimeRevenue = 0;
     const activeProducts = new Set<string>();
 
     for (const [key, qty] of Object.entries(fc.quantities)) {
@@ -110,6 +111,7 @@ export default function BuildForecastListPage() {
             const result = calcFullRevenue(variantProduct, state.margins, variantQty);
             grossRevenue += result.gross_revenue;
             netRevenue += result.net_revenue;
+            oneTimeRevenue += result.gross_components.professional_services;
           }
         }
       } else {
@@ -121,11 +123,12 @@ export default function BuildForecastListPage() {
           const result = calcFullRevenue(p, state.margins, annualQty);
           grossRevenue += result.gross_revenue;
           netRevenue += result.net_revenue;
+          oneTimeRevenue += result.gross_components.professional_services;
         }
       }
     }
 
-    return { totalUnits, grossRevenue, netRevenue, activeProducts: activeProducts.size };
+    return { totalUnits, grossRevenue, netRevenue, oneTimeRevenue, activeProducts: activeProducts.size };
   };
 
   const formatDate = (iso: string) => {
@@ -315,7 +318,7 @@ export default function BuildForecastListPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-3 mb-4">
+                    <div className="grid grid-cols-5 gap-3 mb-4">
                       <div className="bg-gray-50 rounded-xl p-3 text-center">
                         <div className="flex items-center justify-center gap-1 text-gray-400 mb-1">
                           <DollarSign className="w-3 h-3" />
@@ -332,6 +335,15 @@ export default function BuildForecastListPage() {
                         </div>
                         <div className="font-semibold text-gray-900">
                           {stats.netRevenue > 0 ? fmt(stats.netRevenue) : "--"}
+                        </div>
+                      </div>
+                      <div className="bg-orange-50 rounded-xl p-3 text-center">
+                        <div className="flex items-center justify-center gap-1 text-orange-400 mb-1">
+                          <DollarSign className="w-3 h-3" />
+                          <span className="text-xs">One Time Revenue</span>
+                        </div>
+                        <div className="font-semibold text-gray-900">
+                          {stats.oneTimeRevenue > 0 ? fmt(stats.oneTimeRevenue) : "--"}
                         </div>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-3 text-center">
