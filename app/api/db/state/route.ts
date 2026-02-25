@@ -1,8 +1,88 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { AppState } from "@/lib/models/types";
+import { createSeedData } from "@/lib/store/seed";
+import { STANDARD_DELIVERABLES } from "@/lib/models/types";
+
+async function autoSeedIfEmpty() {
+  const count = await prisma.product.count();
+  if (count > 0) return;
+
+  const seed = createSeedData();
+
+  for (let i = 0; i < seed.products.length; i++) {
+    const p = seed.products[i];
+    await prisma.product.create({
+      data: {
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        generally_available: p.generally_available,
+        gross_annual_price: p.gross_annual_price,
+        platform_support_services_pct: p.platform_support_services_pct,
+        professional_services_pct: p.professional_services_pct,
+        software_resale_pct: p.software_resale_pct,
+        cloud_consumption_pct: p.cloud_consumption_pct,
+        pss_pct: p.pss_pct,
+        user_count: p.user_count,
+        has_variants: p.has_variants,
+        selected_variant: p.selected_variant ?? null,
+        variants: (p.variants ?? Prisma.JsonNull) as any,
+        status: p.status,
+        readiness: (p.readiness ?? Prisma.JsonNull) as any,
+        sort_order: i,
+      },
+    });
+  }
+
+  for (const [productId, motion] of Object.entries(seed.salesMotionByProductId)) {
+    await prisma.salesMotion.create({
+      data: { product_id: productId, ...motion },
+    });
+  }
+
+  const settingsEntries = [
+    { key: "margins", value: seed.margins },
+    { key: "industryAverages", value: seed.industryAverages },
+    { key: "itmHistoricalAverages", value: seed.itmHistoricalAverages },
+    { key: "pipelineContribution", value: seed.pipelineContribution },
+  ];
+  for (const s of settingsEntries) {
+    await prisma.appSettings.create({
+      data: { key: s.key, value: s.value as any },
+    });
+  }
+
+  const defaultOwners: Record<string, Record<string, string>> = {
+    "prod-mcp-server": { "Product Management sign-off": "Phi", "Technical readiness certification": "Phi", "Marketing launch plan": "Paul", "Sales enablement training": "Rob", "Demo environment ready": "Rob", "Customer support runbook": "Rob", "Reference architecture documentation": "Phi", "Pricing/packaging finalized": "Paul", "Partner enablement materials": "Rob", "Internal knowledge base updated": "Phi", "Go-to-market campaign": "Paul", "Success metrics defined": "Phi", "Customer advisory board briefing": "Rob", "Post-launch review scheduled": "Phi" },
+    "prod-ai-gateway": { "Product Management sign-off": "Phi", "Technical readiness certification": "Virgil", "Marketing launch plan": "Paul", "Sales enablement training": "Rob", "Demo environment ready": "Virgil", "Customer support runbook": "Rob", "Reference architecture documentation": "Virgil", "Pricing/packaging finalized": "Paul", "Partner enablement materials": "Rob", "Internal knowledge base updated": "Phi", "Go-to-market campaign": "Paul", "Success metrics defined": "Phi", "Customer advisory board briefing": "Rob", "Post-launch review scheduled": "Phi" },
+    "prod-mcp-hub": { "Product Management sign-off": "Phi", "Technical readiness certification": "Virgil", "Marketing launch plan": "Paul", "Sales enablement training": "Rob", "Demo environment ready": "Virgil", "Customer support runbook": "Rob", "Reference architecture documentation": "Virgil", "Pricing/packaging finalized": "Paul", "Partner enablement materials": "Rob", "Internal knowledge base updated": "Phi", "Go-to-market campaign": "Paul", "Success metrics defined": "Phi", "Customer advisory board briefing": "Rob", "Post-launch review scheduled": "Phi" },
+    "prod-managed-plane": { "Product Management sign-off": "Phi", "Technical readiness certification": "Phi", "Marketing launch plan": "Paul", "Sales enablement training": "Rob", "Demo environment ready": "Phi", "Customer support runbook": "Rob", "Reference architecture documentation": "Phi", "Pricing/packaging finalized": "Paul", "Partner enablement materials": "Rob", "Internal knowledge base updated": "Phi", "Go-to-market campaign": "Paul", "Success metrics defined": "Phi", "Customer advisory board briefing": "Rob", "Post-launch review scheduled": "Phi" },
+  };
+
+  for (const product of seed.products) {
+    const ownerMap = defaultOwners[product.id] ?? {};
+    for (let j = 0; j < STANDARD_DELIVERABLES.length; j++) {
+      const d = STANDARD_DELIVERABLES[j];
+      await prisma.launchRequirement.create({
+        data: {
+          product_id: product.id,
+          deliverable: d,
+          owner: ownerMap[d] ?? "",
+          criticalPath: "",
+          timeline: "",
+          content: "",
+          sort_order: j,
+        },
+      });
+    }
+  }
+}
 
 export async function GET() {
+  await autoSeedIfEmpty();
+
   const products = await prisma.product.findMany({ orderBy: { sort_order: "asc" } });
   const salesMotions = await prisma.salesMotion.findMany();
   const settings = await prisma.appSettings.findMany();
