@@ -34,10 +34,19 @@ __tests__/       - Vitest test files
 
 ## Key Configuration
 - **Port**: Frontend runs on port 5000 (0.0.0.0)
-- **Database**: PostgreSQL via DATABASE_URL environment variable
+- **Database**: PostgreSQL via DATABASE_URL environment variable (dev and production are SEPARATE databases)
 - **Dev Origins**: Configured to allow *.replit.dev origins
+- **12 Product IDs**: prod-mcp-server, prod-ai-gateway, prod-mcp-hub, prod-ai-insights, prod-managed-plane, prod-ai-services-ps, prod-developer-portal, prod-fastshift-migration, prod-o58uo345, prod-au7eawfw, prod-flrp41e5, prod-ncbjy80t
 
 ## Recent Changes
+- 2026-02-25: Dev/Production database sync
+  - Production DB had diverged from dev (different product IDs, updated data, new products)
+  - Synced all 12 products from production to dev (was 11, now includes Archera)
+  - Product IDs updated: prod-devops-forge→prod-o58uo345, prod-devops-ps→prod-au7eawfw, prod-ams-forge→prod-flrp41e5
+  - New product: prod-ncbjy80t "Archera (margins)" — S:$12K/M:$15K/L:$20K, 100% Software Resale
+  - Synced 3 saved forecasts: Mike's Forecast, 2026 - All Up (Agressive), Daoud's CS Forecast
+  - Updated seed.ts to match production data exactly
+  - Note: Dev and production have SEPARATE databases; manual sync needed when editing products in production UI
 - 2026-02-25: CFO View dashboard
   - New /cfo page with executive financial overview
   - Forecast selector dropdown to switch between saved forecasts
