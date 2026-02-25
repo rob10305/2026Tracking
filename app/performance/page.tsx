@@ -202,6 +202,7 @@ export default function PerformanceTrackerPage() {
       oppsNeeded: number;
       prospectsNeeded: number;
       pipelineMonth: string;
+      prospectingStart: string;
     }[] = [];
     for (const p of products) {
       const motion = activeMotion ?? state.salesMotionByProductId[p.id];
@@ -223,6 +224,7 @@ export default function PerformanceTrackerPage() {
           oppsNeeded: wb.opps_needed,
           prospectsNeeded: wb.prospects_needed,
           pipelineMonth: wb.pipeline_month,
+          prospectingStart: wb.prospecting_start_month,
         });
       }
     }
@@ -612,24 +614,28 @@ export default function PerformanceTrackerPage() {
                       <thead>
                         <tr className="border-b text-left text-gray-500">
                           <th className="px-4 py-2 font-medium">Product</th>
+                          <th className="px-4 py-2 font-medium">Fiscal Quarter</th>
                           <th className="px-4 py-2 font-medium">Close Month</th>
                           <th className="px-4 py-2 font-medium text-right">Deals</th>
                           <th className="px-4 py-2 font-medium text-right">Opps Needed</th>
                           <th className="px-4 py-2 font-medium text-right">Prospects Needed</th>
                           <th className="px-4 py-2 font-medium">Pipeline Month</th>
+                          <th className="px-4 py-2 font-medium">Prospecting Start</th>
                         </tr>
                       </thead>
                       <tbody>
                         {qRows.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="px-4 py-6 text-center text-gray-400">No data for {q}</td>
+                            <td colSpan={8} className="px-4 py-6 text-center text-gray-400">No data for {q}</td>
                           </tr>
                         ) : (
                           qRows.map((r, i) => {
                             const pipelineBefore = r.pipelineMonth < "2026-01";
+                            const prospectBefore = r.prospectingStart < "2026-01";
                             return (
                               <tr key={`${r.productName}-${r.closeMonth}`} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
                                 <td className="px-4 py-2 font-medium text-gray-800">{r.productName}</td>
+                                <td className="px-4 py-2 text-gray-600">{q}</td>
                                 <td className="px-4 py-2">{formatMonth(r.closeMonth)}</td>
                                 <td className="px-4 py-2 text-right">{r.dealsNeeded}</td>
                                 <td className="px-4 py-2 text-right">{r.oppsNeeded}</td>
@@ -637,6 +643,10 @@ export default function PerformanceTrackerPage() {
                                 <td className={`px-4 py-2 ${pipelineBefore ? "text-orange-600 italic" : ""}`}>
                                   {formatMonth(r.pipelineMonth)}
                                   {pipelineBefore && <span className="text-xs ml-1">(pre-FY)</span>}
+                                </td>
+                                <td className={`px-4 py-2 ${prospectBefore ? "text-orange-600 italic" : ""}`}>
+                                  {formatMonth(r.prospectingStart)}
+                                  {prospectBefore && <span className="text-xs ml-1">(pre-FY)</span>}
                                 </td>
                               </tr>
                             );
