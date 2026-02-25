@@ -6,10 +6,22 @@ import { createSeedData } from "@/lib/store/seed";
 import { STANDARD_DELIVERABLES } from "@/lib/models/types";
 
 async function autoSeedIfEmpty() {
-  const count = await prisma.product.count();
-  if (count > 0) return;
-
+  const existing = await prisma.product.findMany({ select: { id: true } });
   const seed = createSeedData();
+  const seedIds = new Set(seed.products.map((p) => p.id));
+  const hasAnySeedProduct = existing.some((p) => seedIds.has(p.id));
+
+  if (existing.length > 0 && hasAnySeedProduct) return;
+
+  if (existing.length > 0 && !hasAnySeedProduct) {
+    await prisma.launchRequirement.deleteMany();
+    await prisma.forecastEntry.deleteMany();
+    await prisma.salesMotion.deleteMany();
+    await prisma.savedForecastEntry.deleteMany();
+    await prisma.savedForecast.deleteMany();
+    await prisma.product.deleteMany();
+    await prisma.appSettings.deleteMany();
+  }
 
   for (let i = 0; i < seed.products.length; i++) {
     const p = seed.products[i];
