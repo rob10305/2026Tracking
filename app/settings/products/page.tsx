@@ -573,11 +573,10 @@ export default function ProductsPage() {
   const handleExportCSV = () => {
     const headers = [
       "Name",
+      "Variant",
       "Description",
       "Generally Available",
       "Status",
-      "Has Variants",
-      "Selected Variant",
       "Gross Annual Price",
       "Platform Support Services %",
       "Professional Services %",
@@ -586,24 +585,46 @@ export default function ProductsPage() {
       "PSS %",
       "User Count",
     ];
-    const rows = state.products.map((p) => {
-      const eff = getEffectivePricing(p);
-      return [
-        `"${p.name.replace(/"/g, '""')}"`,
-        `"${(p.description || "").replace(/"/g, '""')}"`,
-        `"${p.generally_available || ""}"`,
-        p.status === "in_development" ? "In Development" : "Live",
-        p.has_variants ? "Yes" : "No",
-        p.selected_variant ? VARIANT_LABELS[p.selected_variant] : "",
-        eff.gross_annual_price,
-        `${eff.platform_support_services_pct}%`,
-        `${eff.professional_services_pct}%`,
-        `${eff.software_resale_pct}%`,
-        `${eff.cloud_consumption_pct}%`,
-        `${eff.pss_pct}%`,
-        `"${eff.user_count || ""}"`,
-      ].join(",");
-    });
+    const rows: string[] = [];
+    const VARIANTS_LIST: ProductVariant[] = ["small", "medium", "large"];
+    for (const p of state.products) {
+      if (p.has_variants && p.variants) {
+        for (const v of VARIANTS_LIST) {
+          const vp = p.variants[v];
+          if (!vp) continue;
+          rows.push([
+            `"${p.name.replace(/"/g, '""')}"`,
+            VARIANT_LABELS[v],
+            `"${(p.description || "").replace(/"/g, '""')}"`,
+            `"${p.generally_available || ""}"`,
+            p.status === "in_development" ? "In Development" : "Live",
+            vp.gross_annual_price,
+            `${vp.platform_support_services_pct}%`,
+            `${vp.professional_services_pct}%`,
+            `${vp.software_resale_pct}%`,
+            `${vp.cloud_consumption_pct}%`,
+            `${vp.pss_pct}%`,
+            `"${vp.user_count || ""}"`,
+          ].join(","));
+        }
+      } else {
+        const eff = getEffectivePricing(p);
+        rows.push([
+          `"${p.name.replace(/"/g, '""')}"`,
+          "",
+          `"${(p.description || "").replace(/"/g, '""')}"`,
+          `"${p.generally_available || ""}"`,
+          p.status === "in_development" ? "In Development" : "Live",
+          eff.gross_annual_price,
+          `${eff.platform_support_services_pct}%`,
+          `${eff.professional_services_pct}%`,
+          `${eff.software_resale_pct}%`,
+          `${eff.cloud_consumption_pct}%`,
+          `${eff.pss_pct}%`,
+          `"${eff.user_count || ""}"`,
+        ].join(","));
+      }
+    }
     const csv = [headers.join(","), ...rows].join("\n");
     downloadCSV(csv, `products-export-${new Date().toISOString().slice(0, 10)}.csv`);
   };
