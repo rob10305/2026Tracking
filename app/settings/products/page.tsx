@@ -167,18 +167,26 @@ function ReadinessDisplay({ readiness }: { readiness: ProductReadiness }) {
 
 function ProductCard({
   product,
+  salesMotion,
+  industryAverages,
   onSave,
+  onSaveSalesMotion,
   onDelete,
   onClone,
   defaultExpanded,
 }: {
   product: Product;
+  salesMotion: SalesMotion;
+  industryAverages: SalesMotion;
   onSave: (p: Product) => void;
+  onSaveSalesMotion: (productId: string, s: SalesMotion) => void;
   onDelete: () => void;
   onClone: () => void;
   defaultExpanded?: boolean;
 }) {
   const [p, setP] = useState<Product>({ ...product });
+  const [sm, setSm] = useState<SalesMotion>({ ...salesMotion });
+  const [useIndustryAvg, setUseIndustryAvg] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   const [editing, setEditing] = useState(false);
@@ -232,6 +240,22 @@ function ProductCard({
     setDirty(true);
   };
 
+  const updateSm = (patch: Partial<SalesMotion>) => {
+    setSm((prev) => ({ ...prev, ...patch }));
+    setDirty(true);
+    setUseIndustryAvg(false);
+  };
+
+  const toggleIndustryAverages = () => {
+    if (!useIndustryAvg) {
+      setSm({ ...industryAverages });
+      setDirty(true);
+    } else {
+      setSm({ ...salesMotion });
+    }
+    setUseIndustryAvg(!useIndustryAvg);
+  };
+
   const save = () => {
     if (!validMix) return;
     const toSave = { ...p };
@@ -239,14 +263,18 @@ function ProductCard({
       delete toSave.readiness;
     }
     onSave(toSave);
+    onSaveSalesMotion(product.id, sm);
     setDirty(false);
     setEditing(false);
+    setUseIndustryAvg(false);
   };
 
   const cancel = () => {
     setP({ ...product });
+    setSm({ ...salesMotion });
     setDirty(false);
     setEditing(false);
+    setUseIndustryAvg(false);
   };
 
   const formatPrice = (v: number) =>
@@ -356,6 +384,16 @@ function ProductCard({
               <DetailRow label="Software Resale" value={`${effective.software_resale_pct}%`} />
               <DetailRow label="Cloud Consumption" value={`${effective.cloud_consumption_pct}%`} />
               <DetailRow label="PSS" value={`${effective.pss_pct}%`} />
+            </div>
+          </div>
+
+          <div>
+            <span className="text-sm font-medium text-gray-700 block mb-2">RevOps Performance Metrics</span>
+            <div className="grid grid-cols-4 gap-x-6 gap-y-2">
+              <DetailRow label="Sales Cycle" value={`${salesMotion.sales_cycle_months} mo`} />
+              <DetailRow label="Win Rate" value={`${salesMotion.opp_to_close_win_rate_pct}%`} />
+              <DetailRow label="Prospect to Closure" value={`${salesMotion.prospect_to_opp_rate_pct}%`} />
+              <DetailRow label="Lead Time to Close" value={`${salesMotion.prospecting_lead_time_months} mo`} />
             </div>
           </div>
 
@@ -539,6 +577,65 @@ function ProductCard({
               />
             </div>
           </div>
+
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-sm font-medium text-gray-700">
+                RevOps Performance Metrics
+              </span>
+              <label className="flex items-center gap-2 cursor-pointer select-none ml-auto">
+                <div
+                  role="switch"
+                  aria-checked={useIndustryAvg}
+                  tabIndex={0}
+                  onClick={toggleIndustryAverages}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleIndustryAverages(); } }}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    useIndustryAvg ? "bg-orange-500" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                      useIndustryAvg ? "translate-x-4" : "translate-x-0.5"
+                    }`}
+                  />
+                </div>
+                <span className="text-xs text-gray-500">Use Industry Averages</span>
+              </label>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <NumberInput
+                label="Sales Cycle"
+                value={sm.sales_cycle_months}
+                onChange={(v) => updateSm({ sales_cycle_months: Math.max(0, Math.round(v)) })}
+                suffix="mo"
+                min={0}
+              />
+              <NumberInput
+                label="Win Rate"
+                value={sm.opp_to_close_win_rate_pct}
+                onChange={(v) => updateSm({ opp_to_close_win_rate_pct: v })}
+                suffix="%"
+                min={0}
+                max={100}
+              />
+              <NumberInput
+                label="Prospect to Closure"
+                value={sm.prospect_to_opp_rate_pct}
+                onChange={(v) => updateSm({ prospect_to_opp_rate_pct: v })}
+                suffix="%"
+                min={0}
+                max={100}
+              />
+              <NumberInput
+                label="Lead Time to Close"
+                value={sm.prospecting_lead_time_months}
+                onChange={(v) => updateSm({ prospecting_lead_time_months: Math.max(0, Math.round(v)) })}
+                suffix="mo"
+                min={0}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -546,7 +643,7 @@ function ProductCard({
 }
 
 export default function ProductsPage() {
-  const { state, updateProduct, addProduct, deleteProduct } = useStore();
+  const { state, updateProduct, addProduct, deleteProduct, updateSalesMotion } = useStore();
   const [expandAll, setExpandAll] = useState(false);
 
   const handleAddProduct = () => {
@@ -680,7 +777,10 @@ export default function ProductsPage() {
           <ProductCard
             key={product.id + (expandAll ? "-expanded" : "-collapsed")}
             product={product}
+            salesMotion={state.salesMotionByProductId[product.id] ?? DEFAULT_SALES_MOTION}
+            industryAverages={state.industryAverages}
             onSave={updateProduct}
+            onSaveSalesMotion={updateSalesMotion}
             defaultExpanded={expandAll}
             onClone={() => handleCloneProduct(product)}
             onDelete={() => {

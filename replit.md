@@ -49,6 +49,15 @@ __tests__/       - Vitest test files
   - Product revenue ranking with % of total bars
   - Margin analysis cards (Gross, Net, One-Time, Recurring)
   - Navigation: CFO View added as first nav item
+- 2026-02-25: RevOps metrics merged into Products page
+  - Sales Cycle, Win Rate, Prospect to Closure, Lead Time to Close now shown under each product
+  - Editable in product edit mode with "Use Industry Averages" toggle
+  - Removed standalone RevOps Performance Metrics page (/settings/sales-motions)
+  - Settings page now shows 3 cards: Products, Margins, Opportunity Impact Factors
+- 2026-02-25: Settings password protection
+  - Settings pages require password "itmethods" to access
+  - Session-based unlock (persists until browser tab closed)
+  - Layout-level gate covers all /settings/* routes
 - 2026-02-25: Database backend migration
   - Migrated all app state from localStorage to PostgreSQL database
   - New Prisma schema: Product, SalesMotion, AppSettings, ForecastEntry, SavedForecast, SavedForecastEntry, LaunchRequirement
