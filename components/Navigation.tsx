@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { href: "/forecast", label: "Forecast Modelling" },
   { href: "/performance", label: "Performance Tracker" },
-  { href: "/workback", label: "Workback" },
+  { href: "/workback", label: "Launch Readiness" },
   { href: "/settings", label: "Critical Business Inputs" },
 ];
 

@@ -1,107 +1,76 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useStore } from "@/lib/store/context";
-import { useSavedForecasts } from "@/lib/store/saved-forecasts-context";
-import { MONTHS_2026, MONTH_LABELS, forecastKey, variantForecastKey } from "@/lib/models/types";
-import type { WorkbackRow, ProductVariant } from "@/lib/models/types";
-import { calcWorkbackRow, formatMonth } from "@/lib/calc/workback";
-import { ChevronDown } from "lucide-react";
+import type { LaunchRequirement } from "@/lib/models/types";
+import { STANDARD_DELIVERABLES } from "@/lib/models/types";
+import { ChevronDown, CheckCircle2, Circle, AlertCircle } from "lucide-react";
 
-const VARIANTS: ProductVariant[] = ["small", "medium", "large"];
+const CATEGORY_ORDER = [
+  { prefix: "Product", label: "Product", color: "bg-purple-50 text-purple-700 border-purple-200" },
+  { prefix: "Marketing", label: "Marketing", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { prefix: "Sales", label: "Sales", color: "bg-green-50 text-green-700 border-green-200" },
+  { prefix: "Delivery", label: "Delivery", color: "bg-orange-50 text-orange-700 border-orange-200" },
+  { prefix: "Support", label: "Support & Ops", color: "bg-gray-50 text-gray-700 border-gray-200" },
+];
 
-function monthToQuarter(m: string): string {
-  const month = parseInt(m.split("-")[1], 10);
-  if (month <= 3) return "Q1";
-  if (month <= 6) return "Q2";
-  if (month <= 9) return "Q3";
-  return "Q4";
+function getCategory(deliverable: string) {
+  for (const cat of CATEGORY_ORDER) {
+    if (deliverable.startsWith(cat.prefix)) return cat;
+  }
+  return CATEGORY_ORDER[0];
 }
 
-export default function WorkbackPage() {
-  const { state } = useStore();
-  const { forecasts, isLoaded: fcLoaded } = useSavedForecasts();
-  const [selectedForecastId, setSelectedForecastId] = useState<string>("default");
-  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(
-    new Set(state.products.map((p) => p.id))
+function completionCount(reqs: LaunchRequirement[]): { done: number; total: number } {
+  const total = reqs.length;
+  const done = reqs.filter((r) => r.criticalPath && r.timeline && r.content).length;
+  return { done, total };
+}
+
+export default function LaunchReadinessPage() {
+  const { state, updateLaunchRequirements, isLoaded } = useStore();
+  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  const [editingCell, setEditingCell] = useState<string | null>(null);
+
+  const toggleProduct = useCallback((id: string) => {
+    setExpandedProducts((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const expandAll = () => setExpandedProducts(new Set(state.products.map((p) => p.id)));
+  const collapseAll = () => setExpandedProducts(new Set());
+
+  const getReqs = useCallback(
+    (productId: string): LaunchRequirement[] => {
+      if (state.launchRequirements[productId]) {
+        return state.launchRequirements[productId];
+      }
+      return STANDARD_DELIVERABLES.map((d) => ({
+        deliverable: d,
+        owner: "",
+        criticalPath: "",
+        timeline: "",
+        content: "",
+      }));
+    },
+    [state.launchRequirements],
   );
-  const [expandedQuarters, setExpandedQuarters] = useState<Set<string>>(new Set(["Q1", "Q2", "Q3", "Q4"]));
 
-  const toggleQuarter = (q: string) => {
-    setExpandedQuarters((prev) => {
-      const next = new Set(prev);
-      if (next.has(q)) next.delete(q);
-      else next.add(q);
-      return next;
-    });
-  };
+  const updateField = useCallback(
+    (productId: string, deliverable: string, field: keyof LaunchRequirement, value: string) => {
+      const reqs = getReqs(productId).map((r) =>
+        r.deliverable === deliverable ? { ...r, [field]: value } : r,
+      );
+      updateLaunchRequirements(productId, reqs);
+    },
+    [getReqs, updateLaunchRequirements],
+  );
 
-  const toggleProduct = (id: string) => {
-    setSelectedProductIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
-  const selectAll = () => setSelectedProductIds(new Set(state.products.map((p) => p.id)));
-  const selectNone = () => setSelectedProductIds(new Set());
-
-  const quantities = useMemo(() => {
-    if (selectedForecastId === "default") {
-      return state.forecastByProductIdMonth;
-    }
-    const fc = forecasts.find((f) => f.id === selectedForecastId);
-    return fc?.quantities ?? {};
-  }, [selectedForecastId, state.forecastByProductIdMonth, forecasts]);
-
-  const rows = useMemo(() => {
-    const result: WorkbackRow[] = [];
-    for (const p of state.products) {
-      if (!selectedProductIds.has(p.id)) continue;
-      const motion = state.salesMotionByProductId[p.id];
-      if (!motion) continue;
-      for (const m of MONTHS_2026) {
-        let qty = 0;
-        if (p.has_variants) {
-          for (const v of VARIANTS) qty += quantities[variantForecastKey(p.id, v, m)] ?? 0;
-        } else {
-          qty = quantities[forecastKey(p.id, m)] ?? 0;
-        }
-        if (qty === 0) continue;
-        result.push(calcWorkbackRow(p.id, p.name, m, qty, motion));
-      }
-    }
-    return result;
-  }, [state.products, state.salesMotionByProductId, quantities, selectedProductIds]);
-
-  const groupedByQuarter = useMemo(() => {
-    const map = new Map<string, WorkbackRow[]>();
-    for (const q of ["Q1", "Q2", "Q3", "Q4"]) map.set(q, []);
-    for (const r of rows) {
-      const q = monthToQuarter(r.close_month);
-      map.get(q)!.push(r);
-    }
-    return map;
-  }, [rows]);
-
-  const quarterTotals = useMemo(() => {
-    const totals: Record<string, { deals: number; opps: number; prospects: number }> = {};
-    for (const [q, qRows] of groupedByQuarter) {
-      totals[q] = {
-        deals: qRows.reduce((s, r) => s + r.deals_needed, 0),
-        opps: qRows.reduce((s, r) => s + r.opps_needed, 0),
-        prospects: qRows.reduce((s, r) => s + r.prospects_needed, 0),
-      };
-    }
-    return totals;
-  }, [groupedByQuarter]);
-
-  if (!fcLoaded) {
+  if (!isLoaded) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-pulse flex flex-col items-center gap-3">
@@ -112,141 +81,186 @@ export default function WorkbackPage() {
     );
   }
 
+  const totalCompletion = state.products.reduce(
+    (acc, p) => {
+      const c = completionCount(getReqs(p.id));
+      return { done: acc.done + c.done, total: acc.total + c.total };
+    },
+    { done: 0, total: 0 },
+  );
+  const overallPct = totalCompletion.total > 0 ? Math.round((totalCompletion.done / totalCompletion.total) * 100) : 0;
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Workback Plan</h1>
+          <h1 className="text-2xl font-bold">Product Launch Readiness</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Pipeline requirements by fiscal quarter, product, and forecast model.
+            Track dependencies and deliverables required to launch each product.
           </p>
         </div>
-        <select
-          value={selectedForecastId}
-          onChange={(e) => setSelectedForecastId(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
-        >
-          <option value="default">Default Forecast</option>
-          {forecasts.map((fc) => (
-            <option key={fc.id} value={fc.id}>{fc.name}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-gray-700">Products</span>
-          <div className="flex gap-2">
-            <button onClick={selectAll} className="text-xs text-blue-600 hover:text-blue-800">Select All</button>
-            <span className="text-gray-300">|</span>
-            <button onClick={selectNone} className="text-xs text-blue-600 hover:text-blue-800">Clear All</button>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <div className="text-xs text-gray-500">Overall Completion</div>
+            <div className="text-lg font-bold text-gray-800">{overallPct}%</div>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {state.products.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => toggleProduct(p.id)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                selectedProductIds.has(p.id)
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-gray-500 border-gray-300 hover:border-gray-400"
-              }`}
-            >
-              {p.name}
-            </button>
-          ))}
+          <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${overallPct === 100 ? "bg-green-500" : overallPct > 50 ? "bg-blue-500" : "bg-amber-500"}`}
+              style={{ width: `${overallPct}%` }}
+            />
+          </div>
         </div>
       </div>
 
-      {selectedProductIds.size === 1 && (() => {
-        const pid = [...selectedProductIds][0];
-        const motion = state.salesMotionByProductId[pid];
-        if (!motion) return null;
-        return (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
-            <span className="font-semibold">Assumptions:</span>{" "}
-            Sales cycle {motion.sales_cycle_months}mo, win rate{" "}
-            {motion.opp_to_close_win_rate_pct}%, prospect→opp{" "}
-            {motion.prospect_to_opp_rate_pct}%, lead time to close{" "}
-            {motion.prospecting_lead_time_months}mo
-          </div>
-        );
-      })()}
+      <div className="flex gap-2">
+        <button onClick={expandAll} className="text-xs text-blue-600 hover:text-blue-800">Expand All</button>
+        <span className="text-gray-300">|</span>
+        <button onClick={collapseAll} className="text-xs text-blue-600 hover:text-blue-800">Collapse All</button>
+      </div>
 
-      {["Q1", "Q2", "Q3", "Q4"].map((q) => {
-        const qRows = groupedByQuarter.get(q) ?? [];
-        const totals = quarterTotals[q];
-        return (
-          <div key={q} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <button
-              onClick={() => toggleQuarter(q)}
-              className="w-full bg-gray-50 px-4 py-3 border-b flex items-center justify-between hover:bg-gray-100 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedQuarters.has(q) ? "rotate-0" : "-rotate-90"}`} />
-                <h3 className="font-semibold text-gray-800">{q} FY2026</h3>
-              </div>
-              {qRows.length > 0 && (
-                <div className="flex gap-4 text-xs text-gray-500">
-                  <span>Deals: <span className="font-semibold text-gray-700">{totals.deals.toLocaleString()}</span></span>
-                  <span>Opps: <span className="font-semibold text-gray-700">{totals.opps.toLocaleString()}</span></span>
-                  <span>Prospects: <span className="font-semibold text-gray-700">{totals.prospects.toLocaleString()}</span></span>
+      <div className="space-y-4">
+        {state.products.map((p) => {
+          const reqs = getReqs(p.id);
+          const { done, total } = completionCount(reqs);
+          const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+          const isExpanded = expandedProducts.has(p.id);
+
+          return (
+            <div key={p.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                onClick={() => toggleProduct(p.id)}
+                className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <ChevronDown
+                    className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                  />
+                  <div className="text-left">
+                    <h3 className="font-semibold text-gray-800">{p.name}</h3>
+                    <span className="text-xs text-gray-500">GA: {p.generally_available || "TBD"}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    {pct === 100 ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    ) : pct > 0 ? (
+                      <AlertCircle className="w-4 h-4 text-amber-500" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-gray-300" />
+                    )}
+                    <span className="text-sm text-gray-600">
+                      {done}/{total}
+                    </span>
+                  </div>
+                  <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${pct === 100 ? "bg-green-500" : pct > 50 ? "bg-blue-500" : "bg-amber-500"}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              </button>
+
+              {isExpanded && (
+                <div className="border-t border-gray-200">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 border-b text-left text-gray-500">
+                        <th className="px-4 py-2.5 font-medium w-[280px]">Dependencies / Deliverables</th>
+                        <th className="px-4 py-2.5 font-medium w-[100px]">Owner</th>
+                        <th className="px-4 py-2.5 font-medium">Critical Path to $$</th>
+                        <th className="px-4 py-2.5 font-medium">Timeline</th>
+                        <th className="px-4 py-2.5 font-medium">Content</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reqs.map((r, i) => {
+                        const cat = getCategory(r.deliverable);
+                        const cellKey = (field: string) => `${p.id}::${r.deliverable}::${field}`;
+                        const isComplete = r.criticalPath && r.timeline && r.content;
+
+                        return (
+                          <tr
+                            key={r.deliverable}
+                            className={`border-b border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-gray-50/30"}`}
+                          >
+                            <td className="px-4 py-2.5">
+                              <div className="flex items-center gap-2">
+                                {isComplete ? (
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                                ) : (
+                                  <Circle className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
+                                )}
+                                <span className="text-gray-800">{r.deliverable}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              {editingCell === cellKey("owner") ? (
+                                <input
+                                  autoFocus
+                                  className="w-full border border-blue-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                  defaultValue={r.owner}
+                                  onBlur={(e) => {
+                                    updateField(p.id, r.deliverable, "owner", e.target.value);
+                                    setEditingCell(null);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                    if (e.key === "Escape") setEditingCell(null);
+                                  }}
+                                />
+                              ) : (
+                                <span
+                                  onClick={() => setEditingCell(cellKey("owner"))}
+                                  className={`cursor-pointer inline-block px-2 py-0.5 rounded text-xs font-medium border ${
+                                    r.owner ? cat.color : "bg-gray-100 text-gray-400 border-gray-200"
+                                  }`}
+                                >
+                                  {r.owner || "—"}
+                                </span>
+                              )}
+                            </td>
+                            {(["criticalPath", "timeline", "content"] as const).map((field) => (
+                              <td key={field} className="px-4 py-2.5">
+                                {editingCell === cellKey(field) ? (
+                                  <input
+                                    autoFocus
+                                    className="w-full border border-blue-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                    defaultValue={r[field]}
+                                    onBlur={(e) => {
+                                      updateField(p.id, r.deliverable, field, e.target.value);
+                                      setEditingCell(null);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                      if (e.key === "Escape") setEditingCell(null);
+                                    }}
+                                  />
+                                ) : (
+                                  <span
+                                    onClick={() => setEditingCell(cellKey(field))}
+                                    className={`cursor-pointer block min-h-[24px] px-2 py-0.5 rounded text-sm hover:bg-blue-50 transition-colors ${
+                                      r[field] ? "text-gray-700" : "text-gray-300 italic"
+                                    }`}
+                                  >
+                                    {r[field] || "Click to edit"}
+                                  </span>
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
-            </button>
-            {expandedQuarters.has(q) && <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-gray-500">
-                  <th className="px-4 py-2 font-medium">Product</th>
-                  <th className="px-4 py-2 font-medium">Fiscal Quarter</th>
-                  <th className="px-4 py-2 font-medium">Close Month</th>
-                  <th className="px-4 py-2 font-medium text-right">Deals</th>
-                  <th className="px-4 py-2 font-medium text-right">Opps Needed</th>
-                  <th className="px-4 py-2 font-medium text-right">Prospects Needed</th>
-                  <th className="px-4 py-2 font-medium">Pipeline Month</th>
-                  <th className="px-4 py-2 font-medium">Prospecting Start</th>
-                </tr>
-              </thead>
-              <tbody>
-                {qRows.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
-                      No data for {q}
-                    </td>
-                  </tr>
-                ) : (
-                  qRows.map((r, i) => {
-                    const pipelineBefore2026 = r.pipeline_month < "2026-01";
-                    const prospectBefore2026 = r.prospecting_start_month < "2026-01";
-                    return (
-                      <tr
-                        key={`${r.product_id}-${r.close_month}`}
-                        className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
-                      >
-                        <td className="px-4 py-2 font-medium text-gray-800">{r.product_name}</td>
-                        <td className="px-4 py-2">{q}</td>
-                        <td className="px-4 py-2">{formatMonth(r.close_month)}</td>
-                        <td className="px-4 py-2 text-right">{r.deals_needed}</td>
-                        <td className="px-4 py-2 text-right">{r.opps_needed}</td>
-                        <td className="px-4 py-2 text-right">{r.prospects_needed}</td>
-                        <td className={`px-4 py-2 ${pipelineBefore2026 ? "text-orange-600 italic" : ""}`}>
-                          {formatMonth(r.pipeline_month)}
-                          {pipelineBefore2026 && <span className="text-xs ml-1">(pre-FY)</span>}
-                        </td>
-                        <td className={`px-4 py-2 ${prospectBefore2026 ? "text-orange-600 italic" : ""}`}>
-                          {formatMonth(r.prospecting_start_month)}
-                          {prospectBefore2026 && <span className="text-xs ml-1">(pre-FY)</span>}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>}
-          </div>
-        );
-      })}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

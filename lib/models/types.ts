@@ -70,6 +70,31 @@ export interface PipelineContribution {
 /** Map of "productId::YYYY-MM" → quantity */
 export type ForecastMap = Record<string, number>;
 
+export interface LaunchRequirement {
+  deliverable: string;
+  owner: string;
+  criticalPath: string;
+  timeline: string;
+  content: string;
+}
+
+export const STANDARD_DELIVERABLES = [
+  "Product Descriptions",
+  "Product Pricing",
+  "Product/Beta/MVP/GA",
+  "Marketing - ICP",
+  "Marketing - Customer Content",
+  "Marketing - Website",
+  "Marketing - Digital Campaigns",
+  "Marketing - Event Strategy",
+  "Sales - Pipeline Building",
+  "Sales - Beta Customers",
+  "Sales - Closed Deals",
+  "Delivery - Technical Readiness",
+  "Delivery - Onboarded Customers",
+  "Support and Ops - Customer Onboarding",
+] as const;
+
 export interface AppState {
   products: Product[];
   margins: Margins;
@@ -78,6 +103,7 @@ export interface AppState {
   pipelineContribution: PipelineContribution;
   salesMotionByProductId: Record<string, SalesMotion>;
   forecastByProductIdMonth: ForecastMap;
+  launchRequirements: Record<string, LaunchRequirement[]>;
 }
 
 // ── Saved Forecast types ──

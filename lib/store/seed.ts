@@ -1,4 +1,5 @@
-import type { AppState, Margins, PipelineContribution, VariantPricing } from "@/lib/models/types";
+import type { AppState, Margins, PipelineContribution, VariantPricing, LaunchRequirement } from "@/lib/models/types";
+import { STANDARD_DELIVERABLES } from "@/lib/models/types";
 
 function makeVariants(
   s: VariantPricing,
@@ -267,6 +268,52 @@ export function createSeedData(): AppState {
 
   const forecastByProductIdMonth: AppState["forecastByProductIdMonth"] = {};
 
+  const defaultOwners: Record<string, string> = {
+    "Product Descriptions": "Phi",
+    "Product Pricing": "Phi",
+    "Product/Beta/MVP/GA": "Phi",
+    "Marketing - ICP": "Paul",
+    "Marketing - Customer Content": "Paul",
+    "Marketing - Website": "Paul",
+    "Marketing - Digital Campaigns": "Paul",
+    "Marketing - Event Strategy": "Paul",
+    "Sales - Pipeline Building": "Rob",
+    "Sales - Beta Customers": "Rob",
+    "Sales - Closed Deals": "Rob",
+    "Delivery - Technical Readiness": "Phi",
+    "Delivery - Onboarded Customers": "Phi",
+    "Support and Ops - Customer Onboarding": "Rob",
+  };
+
+  const productOwnerOverrides: Record<string, Record<string, string>> = {
+    "prod-managed-plane": {
+      "Product Descriptions": "Paul",
+      "Product Pricing": "Paul",
+    },
+    "prod-mcp-hub": {
+      "Delivery - Technical Readiness": "Virgil",
+    },
+    "prod-ai-gateway": {
+      "Delivery - Technical Readiness": "Virgil",
+    },
+  };
+
+  function buildLaunchReqs(productId: string): LaunchRequirement[] {
+    const overrides = productOwnerOverrides[productId] ?? {};
+    return STANDARD_DELIVERABLES.map((d) => ({
+      deliverable: d,
+      owner: overrides[d] ?? defaultOwners[d] ?? "",
+      criticalPath: "",
+      timeline: "",
+      content: "",
+    }));
+  }
+
+  const launchRequirements: Record<string, LaunchRequirement[]> = {};
+  for (const p of products) {
+    launchRequirements[p.id] = buildLaunchReqs(p.id);
+  }
+
   return {
     products,
     margins,
@@ -275,5 +322,6 @@ export function createSeedData(): AppState {
     pipelineContribution,
     salesMotionByProductId,
     forecastByProductIdMonth,
+    launchRequirements,
   };
 }

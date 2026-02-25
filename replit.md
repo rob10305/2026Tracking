@@ -19,7 +19,7 @@ app/             - Next.js app router pages and API routes
   forecasts/     - Forecast list and creation pages
   settings/      - Settings page
   summary/       - Summary/dashboard page
-  workback/      - Workback schedule page
+  workback/      - Product Launch Readiness page
 components/      - React components (forms, grids, charts, navigation)
 lib/             - Core logic
   calc/          - Calculation engine (revenue, scenarios, time periods, CSV)
@@ -36,6 +36,16 @@ __tests__/       - Vitest test files
 - **Dev Origins**: Configured to allow *.replit.dev origins
 
 ## Recent Changes
+- 2026-02-25: Product Launch Readiness page
+  - Replaced Workback page with Product Launch Readiness tracker
+  - Each product has 14 standard deliverables (Product, Marketing, Sales, Delivery, Support categories)
+  - Columns: Dependencies/Deliverables, Owner, Critical Path to $$, Timeline, Content
+  - All fields inline-editable (click to edit, Enter to save, Escape to cancel)
+  - Progress tracking per product (done/total) and overall completion percentage
+  - Expand/Collapse All controls, per-product expand/collapse with chevron
+  - LaunchRequirement type added to AppState, persisted in localStorage
+  - Default owners seeded per product (Paul, Phi, Rob, Virgil based on chart)
+  - Navigation renamed from "Workback" to "Launch Readiness"
 - 2026-02-24: Variant-level forecast builder
   - Expandable product rows in forecast builder showing S/M/L variant sub-rows
   - Each variant has individual quantity inputs per month

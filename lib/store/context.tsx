@@ -15,8 +15,9 @@ import type {
   SalesMotion,
   PipelineContribution,
   ForecastMap,
+  LaunchRequirement,
 } from "@/lib/models/types";
-import { forecastKey } from "@/lib/models/types";
+import { forecastKey, STANDARD_DELIVERABLES } from "@/lib/models/types";
 import { saveState, loadState, clearState } from "./persistence";
 import { createSeedData } from "./seed";
 
@@ -39,6 +40,8 @@ interface AppStore {
   // Forecast
   setForecastQty: (productId: string, month: string, qty: number) => void;
   setForecastBulk: (entries: { productId: string; month: string; qty: number }[]) => void;
+  // Launch Requirements
+  updateLaunchRequirements: (productId: string, reqs: LaunchRequirement[]) => void;
   // State management
   resetToSeed: () => void;
   importState: (s: AppState) => void;
@@ -99,6 +102,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       for (const p of saved.products) {
         if (!p.status) {
           p.status = "live";
+        }
+      }
+      if (!saved.launchRequirements) {
+        saved.launchRequirements = {};
+      }
+      for (const p of saved.products) {
+        if (!saved.launchRequirements[p.id]) {
+          saved.launchRequirements[p.id] = STANDARD_DELIVERABLES.map((d) => ({
+            deliverable: d,
+            owner: "",
+            criticalPath: "",
+            timeline: "",
+            content: "",
+          }));
         }
       }
       const needsMigration = saved.products.some((p: any) =>
@@ -254,6 +271,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [update],
   );
 
+  const updateLaunchRequirements = useCallback(
+    (productId: string, reqs: LaunchRequirement[]) => {
+      update((prev) => ({
+        ...prev,
+        launchRequirements: {
+          ...prev.launchRequirements,
+          [productId]: reqs,
+        },
+      }));
+    },
+    [update],
+  );
+
   const resetToSeed = useCallback(() => {
     clearState();
     const seed = createSeedData();
@@ -279,6 +309,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         updateSalesMotion,
         setForecastQty,
         setForecastBulk,
+        updateLaunchRequirements,
         resetToSeed,
         importState,
         isLoaded,
