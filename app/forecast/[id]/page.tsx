@@ -566,7 +566,7 @@ export default function ForecastDetailPage() {
         />
         <KpiCard
           icon={<DollarSign className="w-5 h-5" />}
-          label="One Time Revenue"
+          label="One Time Revenue (Gross)"
           value={hasData ? fmtCompact(annualTotals.ps) : "--"}
           color="orange"
         />

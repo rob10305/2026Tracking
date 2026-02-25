@@ -340,7 +340,7 @@ export default function BuildForecastListPage() {
                       <div className="bg-orange-50 rounded-xl p-3 text-center">
                         <div className="flex items-center justify-center gap-1 text-orange-400 mb-1">
                           <DollarSign className="w-3 h-3" />
-                          <span className="text-xs">One Time Revenue</span>
+                          <span className="text-xs">One Time Revenue (Gross)</span>
                         </div>
                         <div className="font-semibold text-gray-900">
                           {stats.oneTimeRevenue > 0 ? fmt(stats.oneTimeRevenue) : "--"}
