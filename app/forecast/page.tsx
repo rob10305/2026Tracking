@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useSavedForecasts } from "@/lib/store/saved-forecasts-context";
 import { useStore } from "@/lib/store/context";
 import { calcFullRevenue } from "@/lib/calc/revenue";
-import { forecastKey, MONTHS_2026 } from "@/lib/models/types";
-import type { SavedForecast } from "@/lib/models/types";
+import { forecastKey, variantForecastKey, MONTHS_2026 } from "@/lib/models/types";
+import type { SavedForecast, ProductVariant } from "@/lib/models/types";
 import {
   Plus,
   BarChart3,
@@ -82,6 +82,8 @@ export default function BuildForecastListPage() {
     setMenuOpenId(null);
   };
 
+  const VARIANTS: ProductVariant[] = ["small", "medium", "large"];
+
   const getForecastStats = (fc: SavedForecast) => {
     let totalUnits = 0;
     let totalRevenue = 0;
@@ -96,13 +98,27 @@ export default function BuildForecastListPage() {
     }
 
     for (const p of state.products) {
-      let annualQty = 0;
-      for (const m of MONTHS_2026) {
-        annualQty += fc.quantities[forecastKey(p.id, m)] ?? 0;
-      }
-      if (annualQty > 0) {
-        const result = calcFullRevenue(p, state.margins, annualQty);
-        totalRevenue += result.net_revenue;
+      if (p.has_variants && p.variants) {
+        for (const v of VARIANTS) {
+          let variantQty = 0;
+          for (const m of MONTHS_2026) {
+            variantQty += fc.quantities[variantForecastKey(p.id, v, m)] ?? 0;
+          }
+          if (variantQty > 0) {
+            const variantProduct = { ...p, selected_variant: v };
+            const result = calcFullRevenue(variantProduct, state.margins, variantQty);
+            totalRevenue += result.net_revenue;
+          }
+        }
+      } else {
+        let annualQty = 0;
+        for (const m of MONTHS_2026) {
+          annualQty += fc.quantities[forecastKey(p.id, m)] ?? 0;
+        }
+        if (annualQty > 0) {
+          const result = calcFullRevenue(p, state.margins, annualQty);
+          totalRevenue += result.net_revenue;
+        }
       }
     }
 
@@ -124,7 +140,13 @@ export default function BuildForecastListPage() {
     for (const m of MONTHS_2026) {
       let monthTotal = 0;
       for (const p of state.products) {
-        monthTotal += fc.quantities[forecastKey(p.id, m)] ?? 0;
+        if (p.has_variants && p.variants) {
+          for (const v of VARIANTS) {
+            monthTotal += fc.quantities[variantForecastKey(p.id, v, m)] ?? 0;
+          }
+        } else {
+          monthTotal += fc.quantities[forecastKey(p.id, m)] ?? 0;
+        }
       }
       values.push(monthTotal);
     }
