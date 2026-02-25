@@ -22,6 +22,7 @@ import {
   calcPipelineMonth,
   calcProspectingStartMonth,
 } from "@/lib/calc/workback";
+import { calcFullRevenue } from "@/lib/calc/revenue";
 import {
   ChevronDown,
   ChevronRight,
@@ -38,6 +39,7 @@ import {
   Rocket,
   TrendingUp,
   Filter,
+  AlertTriangle,
 } from "lucide-react";
 
 const VARIANTS: ProductVariant[] = ["small", "medium", "large"];
@@ -94,11 +96,23 @@ function getDealsForMonth(
   return deals;
 }
 
+const CRITICAL_DEPENDENCIES = [
+  { deliverable: "Product/Beta/MVP/GA", label: "Product Launched", category: "Product" },
+  { deliverable: "Product Pricing", label: "Pricing Defined", category: "Product" },
+  { deliverable: "Marketing - ICP", label: "ICP Defined", category: "Marketing" },
+  { deliverable: "Marketing - Customer Content", label: "Customer Content", category: "Marketing" },
+  { deliverable: "Marketing - Digital Campaigns", label: "Campaigns Live", category: "Marketing" },
+  { deliverable: "Marketing - Website", label: "Website Ready", category: "Marketing" },
+  { deliverable: "Sales - Pipeline Building", label: "Pipeline Building", category: "Sales" },
+  { deliverable: "Delivery - Technical Readiness", label: "Tech Ready", category: "Delivery" },
+];
+
 interface ProductGTMData {
   product: Product;
   motion: SalesMotion;
   gaMonthIndex: number;
   totalDeals: number;
+  totalGrossRevenue: number;
   monthlyBreakdown: {
     month: string;
     monthIndex: number;
@@ -169,6 +183,27 @@ export default function GTMPage() {
           }
         }
 
+        let totalGrossRevenue = 0;
+        for (let mi = 0; mi < 12; mi++) {
+          const month = MONTHS_2026[mi];
+          if (product.has_variants && product.variants) {
+            for (const v of VARIANTS) {
+              const qty = quantities[variantForecastKey(product.id, v, month)] || 0;
+              if (qty > 0) {
+                const variantProduct = { ...product, selected_variant: v };
+                const result = calcFullRevenue(variantProduct, state.margins, qty);
+                totalGrossRevenue += result.gross_revenue;
+              }
+            }
+          } else {
+            const qty = quantities[forecastKey(product.id, month)] || 0;
+            if (qty > 0) {
+              const result = calcFullRevenue(product, state.margins, qty);
+              totalGrossRevenue += result.gross_revenue;
+            }
+          }
+        }
+
         const reqs = state.launchRequirements?.[product.id] || [];
         const readinessComplete = reqs.filter(isDeliverableComplete).length;
 
@@ -177,6 +212,7 @@ export default function GTMPage() {
           motion,
           gaMonthIndex: gaIdx,
           totalDeals,
+          totalGrossRevenue,
           monthlyBreakdown,
           readiness: reqs,
           readinessComplete: readinessComplete,
@@ -283,6 +319,8 @@ export default function GTMPage() {
           color="purple"
         />
       </div>
+
+      <RevenueAtRisk data={gtmData} />
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Product GTM Workback</h2>
@@ -666,6 +704,158 @@ function TimelineView({ data }: { data: ProductGTMData }) {
             <div className="w-2 h-4 bg-red-500" /> GA
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function fmtCurrency(n: number): string {
+  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(n) >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
+  return `$${n.toFixed(0)}`;
+}
+
+function RevenueAtRisk({ data }: { data: ProductGTMData[] }) {
+  const productsWithRevenue = data.filter((d) => d.totalGrossRevenue > 0);
+  const totalForecastedRevenue = productsWithRevenue.reduce((s, d) => s + d.totalGrossRevenue, 0);
+
+  const rows = productsWithRevenue.map((d) => {
+    const missingDeps: { label: string; category: string }[] = [];
+    for (const dep of CRITICAL_DEPENDENCIES) {
+      const req = d.readiness.find((r) => r.deliverable === dep.deliverable);
+      if (!req || !isDeliverableComplete(req)) {
+        missingDeps.push({ label: dep.label, category: dep.category });
+      }
+    }
+    const isAtRisk = missingDeps.length > 0;
+    return { ...d, missingDeps, isAtRisk };
+  });
+
+  const totalAtRisk = rows.filter((r) => r.isAtRisk).reduce((s, r) => s + r.totalGrossRevenue, 0);
+  const totalClear = totalForecastedRevenue - totalAtRisk;
+  const atRiskPct = totalForecastedRevenue > 0 ? (totalAtRisk / totalForecastedRevenue) * 100 : 0;
+
+  if (productsWithRevenue.length === 0) return null;
+
+  const categoryColors: Record<string, string> = {
+    Product: "bg-blue-100 text-blue-700",
+    Marketing: "bg-purple-100 text-purple-700",
+    Sales: "bg-green-100 text-green-700",
+    Delivery: "bg-amber-100 text-amber-700",
+  };
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            <h2 className="text-lg font-semibold text-gray-900">Revenue at Risk</h2>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span className="text-gray-600">Clear: <span className="font-semibold text-green-700">{fmtCurrency(totalClear)}</span></span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <span className="text-gray-600">At Risk: <span className="font-semibold text-red-700">{fmtCurrency(totalAtRisk)}</span></span>
+            </div>
+            <span className="text-gray-400">|</span>
+            <span className="text-gray-600">Total: <span className="font-semibold">{fmtCurrency(totalForecastedRevenue)}</span></span>
+          </div>
+        </div>
+        <div className="mt-3 w-full h-2.5 bg-gray-100 rounded-full overflow-hidden flex">
+          {totalForecastedRevenue > 0 && (
+            <>
+              <div
+                className="h-full bg-green-500 transition-all"
+                style={{ width: `${100 - atRiskPct}%` }}
+              />
+              <div
+                className="h-full bg-red-400 transition-all"
+                style={{ width: `${atRiskPct}%` }}
+              />
+            </>
+          )}
+        </div>
+        <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <span>{(100 - atRiskPct).toFixed(0)}% ready</span>
+          <span>{atRiskPct.toFixed(0)}% at risk</span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="text-left px-5 py-2.5 font-medium text-gray-500">Product</th>
+              <th className="text-left px-3 py-2.5 font-medium text-gray-500">GA</th>
+              <th className="text-right px-3 py-2.5 font-medium text-gray-500">Deals</th>
+              <th className="text-right px-3 py-2.5 font-medium text-gray-500">Gross Revenue</th>
+              <th className="text-center px-3 py-2.5 font-medium text-gray-500">Status</th>
+              <th className="text-left px-3 py-2.5 font-medium text-gray-500">Missing Dependencies</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows
+              .sort((a, b) => b.totalGrossRevenue - a.totalGrossRevenue)
+              .map((row) => (
+                <tr
+                  key={row.product.id}
+                  className={`border-b border-gray-100 ${row.isAtRisk ? "bg-red-50/40" : ""}`}
+                >
+                  <td className="px-5 py-3 font-medium text-gray-900">{row.product.name}</td>
+                  <td className="px-3 py-3 text-gray-600">{row.product.generally_available}</td>
+                  <td className="px-3 py-3 text-right text-gray-900">{row.totalDeals}</td>
+                  <td className="px-3 py-3 text-right">
+                    <span className={`font-semibold ${row.isAtRisk ? "text-red-700" : "text-green-700"}`}>
+                      {fmtCurrency(row.totalGrossRevenue)}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {row.isAtRisk ? (
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                        <AlertTriangle className="w-3 h-3" /> At Risk
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                        <CheckCircle2 className="w-3 h-3" /> Ready
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3">
+                    {row.missingDeps.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {row.missingDeps.map((dep) => (
+                          <span
+                            key={dep.label}
+                            className={`text-xs px-1.5 py-0.5 rounded ${categoryColors[dep.category] || "bg-gray-100 text-gray-600"}`}
+                          >
+                            {dep.label}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">All dependencies met</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+          <tfoot>
+            <tr className="bg-gray-50 font-semibold">
+              <td className="px-5 py-2.5 text-gray-700">Total</td>
+              <td className="px-3 py-2.5"></td>
+              <td className="px-3 py-2.5 text-right text-gray-700">
+                {productsWithRevenue.reduce((s, d) => s + d.totalDeals, 0)}
+              </td>
+              <td className="px-3 py-2.5 text-right text-gray-700">{fmtCurrency(totalForecastedRevenue)}</td>
+              <td className="px-3 py-2.5"></td>
+              <td className="px-3 py-2.5"></td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
   );
