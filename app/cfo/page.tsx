@@ -382,7 +382,7 @@ export default function CFOViewPage() {
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} tickFormatter={(v: number) => fmtCompact(v)} />
               <Tooltip
-                formatter={(value: number) => fmt(value)}
+                formatter={(value: any) => fmt(Number(value) || 0)}
                 contentStyle={{ fontSize: 13 }}
               />
               <Area type="monotone" dataKey="Gross Revenue" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.15} strokeWidth={2} />
@@ -404,15 +404,15 @@ export default function CFOViewPage() {
                 outerRadius={90}
                 innerRadius={50}
                 paddingAngle={3}
-                label={({ name, percent }: { name: string; percent: number }) =>
-                  `${name.split(" ")[0]} ${(percent * 100).toFixed(0)}%`
+                label={({ name, percent }: Record<string, any>) =>
+                  `${(name ?? "").split(" ")[0]} ${((percent ?? 0) * 100).toFixed(0)}%`
                 }
               >
                 {revenueByCategory.map((entry, i) => (
                   <Cell key={i} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: number) => fmt(value)} />
+              <Tooltip formatter={(value: any) => fmt(Number(value) || 0)} />
             </PieChart>
           </ResponsiveContainer>
           <div className="space-y-2 mt-2">
@@ -437,7 +437,7 @@ export default function CFOViewPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} tickFormatter={(v: number) => fmtCompact(v)} />
-              <Tooltip formatter={(value: number) => fmt(value)} contentStyle={{ fontSize: 13 }} />
+              <Tooltip formatter={(value: any) => fmt(Number(value) || 0)} contentStyle={{ fontSize: 13 }} />
               <Legend />
               <Bar dataKey="One-Time" stackId="a" fill={CATEGORY_COLORS.oneTime} radius={[0, 0, 0, 0]} />
               <Bar dataKey="Recurring" stackId="a" fill={CATEGORY_COLORS.recurring} />
@@ -499,15 +499,15 @@ export default function CFOViewPage() {
                 outerRadius={90}
                 innerRadius={50}
                 paddingAngle={3}
-                label={({ name, percent }: { name: string; percent: number }) =>
-                  `${name} ${(percent * 100).toFixed(0)}%`
+                label={({ name, percent }: Record<string, any>) =>
+                  `${name ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`
                 }
               >
                 {componentPieData.map((entry, i) => (
                   <Cell key={i} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: number) => fmt(value)} />
+              <Tooltip formatter={(value: any) => fmt(Number(value) || 0)} />
             </PieChart>
           </ResponsiveContainer>
         </div>
