@@ -100,6 +100,8 @@ export default function SettingsPage() {
         ))}
       </div>
 
+      <SyncFromProduction />
+
       <div className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
         <h2 className="font-semibold text-base">Import / Export</h2>
         <div className="flex flex-wrap gap-2">
@@ -151,6 +153,70 @@ export default function SettingsPage() {
           Reset to Seed Data
         </button>
       </div>
+    </div>
+  );
+}
+
+function SyncFromProduction() {
+  const [url, setUrl] = React.useState("");
+  const [status, setStatus] = React.useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = React.useState("");
+
+  const handleSync = async () => {
+    if (!url.trim()) return;
+    setStatus("loading");
+    setMessage("");
+    try {
+      const sourceUrl = url.replace(/\/$/, "");
+      const resp = await fetch(`${sourceUrl}/api/db/saved-forecasts`);
+      if (!resp.ok) throw new Error(`Source returned ${resp.status}`);
+      const forecasts = await resp.json();
+
+      const syncResp = await fetch("/api/db/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forecasts }),
+      });
+      if (!syncResp.ok) {
+        const err = await syncResp.json();
+        throw new Error(err.error || "Sync failed");
+      }
+      const result = await syncResp.json();
+      setStatus("success");
+      setMessage(`Synced ${result.synced} forecast(s). Reload the page to see changes.`);
+    } catch (err: any) {
+      setStatus("error");
+      setMessage(err.message);
+    }
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-5 space-y-3">
+      <h2 className="font-semibold text-base">Sync Forecasts from Production</h2>
+      <p className="text-sm text-gray-500">
+        Pull saved forecast data (including quantities) from your production deployment into this environment.
+      </p>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://your-app.replit.app"
+          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          onClick={handleSync}
+          disabled={status === "loading" || !url.trim()}
+          className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        >
+          {status === "loading" ? "Syncing..." : "Sync"}
+        </button>
+      </div>
+      {message && (
+        <p className={`text-sm ${status === "error" ? "text-red-600" : "text-green-600"}`}>
+          {message}
+        </p>
+      )}
     </div>
   );
 }
