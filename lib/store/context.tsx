@@ -45,12 +45,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetch("/api/db/state")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`API returned ${r.status}`);
+        return r.json();
+      })
       .then((data: AppState) => {
-        setState(data);
+        if (data && Array.isArray(data.products) && data.products.length > 0) {
+          setState(data);
+        }
         setIsLoaded(true);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to load state from API:", err);
         setIsLoaded(true);
       });
   }, []);

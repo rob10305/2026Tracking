@@ -81,6 +81,7 @@ async function autoSeedIfEmpty() {
 }
 
 export async function GET() {
+  try {
   await autoSeedIfEmpty();
 
   const products = await prisma.product.findMany({ orderBy: { sort_order: "asc" } });
@@ -174,4 +175,8 @@ export async function GET() {
   };
 
   return NextResponse.json(state);
+  } catch (error: any) {
+    console.error("GET /api/db/state error:", error);
+    return NextResponse.json({ error: error.message, products: [] }, { status: 500 });
+  }
 }
