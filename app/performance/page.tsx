@@ -11,7 +11,7 @@ import {
   type ProductVariant,
 } from "@/lib/models/types";
 import { calcFullRevenue } from "@/lib/calc/revenue";
-import { calcWorkbackRow } from "@/lib/calc/workback";
+import { calcWorkbackRow, formatMonth } from "@/lib/calc/workback";
 import {
   BarChart,
   Bar,
@@ -103,6 +103,16 @@ export default function PerformanceTrackerPage() {
   const [selectedForecastId, setSelectedForecastId] = useState<string>("default");
   const [averageSource, setAverageSource] = useState<AverageSource>("product");
   const [healthOpen, setHealthOpen] = useState(true);
+  const [expandedPipelineQtrs, setExpandedPipelineQtrs] = useState<Set<string>>(new Set(["Q1", "Q2", "Q3", "Q4"]));
+
+  const togglePipelineQtr = (q: string) => {
+    setExpandedPipelineQtrs((prev) => {
+      const next = new Set(prev);
+      if (next.has(q)) next.delete(q);
+      else next.add(q);
+      return next;
+    });
+  };
   const [selectedQuarters, setSelectedQuarters] = useState<Set<number>>(new Set([1, 2, 3, 4]));
 
   const toggleQuarter = (q: number) => {
@@ -227,6 +237,29 @@ export default function PerformanceTrackerPage() {
     const blendedProspectRate = totalProspects > 0 ? (totalOpps / totalProspects) * 100 : 0;
     return { totalDeals, totalOpps, totalProspects, blendedWinRate, blendedProspectRate };
   }, [pipelineData]);
+
+  const pipelineByQuarter = useMemo(() => {
+    const map = new Map<string, typeof pipelineData>();
+    for (const q of ["Q1", "Q2", "Q3", "Q4"]) map.set(q, []);
+    for (const r of pipelineData) {
+      const month = parseInt(r.closeMonth.split("-")[1], 10);
+      const q = month <= 3 ? "Q1" : month <= 6 ? "Q2" : month <= 9 ? "Q3" : "Q4";
+      map.get(q)!.push(r);
+    }
+    return map;
+  }, [pipelineData]);
+
+  const pipelineQtrTotals = useMemo(() => {
+    const totals: Record<string, { deals: number; opps: number; prospects: number }> = {};
+    for (const [q, rows] of pipelineByQuarter) {
+      totals[q] = {
+        deals: rows.reduce((s, r) => s + r.dealsNeeded, 0),
+        opps: rows.reduce((s, r) => s + r.oppsNeeded, 0),
+        prospects: rows.reduce((s, r) => s + r.prospectsNeeded, 0),
+      };
+    }
+    return totals;
+  }, [pipelineByQuarter]);
 
   const channelBreakdown = useMemo(() => {
     const pc = state.pipelineContribution;
@@ -551,49 +584,70 @@ export default function PerformanceTrackerPage() {
             </div>}
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Product Pipeline Requirements</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 text-left">
-                    <th className="pb-2 font-medium text-gray-500">Product</th>
-                    <th className="pb-2 font-medium text-gray-500 text-right">Deals</th>
-                    <th className="pb-2 font-medium text-gray-500 text-right">Opps Needed</th>
-                    <th className="pb-2 font-medium text-gray-500 text-right">Prospects Needed</th>
-                    <th className="pb-2 font-medium text-gray-500 text-right">Opp Coverage</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((p) => {
-                    const motion = state.salesMotionByProductId[p.id];
-                    if (!motion) return null;
-                    const rows = pipelineData.filter((r) => r.productName === p.name);
-                    const deals = rows.reduce((s, r) => s + r.dealsNeeded, 0);
-                    const opps = rows.reduce((s, r) => s + r.oppsNeeded, 0);
-                    const prospects = rows.reduce((s, r) => s + r.prospectsNeeded, 0);
-                    const ratio = deals > 0 ? opps / deals : 0;
-                    return (
-                      <tr key={p.id} className="border-b border-gray-100">
-                        <td className="py-2.5 font-medium text-gray-800">{p.name}</td>
-                        <td className="py-2.5 text-right text-gray-700">{numFmt(deals)}</td>
-                        <td className="py-2.5 text-right text-gray-700">{numFmt(opps)}</td>
-                        <td className="py-2.5 text-right text-gray-700">{numFmt(prospects)}</td>
-                        <td className="py-2.5 text-right">
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                            ratio >= 3 ? "bg-green-100 text-green-700" :
-                            ratio >= 2 ? "bg-amber-100 text-amber-700" :
-                            "bg-red-100 text-red-700"
-                          }`}>
-                            {ratio.toFixed(1)}x
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">Pipeline Requirements by Quarter</h3>
+            {["Q1", "Q2", "Q3", "Q4"].map((q) => {
+              const qRows = pipelineByQuarter.get(q) ?? [];
+              const qTotals = pipelineQtrTotals[q];
+              return (
+                <div key={q} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => togglePipelineQtr(q)}
+                    className="w-full bg-gray-50 px-4 py-3 border-b flex items-center justify-between hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedPipelineQtrs.has(q) ? "rotate-0" : "-rotate-90"}`} />
+                      <span className="font-semibold text-gray-800 text-sm">{q} FY2026</span>
+                    </div>
+                    {qRows.length > 0 && (
+                      <div className="flex gap-4 text-xs text-gray-500">
+                        <span>Deals: <span className="font-semibold text-gray-700">{numFmt(qTotals.deals)}</span></span>
+                        <span>Opps: <span className="font-semibold text-gray-700">{numFmt(qTotals.opps)}</span></span>
+                        <span>Prospects: <span className="font-semibold text-gray-700">{numFmt(qTotals.prospects)}</span></span>
+                      </div>
+                    )}
+                  </button>
+                  {expandedPipelineQtrs.has(q) && (
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-gray-500">
+                          <th className="px-4 py-2 font-medium">Product</th>
+                          <th className="px-4 py-2 font-medium">Close Month</th>
+                          <th className="px-4 py-2 font-medium text-right">Deals</th>
+                          <th className="px-4 py-2 font-medium text-right">Opps Needed</th>
+                          <th className="px-4 py-2 font-medium text-right">Prospects Needed</th>
+                          <th className="px-4 py-2 font-medium">Pipeline Month</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {qRows.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="px-4 py-6 text-center text-gray-400">No data for {q}</td>
+                          </tr>
+                        ) : (
+                          qRows.map((r, i) => {
+                            const pipelineBefore = r.pipelineMonth < "2026-01";
+                            return (
+                              <tr key={`${r.productName}-${r.closeMonth}`} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                                <td className="px-4 py-2 font-medium text-gray-800">{r.productName}</td>
+                                <td className="px-4 py-2">{formatMonth(r.closeMonth)}</td>
+                                <td className="px-4 py-2 text-right">{r.dealsNeeded}</td>
+                                <td className="px-4 py-2 text-right">{r.oppsNeeded}</td>
+                                <td className="px-4 py-2 text-right">{r.prospectsNeeded}</td>
+                                <td className={`px-4 py-2 ${pipelineBefore ? "text-orange-600 italic" : ""}`}>
+                                  {formatMonth(r.pipelineMonth)}
+                                  {pipelineBefore && <span className="text-xs ml-1">(pre-FY)</span>}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
