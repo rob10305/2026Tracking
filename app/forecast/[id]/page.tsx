@@ -39,7 +39,9 @@ import {
   Layers,
   ChevronDown,
   ChevronRight,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 function fmt(n: number): string {
   return n.toLocaleString("en-US", {
@@ -433,6 +435,99 @@ export default function ForecastDetailPage() {
     { key: "contribution", label: "Channels", icon: <PieChartIcon className="w-4 h-4" /> },
   ];
 
+  const handleExport = () => {
+    const wb = XLSX.utils.book_new();
+
+    const qtyRows: (string | number)[][] = [["Product", ...MONTH_LABELS, "Annual Total"]];
+    for (const pd of monthlyProductData) {
+      qtyRows.push([pd.product.name, ...pd.months.map((m) => m.qty), pd.annualQty]);
+      if (pd.variantData) {
+        for (const vd of pd.variantData) {
+          qtyRows.push([`  ${pd.product.name} (${VARIANT_LABELS[vd.variant]})`, ...vd.months.map((m) => m.qty), vd.annualQty]);
+        }
+      }
+    }
+    const qtyWs = XLSX.utils.aoa_to_sheet(qtyRows);
+    XLSX.utils.book_append_sheet(wb, qtyWs, "Won Deals");
+
+    const revRows: (string | number)[][] = [["Product", ...MONTH_LABELS, "Annual Total"]];
+    for (const pd of monthlyProductData) {
+      revRows.push([
+        pd.product.name,
+        ...pd.months.map((m) => m.result ? Math.round(m.result.gross_revenue) : 0),
+        pd.annualResult ? Math.round(pd.annualResult.gross_revenue) : 0,
+      ]);
+    }
+    revRows.push([
+      "TOTAL",
+      ...monthlyTotals.map((mt) => Math.round(mt.grossRev)),
+      Math.round(annualTotals.grossRev),
+    ]);
+    const revWs = XLSX.utils.aoa_to_sheet(revRows);
+    XLSX.utils.book_append_sheet(wb, revWs, "Gross Revenue");
+
+    const netRows: (string | number)[][] = [["Product", ...MONTH_LABELS, "Annual Total"]];
+    for (const pd of monthlyProductData) {
+      netRows.push([
+        pd.product.name,
+        ...pd.months.map((m) => m.result ? Math.round(m.result.net_revenue) : 0),
+        pd.annualResult ? Math.round(pd.annualResult.net_revenue) : 0,
+      ]);
+    }
+    netRows.push([
+      "TOTAL",
+      ...monthlyTotals.map((mt) => Math.round(mt.netRev)),
+      Math.round(annualTotals.netRev),
+    ]);
+    const netWs = XLSX.utils.aoa_to_sheet(netRows);
+    XLSX.utils.book_append_sheet(wb, netWs, "Net Revenue");
+
+    const compRows: (string | number)[][] = [["Product", "Prof Services", "Software Resale", "Cloud Consumption", "PSS", "Total"]];
+    for (const pd of monthlyProductData) {
+      const r = pd.annualResult;
+      if (!r) { compRows.push([pd.product.name, 0, 0, 0, 0, 0]); continue; }
+      compRows.push([
+        pd.product.name,
+        Math.round(r.net_components.professional_services),
+        Math.round(r.net_components.software_resale),
+        Math.round(r.net_components.cloud_consumption),
+        Math.round(r.net_components.pss),
+        Math.round(r.net_revenue),
+      ]);
+    }
+    const compWs = XLSX.utils.aoa_to_sheet(compRows);
+    XLSX.utils.book_append_sheet(wb, compWs, "Components");
+
+    const gpRows: (string | number)[][] = [["Product", "Gross Revenue", "Net Revenue", "Gross GP", "Net GP", "Gross Margin %", "Net Margin %"]];
+    for (const pd of monthlyProductData) {
+      const r = pd.annualResult;
+      if (!r) { gpRows.push([pd.product.name, 0, 0, 0, 0, 0, 0]); continue; }
+      gpRows.push([
+        pd.product.name,
+        Math.round(r.gross_revenue),
+        Math.round(r.net_revenue),
+        Math.round(r.total_gross_gp),
+        Math.round(r.total_net_gp),
+        Math.round(r.gross_margin_pct * 10) / 10,
+        Math.round(r.net_margin_pct * 10) / 10,
+      ]);
+    }
+    const gpWs = XLSX.utils.aoa_to_sheet(gpRows);
+    XLSX.utils.book_append_sheet(wb, gpWs, "Profit & Margin");
+
+    if (pipelineData.length > 0) {
+      const pipeRows: (string | number)[][] = [["Product", "Close Month", "Deals", "Opps Needed", "Prospects Needed", "Pipeline Month"]];
+      for (const row of pipelineData) {
+        pipeRows.push([row.productName, row.closeMonth, row.dealsNeeded, row.oppsNeeded, row.prospectsNeeded, row.pipelineMonth]);
+      }
+      const pipeWs = XLSX.utils.aoa_to_sheet(pipeRows);
+      XLSX.utils.book_append_sheet(wb, pipeWs, "Pipeline");
+    }
+
+    const filename = `${forecast.name.replace(/[^a-zA-Z0-9 ]/g, "").trim()}.xlsx`;
+    XLSX.writeFile(wb, filename);
+  };
+
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -447,6 +542,13 @@ export default function ForecastDetailPage() {
             </p>
           </div>
         </div>
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+        >
+          <Download className="w-4 h-4" />
+          Export XLS
+        </button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
