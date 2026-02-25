@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "prisma generate && prisma db push --skip-generate && next build",
     "postinstall": "prisma generate",
-    "start": "next start",
+    "start": "next start -p 5000",
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest"
