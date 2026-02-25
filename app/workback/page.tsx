@@ -6,6 +6,7 @@ import { useSavedForecasts } from "@/lib/store/saved-forecasts-context";
 import { MONTHS_2026, MONTH_LABELS, forecastKey, variantForecastKey } from "@/lib/models/types";
 import type { WorkbackRow, ProductVariant } from "@/lib/models/types";
 import { calcWorkbackRow, formatMonth } from "@/lib/calc/workback";
+import { ChevronDown } from "lucide-react";
 
 const VARIANTS: ProductVariant[] = ["small", "medium", "large"];
 
@@ -24,6 +25,16 @@ export default function WorkbackPage() {
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(
     new Set(state.products.map((p) => p.id))
   );
+  const [expandedQuarters, setExpandedQuarters] = useState<Set<string>>(new Set(["Q1", "Q2", "Q3", "Q4"]));
+
+  const toggleQuarter = (q: string) => {
+    setExpandedQuarters((prev) => {
+      const next = new Set(prev);
+      if (next.has(q)) next.delete(q);
+      else next.add(q);
+      return next;
+    });
+  };
 
   const toggleProduct = (id: string) => {
     setSelectedProductIds((prev) => {
@@ -168,8 +179,14 @@ export default function WorkbackPage() {
         const totals = quarterTotals[q];
         return (
           <div key={q} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <div className="bg-gray-50 px-4 py-3 border-b flex items-center justify-between">
-              <h3 className="font-semibold text-gray-800">{q} FY2026</h3>
+            <button
+              onClick={() => toggleQuarter(q)}
+              className="w-full bg-gray-50 px-4 py-3 border-b flex items-center justify-between hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedQuarters.has(q) ? "rotate-0" : "-rotate-90"}`} />
+                <h3 className="font-semibold text-gray-800">{q} FY2026</h3>
+              </div>
               {qRows.length > 0 && (
                 <div className="flex gap-4 text-xs text-gray-500">
                   <span>Deals: <span className="font-semibold text-gray-700">{totals.deals.toLocaleString()}</span></span>
@@ -177,8 +194,8 @@ export default function WorkbackPage() {
                   <span>Prospects: <span className="font-semibold text-gray-700">{totals.prospects.toLocaleString()}</span></span>
                 </div>
               )}
-            </div>
-            <table className="w-full text-sm">
+            </button>
+            {expandedQuarters.has(q) && <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-gray-500">
                   <th className="px-4 py-2 font-medium">Product</th>
@@ -226,7 +243,7 @@ export default function WorkbackPage() {
                   })
                 )}
               </tbody>
-            </table>
+            </table>}
           </div>
         );
       })}
