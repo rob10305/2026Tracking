@@ -179,7 +179,7 @@ export default function BuildForecastListPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Build Forecast</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Forecast Modelling</h1>
         <p className="text-gray-500 mt-1">
           Create and compare forecast models to plan your revenue targets.
         </p>
