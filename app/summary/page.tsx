@@ -241,7 +241,7 @@ export default function SummaryPage() {
           <thead>
             <tr className="bg-gray-50 border-b text-left">
               <th className="px-3 py-2 font-medium">Product</th>
-              <th className="px-3 py-2 font-medium text-right">Units</th>
+              <th className="px-3 py-2 font-medium text-right">Won Deals</th>
               <th className="px-3 py-2 font-medium text-right">Revenue</th>
               <th className="px-3 py-2 font-medium text-right">PS $</th>
               <th className="px-3 py-2 font-medium text-right">Resale $</th>

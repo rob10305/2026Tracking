@@ -464,7 +464,7 @@ export default function ForecastDetailPage() {
         />
         <KpiCard
           icon={<Package className="w-5 h-5" />}
-          label="Total Units"
+          label="Total Won Deals"
           value={hasData ? totalUnits.toLocaleString() : "--"}
           color="purple"
         />

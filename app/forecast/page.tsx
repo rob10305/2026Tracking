@@ -325,7 +325,7 @@ export default function BuildForecastListPage() {
                       <div className="bg-gray-50 rounded-xl p-3 text-center">
                         <div className="flex items-center justify-center gap-1 text-gray-400 mb-1">
                           <Package className="w-3 h-3" />
-                          <span className="text-xs">Units</span>
+                          <span className="text-xs">Won Deals</span>
                         </div>
                         <div className="font-semibold text-gray-900">
                           {stats.totalUnits > 0 ? stats.totalUnits.toLocaleString() : "--"}

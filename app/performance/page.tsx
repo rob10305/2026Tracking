@@ -791,7 +791,7 @@ export default function PerformanceTrackerPage() {
                   <tr className="border-b border-gray-200 text-left">
                     <th className="pb-2 font-medium text-gray-500">Month</th>
                     <th className="pb-2 font-medium text-gray-500 text-right">Revenue</th>
-                    <th className="pb-2 font-medium text-gray-500 text-right">Units</th>
+                    <th className="pb-2 font-medium text-gray-500 text-right">Won Deals</th>
                     <th className="pb-2 font-medium text-gray-500 text-right">Pipeline Opps</th>
                     <th className="pb-2 font-medium text-gray-500 text-right">Pipeline Prospects</th>
                   </tr>
