@@ -86,7 +86,8 @@ export default function BuildForecastListPage() {
 
   const getForecastStats = (fc: SavedForecast) => {
     let totalUnits = 0;
-    let totalRevenue = 0;
+    let grossRevenue = 0;
+    let netRevenue = 0;
     const activeProducts = new Set<string>();
 
     for (const [key, qty] of Object.entries(fc.quantities)) {
@@ -107,7 +108,8 @@ export default function BuildForecastListPage() {
           if (variantQty > 0) {
             const variantProduct = { ...p, selected_variant: v };
             const result = calcFullRevenue(variantProduct, state.margins, variantQty);
-            totalRevenue += result.net_revenue;
+            grossRevenue += result.gross_revenue;
+            netRevenue += result.net_revenue;
           }
         }
       } else {
@@ -117,12 +119,13 @@ export default function BuildForecastListPage() {
         }
         if (annualQty > 0) {
           const result = calcFullRevenue(p, state.margins, annualQty);
-          totalRevenue += result.net_revenue;
+          grossRevenue += result.gross_revenue;
+          netRevenue += result.net_revenue;
         }
       }
     }
 
-    return { totalUnits, totalRevenue, activeProducts: activeProducts.size };
+    return { totalUnits, grossRevenue, netRevenue, activeProducts: activeProducts.size };
   };
 
   const formatDate = (iso: string) => {
@@ -312,14 +315,23 @@ export default function BuildForecastListPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="grid grid-cols-4 gap-3 mb-4">
                       <div className="bg-gray-50 rounded-xl p-3 text-center">
                         <div className="flex items-center justify-center gap-1 text-gray-400 mb-1">
                           <DollarSign className="w-3 h-3" />
-                          <span className="text-xs">Revenue</span>
+                          <span className="text-xs">Gross Revenue</span>
                         </div>
                         <div className="font-semibold text-gray-900">
-                          {stats.totalRevenue > 0 ? fmt(stats.totalRevenue) : "--"}
+                          {stats.grossRevenue > 0 ? fmt(stats.grossRevenue) : "--"}
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 rounded-xl p-3 text-center">
+                        <div className="flex items-center justify-center gap-1 text-gray-400 mb-1">
+                          <DollarSign className="w-3 h-3" />
+                          <span className="text-xs">Net Revenue</span>
+                        </div>
+                        <div className="font-semibold text-gray-900">
+                          {stats.netRevenue > 0 ? fmt(stats.netRevenue) : "--"}
                         </div>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-3 text-center">
