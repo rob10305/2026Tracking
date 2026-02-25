@@ -328,7 +328,7 @@ export default function CFOViewPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
         <KpiCard
           label="Gross Revenue"
           value={fmtCompact(annual.grossRev)}
@@ -351,11 +351,18 @@ export default function CFOViewPage() {
           color="amber"
         />
         <KpiCard
-          label="Recurring Revenue"
-          value={fmtCompact(recurring)}
-          subtext="PSS + Cloud"
+          label="PSS Revenue"
+          value={fmtCompact(annual.pss)}
+          subtext="Platform Support Services"
           icon={<TrendingUp className="w-5 h-5" />}
           color="cyan"
+        />
+        <KpiCard
+          label="Cloud Revenue"
+          value={fmtCompact(annual.cc)}
+          subtext="Cloud Consumption"
+          icon={<TrendingUp className="w-5 h-5" />}
+          color="indigo"
         />
         <KpiCard
           label="Total Deals"
@@ -627,7 +634,7 @@ function KpiCard({
   value: string;
   subtext: string;
   icon: React.ReactNode;
-  color: "blue" | "green" | "amber" | "cyan" | "purple" | "slate";
+  color: "blue" | "green" | "amber" | "cyan" | "purple" | "slate" | "indigo";
 }) {
   const colorMap = {
     blue: { bg: "bg-blue-50", text: "text-blue-600", icon: "bg-blue-100 text-blue-600" },
@@ -636,6 +643,7 @@ function KpiCard({
     cyan: { bg: "bg-cyan-50", text: "text-cyan-600", icon: "bg-cyan-100 text-cyan-600" },
     purple: { bg: "bg-purple-50", text: "text-purple-600", icon: "bg-purple-100 text-purple-600" },
     slate: { bg: "bg-slate-50", text: "text-slate-600", icon: "bg-slate-100 text-slate-600" },
+    indigo: { bg: "bg-indigo-50", text: "text-indigo-600", icon: "bg-indigo-100 text-indigo-600" },
   };
   const c = colorMap[color];
 
