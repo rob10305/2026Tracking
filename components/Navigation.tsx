@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/cfo", label: "CFO View" },
-  { href: "/gtm", label: "GTM Readiness" },
   { href: "/forecast", label: "Forecast Modelling" },
   { href: "/performance", label: "Performance Tracker" },
   { href: "/workback", label: "Launch Readiness" },
