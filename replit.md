@@ -18,6 +18,7 @@ app/             - Next.js app router pages and API routes
   api/forecasts/ - Legacy REST API (unused)
   forecast/      - Forecast detail page
   forecasts/     - Forecast list and creation pages
+  cfo/           - CFO View (executive financial dashboard)
   settings/      - Settings page
   summary/       - Summary/dashboard page
   workback/      - Product Launch Readiness page
@@ -37,6 +38,17 @@ __tests__/       - Vitest test files
 - **Dev Origins**: Configured to allow *.replit.dev origins
 
 ## Recent Changes
+- 2026-02-25: CFO View dashboard
+  - New /cfo page with executive financial overview
+  - Forecast selector dropdown to switch between saved forecasts
+  - 6 KPI cards: Gross Revenue, Net Revenue, One-Time Revenue (PS), Recurring Revenue (PSS+Cloud), Total Deals, Gross Margin
+  - Revenue Categories: One-Time (Professional Services), Recurring (PSS + Cloud), Software Resale
+  - Monthly revenue trend (area chart), revenue by category (stacked bar), deals by month
+  - Revenue category pie chart, component mix pie chart
+  - Quarterly summary table (Gross Rev, Net Rev, One-Time, Recurring, Deals)
+  - Product revenue ranking with % of total bars
+  - Margin analysis cards (Gross, Net, One-Time, Recurring)
+  - Navigation: CFO View added as first nav item
 - 2026-02-25: Database backend migration
   - Migrated all app state from localStorage to PostgreSQL database
   - New Prisma schema: Product, SalesMotion, AppSettings, ForecastEntry, SavedForecast, SavedForecastEntry, LaunchRequirement
