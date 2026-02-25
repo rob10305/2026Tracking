@@ -1,0 +1,723 @@
+"use client";
+
+import React, { useState, useMemo } from "react";
+import { useStore } from "@/lib/store/context";
+import { useSavedForecasts } from "@/lib/store/saved-forecasts-context";
+import {
+  MONTHS_2026,
+  MONTH_LABELS,
+  STANDARD_DELIVERABLES,
+  forecastKey,
+  variantForecastKey,
+} from "@/lib/models/types";
+import type {
+  Product,
+  ProductVariant,
+  SalesMotion,
+  LaunchRequirement,
+} from "@/lib/models/types";
+import {
+  calcOppsNeeded,
+  calcProspectsNeeded,
+  calcPipelineMonth,
+  calcProspectingStartMonth,
+} from "@/lib/calc/workback";
+import {
+  ChevronDown,
+  ChevronRight,
+  Target,
+  Users,
+  Calendar,
+  CheckCircle2,
+  Circle,
+  Megaphone,
+  ShoppingCart,
+  Truck,
+  HeadphonesIcon,
+  Package,
+  Rocket,
+  TrendingUp,
+  Filter,
+} from "lucide-react";
+
+const VARIANTS: ProductVariant[] = ["small", "medium", "large"];
+
+const GA_MONTH_INDEX: Record<string, number> = {
+  January: 0, February: 1, March: 2, April: 3, May: 4, June: 5,
+  July: 6, August: 7, September: 8, October: 9, November: 10, December: 11,
+};
+
+const PILLAR_CONFIG = [
+  { name: "Product", prefix: "Product", color: "blue", icon: Package },
+  { name: "Marketing", prefix: "Marketing", color: "purple", icon: Megaphone },
+  { name: "Sales", prefix: "Sales", color: "green", icon: ShoppingCart },
+  { name: "Delivery", prefix: "Delivery", color: "amber", icon: Truck },
+  { name: "Support & Ops", prefix: "Support", color: "red", icon: HeadphonesIcon },
+];
+
+const PILLAR_COLORS: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+  blue: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", badge: "bg-blue-100 text-blue-700" },
+  purple: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700", badge: "bg-purple-100 text-purple-700" },
+  green: { bg: "bg-green-50", border: "border-green-200", text: "text-green-700", badge: "bg-green-100 text-green-700" },
+  amber: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", badge: "bg-amber-100 text-amber-700" },
+  red: { bg: "bg-red-50", border: "border-red-200", text: "text-red-700", badge: "bg-red-100 text-red-700" },
+};
+
+function getDeliverablesByPillar(pillarPrefix: string): string[] {
+  return STANDARD_DELIVERABLES.filter((d) => {
+    if (pillarPrefix === "Product") return d.startsWith("Product");
+    if (pillarPrefix === "Marketing") return d.startsWith("Marketing");
+    if (pillarPrefix === "Sales") return d.startsWith("Sales");
+    if (pillarPrefix === "Delivery") return d.startsWith("Delivery");
+    if (pillarPrefix === "Support") return d.startsWith("Support");
+    return false;
+  });
+}
+
+function isDeliverableComplete(req: LaunchRequirement): boolean {
+  return !!(req.criticalPath || req.timeline || req.content);
+}
+
+function getDealsForMonth(
+  product: Product,
+  month: string,
+  quantities: Record<string, number>,
+): number {
+  let deals = 0;
+  if (product.has_variants && product.variants) {
+    for (const v of VARIANTS) {
+      deals += quantities[variantForecastKey(product.id, v, month)] || 0;
+    }
+  } else {
+    deals += quantities[forecastKey(product.id, month)] || 0;
+  }
+  return deals;
+}
+
+interface ProductGTMData {
+  product: Product;
+  motion: SalesMotion;
+  gaMonthIndex: number;
+  totalDeals: number;
+  monthlyBreakdown: {
+    month: string;
+    monthIndex: number;
+    deals: number;
+    oppsNeeded: number;
+    prospectsNeeded: number;
+    pipelineMonth: string;
+    pipelineMonthIndex: number;
+    prospectingStart: string;
+    prospectingStartIndex: number;
+  }[];
+  readiness: LaunchRequirement[];
+  readinessComplete: number;
+  readinessTotal: number;
+}
+
+export default function GTMPage() {
+  const { state, isLoaded: storeLoaded } = useStore();
+  const { forecasts, isLoaded: forecastsLoaded } = useSavedForecasts();
+  const [selectedForecastId, setSelectedForecastId] = useState<string>("");
+  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  const [expandAll, setExpandAll] = useState(false);
+
+  const selectedForecast = useMemo(() => {
+    if (selectedForecastId) return forecasts.find((f) => f.id === selectedForecastId);
+    return forecasts[0];
+  }, [selectedForecastId, forecasts]);
+
+  const gtmData = useMemo<ProductGTMData[]>(() => {
+    if (!state.products.length) return [];
+
+    const quantities = selectedForecast?.quantities || {};
+
+    return state.products
+      .filter((p) => p.status === "live")
+      .map((product) => {
+        const motion = state.salesMotionByProductId[product.id] || state.industryAverages;
+        const gaIdx = GA_MONTH_INDEX[product.generally_available] ?? 0;
+
+        const monthlyBreakdown: ProductGTMData["monthlyBreakdown"] = [];
+        let totalDeals = 0;
+
+        for (let mi = 0; mi < 12; mi++) {
+          const month = MONTHS_2026[mi];
+          const deals = getDealsForMonth(product, month, quantities);
+
+          if (deals > 0) {
+            totalDeals += deals;
+            const oppsNeeded = calcOppsNeeded(deals, motion.opp_to_close_win_rate_pct);
+            const prospectsNeeded = calcProspectsNeeded(oppsNeeded, motion.prospect_to_opp_rate_pct);
+            const pipelineMonth = calcPipelineMonth(month, motion.sales_cycle_months);
+            const prospectingStart = calcProspectingStartMonth(pipelineMonth, motion.prospecting_lead_time_months);
+
+            const pmParts = pipelineMonth.split("-").map(Number);
+            const psParts = prospectingStart.split("-").map(Number);
+
+            monthlyBreakdown.push({
+              month,
+              monthIndex: mi,
+              deals,
+              oppsNeeded,
+              prospectsNeeded,
+              pipelineMonth,
+              pipelineMonthIndex: pmParts[0] === 2026 ? pmParts[1] - 1 : pmParts[1] - 1 - 12,
+              prospectingStart,
+              prospectingStartIndex: psParts[0] === 2026 ? psParts[1] - 1 : psParts[1] - 1 - 12,
+            });
+          }
+        }
+
+        const reqs = state.launchRequirements?.[product.id] || [];
+        const readinessComplete = reqs.filter(isDeliverableComplete).length;
+
+        return {
+          product,
+          motion,
+          gaMonthIndex: gaIdx,
+          totalDeals,
+          monthlyBreakdown,
+          readiness: reqs,
+          readinessComplete: readinessComplete,
+          readinessTotal: reqs.length || STANDARD_DELIVERABLES.length,
+        };
+      })
+      .sort((a, b) => a.gaMonthIndex - b.gaMonthIndex);
+  }, [selectedForecast, state]);
+
+  const summaryStats = useMemo(() => {
+    let totalDeals = 0;
+    let totalOpps = 0;
+    let totalProspects = 0;
+    let productsWithDeals = 0;
+    let earliestProspecting = 12;
+
+    for (const d of gtmData) {
+      totalDeals += d.totalDeals;
+      if (d.totalDeals > 0) productsWithDeals++;
+      for (const mb of d.monthlyBreakdown) {
+        totalOpps += mb.oppsNeeded;
+        totalProspects += mb.prospectsNeeded;
+        if (mb.prospectingStartIndex < earliestProspecting) {
+          earliestProspecting = mb.prospectingStartIndex;
+        }
+      }
+    }
+
+    return { totalDeals, totalOpps, totalProspects, productsWithDeals, earliestProspecting };
+  }, [gtmData]);
+
+  const toggleProduct = (id: string) => {
+    setExpandedProducts((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleExpandAll = () => {
+    if (expandAll) {
+      setExpandedProducts(new Set());
+    } else {
+      setExpandedProducts(new Set(gtmData.map((d) => d.product.id)));
+    }
+    setExpandAll(!expandAll);
+  };
+
+  if (!storeLoaded || !forecastsLoaded) {
+    return (
+      <div className="max-w-[1400px] mx-auto p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-gray-500 text-sm">Loading GTM data...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-[1400px] mx-auto p-6 space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">GTM Readiness</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Go-to-market workback analysis. For each product, see what needs to be true — pipeline requirements, timing dependencies, and launch readiness — to close forecasted deals.
+          </p>
+        </div>
+        <div className="relative">
+          <select
+            className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={selectedForecastId || selectedForecast?.id || ""}
+            onChange={(e) => setSelectedForecastId(e.target.value)}
+          >
+            {forecasts.map((f) => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <SummaryCard
+          icon={<Target className="w-5 h-5" />}
+          label="Total Deals Forecasted"
+          value={summaryStats.totalDeals.toString()}
+          color="blue"
+        />
+        <SummaryCard
+          icon={<TrendingUp className="w-5 h-5" />}
+          label="Opportunities Required"
+          value={summaryStats.totalOpps.toString()}
+          color="amber"
+        />
+        <SummaryCard
+          icon={<Users className="w-5 h-5" />}
+          label="Prospects Required"
+          value={summaryStats.totalProspects.toString()}
+          color="green"
+        />
+        <SummaryCard
+          icon={<Rocket className="w-5 h-5" />}
+          label="Products with Deals"
+          value={`${summaryStats.productsWithDeals} / ${gtmData.length}`}
+          color="purple"
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-900">Product GTM Workback</h2>
+        <button
+          onClick={handleExpandAll}
+          className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+        >
+          <Filter className="w-4 h-4" />
+          {expandAll ? "Collapse All" : "Expand All"}
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {gtmData.map((data) => (
+          <ProductGTMCard
+            key={data.product.id}
+            data={data}
+            expanded={expandedProducts.has(data.product.id)}
+            onToggle={() => toggleProduct(data.product.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SummaryCard({
+  icon,
+  label,
+  value,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  color: "blue" | "amber" | "green" | "purple";
+}) {
+  const colors = {
+    blue: { bg: "bg-blue-50", text: "text-blue-600", icon: "bg-blue-100 text-blue-600" },
+    amber: { bg: "bg-amber-50", text: "text-amber-600", icon: "bg-amber-100 text-amber-600" },
+    green: { bg: "bg-green-50", text: "text-green-600", icon: "bg-green-100 text-green-600" },
+    purple: { bg: "bg-purple-50", text: "text-purple-600", icon: "bg-purple-100 text-purple-600" },
+  };
+  const c = colors[color];
+  return (
+    <div className={`${c.bg} rounded-xl p-4 border border-gray-100`}>
+      <div className={`w-8 h-8 rounded-lg ${c.icon} flex items-center justify-center mb-2`}>{icon}</div>
+      <div className={`text-2xl font-bold ${c.text}`}>{value}</div>
+      <div className="text-xs text-gray-500 mt-1">{label}</div>
+    </div>
+  );
+}
+
+function ProductGTMCard({
+  data,
+  expanded,
+  onToggle,
+}: {
+  data: ProductGTMData;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const { product, motion, gaMonthIndex, totalDeals, monthlyBreakdown, readiness, readinessComplete, readinessTotal } = data;
+  const gaLabel = MONTH_LABELS[gaMonthIndex] || "TBD";
+  const readinessPct = readinessTotal > 0 ? Math.round((readinessComplete / readinessTotal) * 100) : 0;
+
+  const hasDeals = totalDeals > 0;
+  const firstCloseMonth = monthlyBreakdown.length > 0 ? monthlyBreakdown[0].monthIndex : -1;
+  const earliestProspecting = monthlyBreakdown.length > 0
+    ? Math.min(...monthlyBreakdown.map((m) => m.prospectingStartIndex))
+    : -1;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full px-5 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors"
+      >
+        {expanded ? (
+          <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+        ) : (
+          <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+        )}
+
+        <div className="flex-1 text-left">
+          <div className="flex items-center gap-3">
+            <span className="font-semibold text-gray-900">{product.name}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+              GA: {product.generally_available}
+            </span>
+            {hasDeals && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                {totalDeals} deal{totalDeals !== 1 ? "s" : ""} forecasted
+              </span>
+            )}
+            {!hasDeals && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                No deals forecasted
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="flex items-center gap-1.5">
+            {PILLAR_CONFIG.map((pillar) => {
+              const deliverables = getDeliverablesByPillar(pillar.prefix);
+              const done = deliverables.filter((d) => {
+                const req = readiness.find((r) => r.deliverable === d);
+                return req ? isDeliverableComplete(req) : false;
+              }).length;
+              const total = deliverables.length;
+              const pct = total > 0 ? done / total : 0;
+              const pc = PILLAR_COLORS[pillar.color];
+              return (
+                <div
+                  key={pillar.name}
+                  className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${
+                    pct === 1
+                      ? "bg-green-100 text-green-700"
+                      : pct > 0
+                      ? `${pc.badge}`
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                  title={`${pillar.name}: ${done}/${total}`}
+                >
+                  {pct === 1 ? "✓" : `${done}`}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="w-20">
+            <div className="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Ready</span>
+              <span>{readinessPct}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  readinessPct === 100
+                    ? "bg-green-500"
+                    : readinessPct > 50
+                    ? "bg-blue-500"
+                    : readinessPct > 0
+                    ? "bg-amber-500"
+                    : "bg-gray-300"
+                }`}
+                style={{ width: `${readinessPct}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-gray-100 px-5 py-4 space-y-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <PipelineWorkback data={data} />
+            <TimelineView data={data} />
+          </div>
+
+          <ReadinessChecklist readiness={readiness} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PipelineWorkback({ data }: { data: ProductGTMData }) {
+  const { product, motion, monthlyBreakdown, totalDeals } = data;
+
+  if (!totalDeals) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-4">
+        <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+          <Target className="w-4 h-4" /> Pipeline Requirements
+        </h3>
+        <p className="text-sm text-gray-500">No deals forecasted for this product. Add deals in Forecast Modelling to see pipeline requirements.</p>
+      </div>
+    );
+  }
+
+  const totalOpps = monthlyBreakdown.reduce((s, m) => s + m.oppsNeeded, 0);
+  const totalProspects = monthlyBreakdown.reduce((s, m) => s + m.prospectsNeeded, 0);
+
+  return (
+    <div className="bg-gray-50 rounded-lg p-4">
+      <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <Target className="w-4 h-4" /> Pipeline Requirements
+      </h3>
+
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="text-center p-2 bg-white rounded-lg border border-gray-200">
+          <div className="text-lg font-bold text-blue-600">{totalDeals}</div>
+          <div className="text-xs text-gray-500">Deals</div>
+        </div>
+        <div className="text-center p-2 bg-white rounded-lg border border-gray-200">
+          <div className="text-lg font-bold text-amber-600">{totalOpps}</div>
+          <div className="text-xs text-gray-500">Opportunities</div>
+        </div>
+        <div className="text-center p-2 bg-white rounded-lg border border-gray-200">
+          <div className="text-lg font-bold text-green-600">{totalProspects}</div>
+          <div className="text-xs text-gray-500">Prospects</div>
+        </div>
+      </div>
+
+      <div className="space-y-1 text-xs text-gray-600 mb-3">
+        <div className="flex justify-between">
+          <span>Sales Cycle</span>
+          <span className="font-medium">{motion.sales_cycle_months} months</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Win Rate (Opp → Deal)</span>
+          <span className="font-medium">{motion.opp_to_close_win_rate_pct}%</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Conversion (Prospect → Opp)</span>
+          <span className="font-medium">{motion.prospect_to_opp_rate_pct}%</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Prospecting Lead Time</span>
+          <span className="font-medium">{motion.prospecting_lead_time_months} month{motion.prospecting_lead_time_months !== 1 ? "s" : ""}</span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th className="text-left py-1.5 text-gray-500 font-medium">Close Month</th>
+              <th className="text-right py-1.5 text-gray-500 font-medium">Deals</th>
+              <th className="text-right py-1.5 text-gray-500 font-medium">Opps</th>
+              <th className="text-right py-1.5 text-gray-500 font-medium">Prospects</th>
+              <th className="text-left py-1.5 text-gray-500 font-medium pl-3">Pipeline By</th>
+              <th className="text-left py-1.5 text-gray-500 font-medium">Prospect By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {monthlyBreakdown.map((mb) => (
+              <tr key={mb.month} className="border-b border-gray-100">
+                <td className="py-1.5 font-medium text-gray-900">{MONTH_LABELS[mb.monthIndex]}</td>
+                <td className="py-1.5 text-right text-blue-600 font-semibold">{mb.deals}</td>
+                <td className="py-1.5 text-right text-amber-600">{mb.oppsNeeded}</td>
+                <td className="py-1.5 text-right text-green-600">{mb.prospectsNeeded}</td>
+                <td className="py-1.5 pl-3">
+                  <span className={`px-1.5 py-0.5 rounded text-xs ${
+                    mb.pipelineMonthIndex < 0 ? "bg-red-100 text-red-700" : "bg-amber-50 text-amber-700"
+                  }`}>
+                    {formatMonthLabel(mb.pipelineMonth)}
+                  </span>
+                </td>
+                <td className="py-1.5">
+                  <span className={`px-1.5 py-0.5 rounded text-xs ${
+                    mb.prospectingStartIndex < 0 ? "bg-red-100 text-red-700" : "bg-green-50 text-green-700"
+                  }`}>
+                    {formatMonthLabel(mb.prospectingStart)}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function formatMonthLabel(yearMonth: string): string {
+  const [y, m] = yearMonth.split("-").map(Number);
+  const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  if (y < 2026) return `${labels[m - 1]} ${y} ⚠`;
+  return `${labels[m - 1]}`;
+}
+
+function TimelineView({ data }: { data: ProductGTMData }) {
+  const { product, gaMonthIndex, monthlyBreakdown, motion } = data;
+
+  const phases: { label: string; start: number; end: number; color: string }[] = [];
+
+  if (monthlyBreakdown.length > 0) {
+    const earliestProspect = Math.min(...monthlyBreakdown.map((m) => m.prospectingStartIndex));
+    const earliestPipeline = Math.min(...monthlyBreakdown.map((m) => m.pipelineMonthIndex));
+    const firstClose = monthlyBreakdown[0].monthIndex;
+    const lastClose = monthlyBreakdown[monthlyBreakdown.length - 1].monthIndex;
+
+    if (earliestProspect >= 0) {
+      phases.push({
+        label: "Prospecting",
+        start: Math.max(0, earliestProspect),
+        end: Math.max(0, earliestPipeline),
+        color: "bg-green-400",
+      });
+    }
+    if (earliestPipeline >= 0) {
+      phases.push({
+        label: "Pipeline Building",
+        start: Math.max(0, earliestPipeline),
+        end: firstClose,
+        color: "bg-amber-400",
+      });
+    }
+    phases.push({
+      label: "Closing Deals",
+      start: firstClose,
+      end: lastClose + 1,
+      color: "bg-blue-500",
+    });
+  }
+
+  return (
+    <div className="bg-gray-50 rounded-lg p-4">
+      <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <Calendar className="w-4 h-4" /> Timeline
+      </h3>
+
+      <div className="space-y-2">
+        <div className="flex text-xs text-gray-400">
+          {MONTH_LABELS.map((m) => (
+            <div key={m} className="flex-1 text-center">{m}</div>
+          ))}
+        </div>
+
+        <div className="relative h-6 bg-gray-200 rounded-full overflow-hidden flex">
+          {MONTH_LABELS.map((_, i) => (
+            <div
+              key={i}
+              className={`flex-1 border-r border-gray-300/30 ${
+                i === gaMonthIndex ? "bg-gray-400/30" : ""
+              }`}
+            />
+          ))}
+        </div>
+
+        {gaMonthIndex >= 0 && (
+          <div className="relative h-0">
+            <div
+              className="absolute -top-8 flex flex-col items-center"
+              style={{ left: `${((gaMonthIndex + 0.5) / 12) * 100}%`, transform: "translateX(-50%)" }}
+            >
+              <div className="w-0.5 h-3 bg-red-500" />
+              <div className="text-[10px] text-red-600 font-semibold whitespace-nowrap mt-0.5">GA</div>
+            </div>
+          </div>
+        )}
+
+        {phases.map((phase, i) => (
+          <div key={i} className="relative">
+            <div className="flex items-center gap-2">
+              <div className="relative h-4 flex-1 bg-gray-100 rounded overflow-hidden">
+                <div
+                  className={`absolute h-full rounded ${phase.color}`}
+                  style={{
+                    left: `${(Math.max(0, phase.start) / 12) * 100}%`,
+                    width: `${(Math.max(1, phase.end - Math.max(0, phase.start)) / 12) * 100}%`,
+                  }}
+                />
+              </div>
+              <span className="text-xs text-gray-600 w-28 text-right">{phase.label}</span>
+            </div>
+          </div>
+        ))}
+
+        {phases.length === 0 && (
+          <div className="text-xs text-gray-500 text-center py-2">
+            No deals forecasted — add deals to see timeline
+          </div>
+        )}
+
+        <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-green-400" /> Prospecting
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-amber-400" /> Pipeline
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-blue-500" /> Closing
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-4 bg-red-500" /> GA
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReadinessChecklist({ readiness }: { readiness: LaunchRequirement[] }) {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <CheckCircle2 className="w-4 h-4" /> Launch Dependencies
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        {PILLAR_CONFIG.map((pillar) => {
+          const deliverables = getDeliverablesByPillar(pillar.prefix);
+          const pc = PILLAR_COLORS[pillar.color];
+          const Icon = pillar.icon;
+          const done = deliverables.filter((d) => {
+            const req = readiness.find((r) => r.deliverable === d);
+            return req ? isDeliverableComplete(req) : false;
+          }).length;
+
+          return (
+            <div key={pillar.name} className={`rounded-lg border ${pc.border} ${pc.bg} p-3`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Icon className={`w-4 h-4 ${pc.text}`} />
+                <span className={`text-xs font-semibold ${pc.text}`}>{pillar.name}</span>
+                <span className={`text-xs ml-auto ${pc.text}`}>{done}/{deliverables.length}</span>
+              </div>
+              <div className="space-y-1.5">
+                {deliverables.map((d) => {
+                  const req = readiness.find((r) => r.deliverable === d);
+                  const complete = req ? isDeliverableComplete(req) : false;
+                  const shortName = d.includes(" - ") ? d.split(" - ")[1] : d.replace("Product/", "").replace("Product ", "");
+
+                  return (
+                    <div key={d} className="flex items-center gap-1.5">
+                      {complete ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
+                      )}
+                      <span className={`text-xs ${complete ? "text-gray-700" : "text-gray-400"}`}>
+                        {shortName}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

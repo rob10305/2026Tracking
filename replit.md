@@ -19,6 +19,7 @@ app/             - Next.js app router pages and API routes
   forecast/      - Forecast detail page
   forecasts/     - Forecast list and creation pages
   cfo/           - CFO View (executive financial dashboard)
+  gtm/           - GTM Readiness (go-to-market workback analysis)
   settings/      - Settings page
   summary/       - Summary/dashboard page
   workback/      - Product Launch Readiness page
@@ -39,6 +40,18 @@ __tests__/       - Vitest test files
 - **12 Product IDs**: prod-mcp-server, prod-ai-gateway, prod-mcp-hub, prod-ai-insights, prod-managed-plane, prod-ai-services-ps, prod-developer-portal, prod-fastshift-migration, prod-o58uo345, prod-au7eawfw, prod-flrp41e5, prod-ncbjy80t
 
 ## Recent Changes
+- 2026-02-25: GTM Readiness page
+  - New /gtm page for go-to-market workback analysis
+  - Forecast selector dropdown to switch between saved forecasts
+  - 4 KPI cards: Total Deals Forecasted, Opportunities Required, Prospects Required, Products with Deals
+  - Product GTM Workback list showing all 12 products sorted by GA date
+  - Expandable product cards with: pipeline requirements table, timeline visualization, launch dependencies checklist
+  - Pipeline workback: calculates opps/prospects needed per close month using sales motion data
+  - Timeline: visual Gantt-style bars showing Prospecting → Pipeline → Closing phases with GA marker
+  - Launch Dependencies: 5-pillar readiness checklist (Product, Marketing, Sales, Delivery, Support & Ops) with 14 standard deliverables
+  - Pillar completion indicators on collapsed product rows
+  - Expand All/Collapse All controls
+  - Navigation: GTM Readiness added as second nav item (after CFO View)
 - 2026-02-25: Dev/Production database sync
   - Production DB had diverged from dev (different product IDs, updated data, new products)
   - Synced all 12 products from production to dev (was 11, now includes Archera)
