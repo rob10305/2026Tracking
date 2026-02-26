@@ -56,6 +56,17 @@ const SUB_PAGES = [
     color: "border-rose-200 hover:border-rose-400 hover:bg-rose-50",
   },
   {
+    href: "/settings/dependencies",
+    title: "Dependency Map",
+    description: "Visualize dependency chains and blockers across all product launch activities.",
+    icon: (
+      <svg className="w-8 h-8 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.928-3.374a4.5 4.5 0 00-6.364-6.364L4.5 7.5a4.5 4.5 0 001.242 7.244" />
+      </svg>
+    ),
+    color: "border-cyan-200 hover:border-cyan-400 hover:bg-cyan-50",
+  },
+  {
     href: "/settings/gtm",
     title: "GTM Readiness",
     description: "Go-to-market workback analysis — pipeline requirements, timing, and launch dependencies.",
@@ -97,7 +108,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {SUB_PAGES.map((card) => (
           <Link
             key={card.href}

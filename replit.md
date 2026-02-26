@@ -22,6 +22,7 @@ app/             - Next.js app router pages and API routes
   settings/      - Settings page (password-protected)
   settings/gtm/  - GTM Readiness (go-to-market workback analysis)
   settings/launch/ - Product Launch (manage launch activities per product with custom rows)
+  settings/dependencies/ - Dependency Map (visual dependency chains & blockers per product)
   summary/       - Summary/dashboard page
   workback/      - Product Launch Readiness page
 components/      - React components (forms, grids, charts, navigation)
@@ -41,6 +42,15 @@ __tests__/       - Vitest test files
 - **12 Product IDs**: prod-mcp-server, prod-ai-gateway, prod-mcp-hub, prod-ai-insights, prod-managed-plane, prod-ai-services-ps, prod-developer-portal, prod-fastshift-migration, prod-o58uo345, prod-au7eawfw, prod-flrp41e5, prod-ncbjy80t
 
 ## Recent Changes
+- 2026-02-26: Dependency Map page
+  - New /settings/dependencies page for visualizing launch dependency chains
+  - 4 KPI cards: Total Dependencies, Blocked Chains, Active Blockers, Products at Risk
+  - Per-product expandable cards showing: active blockers panel, dependency chain visualization, pillar status grid
+  - Dependency chains rendered as visual flowcharts (from → arrow → to) with BLOCKED/PENDING/RESOLVED badges
+  - Active blockers highlighted in amber panel showing which items they block
+  - Pillar activity status grid with icons for complete/blocker/blocked/incomplete states
+  - Filter controls: All Products, With Blockers, Incomplete
+  - Cyan-colored card on Settings page links to Dependency Map
 - 2026-02-26: Product Launch settings page
   - New /settings/launch page for managing launch activities per product
   - Lists all products with full 5-pillar activity tables (same fields as Launch Readiness)
