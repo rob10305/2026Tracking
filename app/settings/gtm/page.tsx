@@ -79,7 +79,7 @@ function getDeliverablesByPillar(pillarPrefix: string): string[] {
 }
 
 function isDeliverableComplete(req: LaunchRequirement): boolean {
-  return !!(req.criticalPath || req.timeline || req.content);
+  return !!(req.timeline || req.content);
 }
 
 function getDealsForMonth(
@@ -1021,7 +1021,7 @@ function ReadinessActivities({
         const pillarReqs = allReqs.filter((r) => pillar.deliverables.includes(r.deliverable));
         if (pillarReqs.length === 0) return null;
 
-        const done = pillarReqs.filter((r) => r.criticalPath && r.timeline && r.content).length;
+        const done = pillarReqs.filter((r) => r.timeline && r.content).length;
         const total = pillarReqs.length;
         const allDone = done === total && total > 0;
         const PillarIcon = pillar.icon;
@@ -1055,8 +1055,7 @@ function ReadinessActivities({
                   <tr className={`${pillar.bg} border-b ${pillar.border}`}>
                     <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs w-[180px]`}>Activity</th>
                     <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs w-[80px]`}>Owner</th>
-                    <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs`}>Critical Path to $$</th>
-                    <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs`}>Timeline</th>
+                    <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs w-[120px]`}>Due Date</th>
                     <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs`}>Content</th>
                     <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs w-[150px]`}>Depends On</th>
                   </tr>
@@ -1064,7 +1063,7 @@ function ReadinessActivities({
                 <tbody>
                   {pillarReqs.map((r, i) => {
                     const cellKey = (field: string) => `gtm::${productId}::${r.deliverable}::${field}`;
-                    const isComplete = r.criticalPath && r.timeline && r.content;
+                    const isComplete = r.timeline && r.content;
                     const hasDependants = allReqs.some((other) => other.dependency === r.deliverable);
 
                     return (
@@ -1121,34 +1120,46 @@ function ReadinessActivities({
                             </span>
                           )}
                         </td>
-                        {(["criticalPath", "timeline", "content"] as const).map((field) => (
-                          <td key={field} className="px-3 py-2">
-                            {editingCell === cellKey(field) ? (
-                              <input
-                                autoFocus
-                                className="w-full border border-blue-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                defaultValue={r[field]}
-                                onBlur={(e) => {
-                                  updateField(productId, r.deliverable, field, e.target.value);
-                                  setEditingCell(null);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                                  if (e.key === "Escape") setEditingCell(null);
-                                }}
-                              />
-                            ) : (
-                              <span
-                                onClick={() => setEditingCell(cellKey(field))}
-                                className={`cursor-pointer block min-h-[20px] px-1.5 py-0.5 rounded text-xs hover:bg-blue-50 transition-colors ${
-                                  r[field] ? "text-gray-700" : "text-gray-300 italic"
-                                }`}
-                              >
-                                {r[field] || "Click to edit"}
-                              </span>
-                            )}
-                          </td>
-                        ))}
+                        <td className="px-3 py-2">
+                          <input
+                            type="date"
+                            value={r.timeline || ""}
+                            onChange={(e) =>
+                              updateField(productId, r.deliverable, "timeline", e.target.value)
+                            }
+                            className={`w-full text-xs border rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 ${
+                              r.timeline
+                                ? "border-gray-300 text-gray-700"
+                                : "border-gray-200 text-gray-400"
+                            }`}
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          {editingCell === cellKey("content") ? (
+                            <input
+                              autoFocus
+                              className="w-full border border-blue-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                              defaultValue={r.content}
+                              onBlur={(e) => {
+                                updateField(productId, r.deliverable, "content", e.target.value);
+                                setEditingCell(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                if (e.key === "Escape") setEditingCell(null);
+                              }}
+                            />
+                          ) : (
+                            <span
+                              onClick={() => setEditingCell(cellKey("content"))}
+                              className={`cursor-pointer block min-h-[20px] px-1.5 py-0.5 rounded text-xs hover:bg-blue-50 transition-colors ${
+                                r.content ? "text-gray-700" : "text-gray-300 italic"
+                              }`}
+                            >
+                              {r.content || "Click to edit"}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-3 py-2">
                           <select
                             value={r.dependency || ""}

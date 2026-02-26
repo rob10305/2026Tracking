@@ -134,7 +134,7 @@ function friendlyName(deliverable: string): string {
 
 function completionCount(reqs: LaunchRequirement[]): { done: number; total: number } {
   const total = reqs.length;
-  const done = reqs.filter((r) => r.criticalPath && r.timeline && r.content).length;
+  const done = reqs.filter((r) => r.timeline && r.content).length;
   return { done, total };
 }
 
@@ -342,7 +342,7 @@ export default function ProductLaunchPage() {
                   <div className="hidden md:flex items-center gap-1">
                     {PILLARS.map((pillar) => {
                       const pillarReqs = getReqsForPillar(reqs, pillar);
-                      const pc = { done: pillarReqs.filter((r) => r.criticalPath && r.timeline && r.content).length, total: pillarReqs.length };
+                      const pc = { done: pillarReqs.filter((r) => r.timeline && r.content).length, total: pillarReqs.length };
                       const allDone = pc.done === pc.total && pc.total > 0;
                       return (
                         <div
@@ -436,7 +436,7 @@ export default function ProductLaunchPage() {
                       );
                     }
 
-                    const pc = { done: pillarReqs.filter((r) => r.criticalPath && r.timeline && r.content).length, total: pillarReqs.length };
+                    const pc = { done: pillarReqs.filter((r) => r.timeline && r.content).length, total: pillarReqs.length };
                     const allDone = pc.done === pc.total && pc.total > 0;
                     const PillarIcon = pillar.icon;
 
@@ -495,11 +495,8 @@ export default function ProductLaunchPage() {
                                 <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[90px]`}>
                                   Owner
                                 </th>
-                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs`}>
-                                  Critical Path to $$
-                                </th>
-                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs`}>
-                                  Timeline
+                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[130px]`}>
+                                  Due Date
                                 </th>
                                 <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs`}>
                                   Content
@@ -514,7 +511,7 @@ export default function ProductLaunchPage() {
                               {pillarReqs.map((r, i) => {
                                 const cellKey = (field: string) =>
                                   `${p.id}::${r.deliverable}::${field}`;
-                                const isComplete = r.criticalPath && r.timeline && r.content;
+                                const isComplete = r.timeline && r.content;
                                 const hasDependants = reqs.some((other) => other.dependency === r.deliverable);
                                 const isCustom = !STANDARD_DELIVERABLES.includes(r.deliverable);
 
@@ -577,36 +574,46 @@ export default function ProductLaunchPage() {
                                         </span>
                                       )}
                                     </td>
-                                    {(["criticalPath", "timeline", "content"] as const).map(
-                                      (field) => (
-                                        <td key={field} className="px-4 py-2.5">
-                                          {editingCell === cellKey(field) ? (
-                                            <input
-                                              autoFocus
-                                              className="w-full border border-blue-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                              defaultValue={r[field]}
-                                              onBlur={(e) => {
-                                                updateField(p.id, r.deliverable, field, e.target.value);
-                                                setEditingCell(null);
-                                              }}
-                                              onKeyDown={(e) => {
-                                                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                                                if (e.key === "Escape") setEditingCell(null);
-                                              }}
-                                            />
-                                          ) : (
-                                            <span
-                                              onClick={() => setEditingCell(cellKey(field))}
-                                              className={`cursor-pointer block min-h-[24px] px-2 py-0.5 rounded text-sm hover:bg-blue-50 transition-colors ${
-                                                r[field] ? "text-gray-700" : "text-gray-300 italic"
-                                              }`}
-                                            >
-                                              {r[field] || "Click to edit"}
-                                            </span>
-                                          )}
-                                        </td>
-                                      ),
-                                    )}
+                                    <td className="px-4 py-2.5">
+                                      <input
+                                        type="date"
+                                        value={r.timeline || ""}
+                                        onChange={(e) =>
+                                          updateField(p.id, r.deliverable, "timeline", e.target.value)
+                                        }
+                                        className={`w-full text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 ${
+                                          r.timeline
+                                            ? "border-gray-300 text-gray-700"
+                                            : "border-gray-200 text-gray-400"
+                                        }`}
+                                      />
+                                    </td>
+                                    <td className="px-4 py-2.5">
+                                      {editingCell === cellKey("content") ? (
+                                        <input
+                                          autoFocus
+                                          className="w-full border border-blue-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                          defaultValue={r.content}
+                                          onBlur={(e) => {
+                                            updateField(p.id, r.deliverable, "content", e.target.value);
+                                            setEditingCell(null);
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                            if (e.key === "Escape") setEditingCell(null);
+                                          }}
+                                        />
+                                      ) : (
+                                        <span
+                                          onClick={() => setEditingCell(cellKey("content"))}
+                                          className={`cursor-pointer block min-h-[24px] px-2 py-0.5 rounded text-sm hover:bg-blue-50 transition-colors ${
+                                            r.content ? "text-gray-700" : "text-gray-300 italic"
+                                          }`}
+                                        >
+                                          {r.content || "Click to edit"}
+                                        </span>
+                                      )}
+                                    </td>
                                     <td className="px-4 py-2.5">
                                       <select
                                         value={r.dependency || ""}
