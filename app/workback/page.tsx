@@ -14,6 +14,7 @@ import {
   HandshakeIcon,
   Rocket,
   HeadphonesIcon,
+  Link2,
 } from "lucide-react";
 
 const PILLARS = [
@@ -168,6 +169,7 @@ export default function LaunchReadinessPage() {
         criticalPath: "",
         timeline: "",
         content: "",
+        dependency: "",
       }));
     },
     [state.launchRequirements],
@@ -380,10 +382,10 @@ export default function LaunchReadinessPage() {
                           <table className="w-full text-sm">
                             <thead>
                               <tr className={`${pillar.bg} border-b ${pillar.border}`}>
-                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[220px]`}>
+                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[200px]`}>
                                   Activity
                                 </th>
-                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[100px]`}>
+                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[90px]`}>
                                   Owner
                                 </th>
                                 <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs`}>
@@ -395,6 +397,9 @@ export default function LaunchReadinessPage() {
                                 <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs`}>
                                   Content
                                 </th>
+                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[170px]`}>
+                                  Depends On
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
@@ -402,6 +407,7 @@ export default function LaunchReadinessPage() {
                                 const cellKey = (field: string) =>
                                   `${p.id}::${r.deliverable}::${field}`;
                                 const isComplete = r.criticalPath && r.timeline && r.content;
+                                const hasDependants = reqs.some((other) => other.dependency === r.deliverable);
 
                                 return (
                                   <tr
@@ -418,6 +424,15 @@ export default function LaunchReadinessPage() {
                                         <span className="text-gray-800 font-medium">
                                           {friendlyName(r.deliverable)}
                                         </span>
+                                        {hasDependants && (
+                                          <span
+                                            className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200"
+                                            title="Other activities depend on this"
+                                          >
+                                            <Link2 className="w-3 h-3" />
+                                            BLOCKER
+                                          </span>
+                                        )}
                                       </div>
                                     </td>
                                     <td className="px-4 py-2.5">
@@ -492,6 +507,33 @@ export default function LaunchReadinessPage() {
                                         </td>
                                       ),
                                     )}
+                                    <td className="px-4 py-2.5">
+                                      <select
+                                        value={r.dependency || ""}
+                                        onChange={(e) =>
+                                          updateField(
+                                            p.id,
+                                            r.deliverable,
+                                            "dependency",
+                                            e.target.value,
+                                          )
+                                        }
+                                        className={`w-full text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 ${
+                                          r.dependency
+                                            ? "border-blue-300 bg-blue-50 text-blue-800"
+                                            : "border-gray-200 text-gray-400"
+                                        }`}
+                                      >
+                                        <option value="">None</option>
+                                        {reqs
+                                          .filter((other) => other.deliverable !== r.deliverable)
+                                          .map((other) => (
+                                            <option key={other.deliverable} value={other.deliverable}>
+                                              {friendlyName(other.deliverable)}
+                                            </option>
+                                          ))}
+                                      </select>
+                                    </td>
                                   </tr>
                                 );
                               })}

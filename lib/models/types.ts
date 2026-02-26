@@ -76,6 +76,7 @@ export interface LaunchRequirement {
   criticalPath: string;
   timeline: string;
   content: string;
+  dependency: string;
 }
 
 export const STANDARD_DELIVERABLES = [

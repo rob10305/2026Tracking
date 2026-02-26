@@ -40,6 +40,11 @@ __tests__/       - Vitest test files
 - **12 Product IDs**: prod-mcp-server, prod-ai-gateway, prod-mcp-hub, prod-ai-insights, prod-managed-plane, prod-ai-services-ps, prod-developer-portal, prod-fastshift-migration, prod-o58uo345, prod-au7eawfw, prod-flrp41e5, prod-ncbjy80t
 
 ## Recent Changes
+- 2026-02-26: Launch Readiness dependency tracking
+  - Added `dependency` field to LaunchRequirement type and database schema
+  - Each activity row now has a "Depends On" dropdown to select any other activity (across all pillars) as a dependency
+  - Items with downstream dependants show an amber "BLOCKER" badge next to their name
+  - Dependency data persists to database alongside other launch requirement fields
 - 2026-02-25: GTM Readiness page moved under Settings
   - Moved from /gtm to /settings/gtm (password-protected behind Settings gate)
   - Removed from main navigation bar; accessible via Settings page card

@@ -15,6 +15,7 @@ export async function PUT(req: Request) {
     criticalPath: r.criticalPath ?? "",
     timeline: r.timeline ?? "",
     content: r.content ?? "",
+    dependency: r.dependency ?? "",
     sort_order: i,
   }));
 

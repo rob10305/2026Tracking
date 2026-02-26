@@ -133,6 +133,7 @@ export async function GET() {
       criticalPath: lr.criticalPath,
       timeline: lr.timeline,
       content: lr.content,
+      dependency: lr.dependency,
     });
   }
 

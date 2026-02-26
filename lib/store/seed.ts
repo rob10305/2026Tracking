@@ -414,6 +414,7 @@ export function createSeedData(): AppState {
       criticalPath: "",
       timeline: "",
       content: "",
+      dependency: "",
     }));
   }
 
