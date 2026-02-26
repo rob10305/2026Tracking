@@ -21,6 +21,7 @@ app/             - Next.js app router pages and API routes
   cfo/           - CFO View (executive financial dashboard)
   settings/      - Settings page (password-protected)
   settings/gtm/  - GTM Readiness (go-to-market workback analysis)
+  settings/launch/ - Product Launch (manage launch activities per product with custom rows)
   summary/       - Summary/dashboard page
   workback/      - Product Launch Readiness page
 components/      - React components (forms, grids, charts, navigation)
@@ -40,6 +41,15 @@ __tests__/       - Vitest test files
 - **12 Product IDs**: prod-mcp-server, prod-ai-gateway, prod-mcp-hub, prod-ai-insights, prod-managed-plane, prod-ai-services-ps, prod-developer-portal, prod-fastshift-migration, prod-o58uo345, prod-au7eawfw, prod-flrp41e5, prod-ncbjy80t
 
 ## Recent Changes
+- 2026-02-26: Product Launch settings page
+  - New /settings/launch page for managing launch activities per product
+  - Lists all products with full 5-pillar activity tables (same fields as Launch Readiness)
+  - Users can add custom activity rows to any pillar per product
+  - Custom activities prefixed with pillar name (e.g., "Marketing - My Custom Activity")
+  - Custom rows marked with "CUSTOM" badge and can be deleted via trash icon
+  - Standard deliverables cannot be deleted
+  - Rose-colored card on Settings page links to Product Launch
+  - Settings page grid updated to 5 columns for all cards
 - 2026-02-26: Launch Readiness dependency tracking
   - Added `dependency` field to LaunchRequirement type and database schema
   - Each activity row now has a "Depends On" dropdown to select any other activity (across all pillars) as a dependency
