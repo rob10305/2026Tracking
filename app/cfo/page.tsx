@@ -438,19 +438,44 @@ export default function CFOViewPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-          <h3 className="font-semibold text-gray-800 mb-4">Revenue by Category (Monthly)</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={monthlyChartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} tickFormatter={(v: number) => fmtCompact(v)} />
-              <Tooltip formatter={(value: any) => fmt(Number(value) || 0)} contentStyle={{ fontSize: 13 }} />
-              <Legend />
-              <Bar dataKey="One-Time" stackId="a" fill={CATEGORY_COLORS.oneTime} radius={[0, 0, 0, 0]} />
-              <Bar dataKey="Recurring" stackId="a" fill={CATEGORY_COLORS.recurring} />
-              <Bar dataKey="Software Resale" stackId="a" fill={CATEGORY_COLORS.softwareResale} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <h3 className="font-semibold text-gray-800 mb-4">Revenue by Component (Monthly)</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 text-left">
+                  <th className="py-2 px-2 font-medium text-gray-500">Month</th>
+                  <th className="py-2 px-2 font-medium text-right text-blue-600">Cloud</th>
+                  <th className="py-2 px-2 font-medium text-right text-indigo-600">PSS</th>
+                  <th className="py-2 px-2 font-medium text-right text-amber-600">Prof Svcs</th>
+                  <th className="py-2 px-2 font-medium text-right text-purple-600">SW Resale</th>
+                  <th className="py-2 px-2 font-medium text-right text-gray-700">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthly.map((m, i) => {
+                  const total = m.cc + m.pss + m.ps + m.sr;
+                  return (
+                    <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-1.5 px-2 font-medium text-gray-800">{MONTH_LABELS[i]}</td>
+                      <td className="py-1.5 px-2 text-right text-blue-700">{m.cc > 0 ? fmtCompact(m.cc) : "—"}</td>
+                      <td className="py-1.5 px-2 text-right text-indigo-700">{m.pss > 0 ? fmtCompact(m.pss) : "—"}</td>
+                      <td className="py-1.5 px-2 text-right text-amber-700">{m.ps > 0 ? fmtCompact(m.ps) : "—"}</td>
+                      <td className="py-1.5 px-2 text-right text-purple-700">{m.sr > 0 ? fmtCompact(m.sr) : "—"}</td>
+                      <td className="py-1.5 px-2 text-right font-semibold text-gray-900">{total > 0 ? fmtCompact(total) : "—"}</td>
+                    </tr>
+                  );
+                })}
+                <tr className="bg-gray-50 font-semibold">
+                  <td className="py-2 px-2 text-gray-900">FY Total</td>
+                  <td className="py-2 px-2 text-right text-blue-800">{fmtCompact(monthly.reduce((s, m) => s + m.cc, 0))}</td>
+                  <td className="py-2 px-2 text-right text-indigo-800">{fmtCompact(monthly.reduce((s, m) => s + m.pss, 0))}</td>
+                  <td className="py-2 px-2 text-right text-amber-800">{fmtCompact(monthly.reduce((s, m) => s + m.ps, 0))}</td>
+                  <td className="py-2 px-2 text-right text-purple-800">{fmtCompact(monthly.reduce((s, m) => s + m.sr, 0))}</td>
+                  <td className="py-2 px-2 text-right text-gray-900">{fmtCompact(annual.grossRev)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
