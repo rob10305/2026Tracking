@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useStore } from "@/lib/store/context";
 import { useSavedForecasts } from "@/lib/store/saved-forecasts-context";
 import {
@@ -40,6 +40,8 @@ import {
   TrendingUp,
   Filter,
   AlertTriangle,
+  HandshakeIcon,
+  Link2,
 } from "lucide-react";
 
 const VARIANTS: ProductVariant[] = ["small", "medium", "large"];
@@ -130,11 +132,39 @@ interface ProductGTMData {
 }
 
 export default function GTMPage() {
-  const { state, isLoaded: storeLoaded } = useStore();
+  const { state, isLoaded: storeLoaded, updateLaunchRequirements } = useStore();
+  const [editingCell, setEditingCell] = useState<string | null>(null);
   const { forecasts, isLoaded: forecastsLoaded } = useSavedForecasts();
   const [selectedForecastId, setSelectedForecastId] = useState<string>("");
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [expandAll, setExpandAll] = useState(false);
+
+  const getReqs = useCallback(
+    (productId: string): LaunchRequirement[] => {
+      if (state.launchRequirements[productId]) {
+        return state.launchRequirements[productId];
+      }
+      return STANDARD_DELIVERABLES.map((d) => ({
+        deliverable: d,
+        owner: "",
+        criticalPath: "",
+        timeline: "",
+        content: "",
+        dependency: "",
+      }));
+    },
+    [state.launchRequirements],
+  );
+
+  const updateField = useCallback(
+    (productId: string, deliverable: string, field: keyof LaunchRequirement, value: string) => {
+      const reqs = getReqs(productId).map((r) =>
+        r.deliverable === deliverable ? { ...r, [field]: value } : r,
+      );
+      updateLaunchRequirements(productId, reqs);
+    },
+    [getReqs, updateLaunchRequirements],
+  );
 
   const selectedForecast = useMemo(() => {
     if (selectedForecastId) return forecasts.find((f) => f.id === selectedForecastId);
@@ -340,6 +370,10 @@ export default function GTMPage() {
             data={data}
             expanded={expandedProducts.has(data.product.id)}
             onToggle={() => toggleProduct(data.product.id)}
+            allReqs={getReqs(data.product.id)}
+            updateField={updateField}
+            editingCell={editingCell}
+            setEditingCell={setEditingCell}
           />
         ))}
       </div>
@@ -378,10 +412,18 @@ function ProductGTMCard({
   data,
   expanded,
   onToggle,
+  allReqs,
+  updateField,
+  editingCell,
+  setEditingCell,
 }: {
   data: ProductGTMData;
   expanded: boolean;
   onToggle: () => void;
+  allReqs: LaunchRequirement[];
+  updateField: (productId: string, deliverable: string, field: keyof LaunchRequirement, value: string) => void;
+  editingCell: string | null;
+  setEditingCell: (key: string | null) => void;
 }) {
   const { product, motion, gaMonthIndex, totalDeals, monthlyBreakdown, readiness, readinessComplete, readinessTotal } = data;
   const gaLabel = MONTH_LABELS[gaMonthIndex] || "TBD";
@@ -483,7 +525,13 @@ function ProductGTMCard({
             <TimelineView data={data} />
           </div>
 
-          <ReadinessChecklist readiness={readiness} />
+          <ReadinessActivities
+            productId={product.id}
+            allReqs={allReqs}
+            updateField={updateField}
+            editingCell={editingCell}
+            setEditingCell={setEditingCell}
+          />
         </div>
       )}
     </div>
@@ -861,53 +909,277 @@ function RevenueAtRisk({ data }: { data: ProductGTMData[] }) {
   );
 }
 
-function ReadinessChecklist({ readiness }: { readiness: LaunchRequirement[] }) {
+const GTM_PILLARS = [
+  {
+    id: "product",
+    label: "Product",
+    subtitle: "Define & Build",
+    icon: Package,
+    bg: "bg-purple-50",
+    border: "border-purple-200",
+    text: "text-purple-700",
+    accent: "bg-purple-500",
+    lightAccent: "bg-purple-100",
+    deliverables: ["Product Descriptions", "Product Pricing", "Product/Beta/MVP/GA"],
+  },
+  {
+    id: "marketing",
+    label: "Marketing",
+    subtitle: "Position & Promote",
+    icon: Megaphone,
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    text: "text-blue-700",
+    accent: "bg-blue-500",
+    lightAccent: "bg-blue-100",
+    deliverables: [
+      "Marketing - ICP",
+      "Marketing - Customer Content",
+      "Marketing - Website",
+      "Marketing - Digital Campaigns",
+      "Marketing - Event Strategy",
+    ],
+  },
+  {
+    id: "sales",
+    label: "Sales",
+    subtitle: "Enable & Close",
+    icon: HandshakeIcon,
+    bg: "bg-green-50",
+    border: "border-green-200",
+    text: "text-green-700",
+    accent: "bg-green-500",
+    lightAccent: "bg-green-100",
+    deliverables: [
+      "Sales - Pipeline Building",
+      "Sales - Beta Customers",
+      "Sales - Closed Deals",
+    ],
+  },
+  {
+    id: "delivery",
+    label: "Delivery",
+    subtitle: "Deploy & Validate",
+    icon: Rocket,
+    bg: "bg-orange-50",
+    border: "border-orange-200",
+    text: "text-orange-700",
+    accent: "bg-orange-500",
+    lightAccent: "bg-orange-100",
+    deliverables: [
+      "Delivery - Technical Readiness",
+      "Delivery - Onboarded Customers",
+    ],
+  },
+  {
+    id: "support",
+    label: "Support & Ops",
+    subtitle: "Scale & Sustain",
+    icon: HeadphonesIcon,
+    bg: "bg-slate-50",
+    border: "border-slate-200",
+    text: "text-slate-700",
+    accent: "bg-slate-500",
+    lightAccent: "bg-slate-100",
+    deliverables: ["Support and Ops - Customer Onboarding"],
+  },
+];
+
+function friendlyName(deliverable: string): string {
+  if (deliverable === "Product Descriptions") return "Descriptions";
+  if (deliverable === "Product Pricing") return "Pricing";
+  if (deliverable === "Product/Beta/MVP/GA") return "Beta / MVP / GA";
+  const stripped = deliverable
+    .replace(/^Product\s*[-–—]?\s*/, "")
+    .replace(/^Marketing\s*[-–—]\s*/, "")
+    .replace(/^Sales\s*[-–—]\s*/, "")
+    .replace(/^Delivery\s*[-–—]\s*/, "")
+    .replace(/^Support and Ops\s*[-–—]\s*/, "")
+    .replace(/^Product\//, "");
+  return stripped;
+}
+
+function ReadinessActivities({
+  productId,
+  allReqs,
+  updateField,
+  editingCell,
+  setEditingCell,
+}: {
+  productId: string;
+  allReqs: LaunchRequirement[];
+  updateField: (productId: string, deliverable: string, field: keyof LaunchRequirement, value: string) => void;
+  editingCell: string | null;
+  setEditingCell: (key: string | null) => void;
+}) {
   return (
-    <div>
-      <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-        <CheckCircle2 className="w-4 h-4" /> Launch Dependencies
+    <div className="space-y-4">
+      <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+        <CheckCircle2 className="w-4 h-4" /> GTM Activities
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-        {PILLAR_CONFIG.map((pillar) => {
-          const deliverables = getDeliverablesByPillar(pillar.prefix);
-          const pc = PILLAR_COLORS[pillar.color];
-          const Icon = pillar.icon;
-          const done = deliverables.filter((d) => {
-            const req = readiness.find((r) => r.deliverable === d);
-            return req ? isDeliverableComplete(req) : false;
-          }).length;
+      {GTM_PILLARS.map((pillar) => {
+        const pillarReqs = allReqs.filter((r) => pillar.deliverables.includes(r.deliverable));
+        if (pillarReqs.length === 0) return null;
 
-          return (
-            <div key={pillar.name} className={`rounded-lg border ${pc.border} ${pc.bg} p-3`}>
-              <div className="flex items-center gap-2 mb-2">
-                <Icon className={`w-4 h-4 ${pc.text}`} />
-                <span className={`text-xs font-semibold ${pc.text}`}>{pillar.name}</span>
-                <span className={`text-xs ml-auto ${pc.text}`}>{done}/{deliverables.length}</span>
+        const done = pillarReqs.filter((r) => r.criticalPath && r.timeline && r.content).length;
+        const total = pillarReqs.length;
+        const allDone = done === total && total > 0;
+        const PillarIcon = pillar.icon;
+
+        return (
+          <div key={pillar.id}>
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`w-7 h-7 rounded-lg ${pillar.accent} text-white flex items-center justify-center`}>
+                <PillarIcon className="w-3.5 h-3.5" />
               </div>
-              <div className="space-y-1.5">
-                {deliverables.map((d) => {
-                  const req = readiness.find((r) => r.deliverable === d);
-                  const complete = req ? isDeliverableComplete(req) : false;
-                  const shortName = d.includes(" - ") ? d.split(" - ")[1] : d.replace("Product/", "").replace("Product ", "");
-
-                  return (
-                    <div key={d} className="flex items-center gap-1.5">
-                      {complete ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                      ) : (
-                        <Circle className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
-                      )}
-                      <span className={`text-xs ${complete ? "text-gray-700" : "text-gray-400"}`}>
-                        {shortName}
-                      </span>
-                    </div>
-                  );
-                })}
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-bold uppercase tracking-wider ${pillar.text}`}>{pillar.label}</span>
+                <span className="text-xs text-gray-400 italic">{pillar.subtitle}</span>
+              </div>
+              <div className="flex-1 flex items-center gap-2 justify-end">
+                <span className={`text-xs font-medium ${allDone ? "text-green-600" : "text-gray-400"}`}>
+                  {done}/{total}
+                </span>
+                <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${allDone ? "bg-green-500" : pillar.accent}`}
+                    style={{ width: `${total > 0 ? (done / total) * 100 : 0}%` }}
+                  />
+                </div>
               </div>
             </div>
-          );
-        })}
-      </div>
+
+            <div className={`rounded-lg border ${pillar.border} overflow-hidden`}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className={`${pillar.bg} border-b ${pillar.border}`}>
+                    <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs w-[180px]`}>Activity</th>
+                    <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs w-[80px]`}>Owner</th>
+                    <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs`}>Critical Path to $$</th>
+                    <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs`}>Timeline</th>
+                    <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs`}>Content</th>
+                    <th className={`px-3 py-2 text-left font-medium ${pillar.text} text-xs w-[150px]`}>Depends On</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pillarReqs.map((r, i) => {
+                    const cellKey = (field: string) => `gtm::${productId}::${r.deliverable}::${field}`;
+                    const isComplete = r.criticalPath && r.timeline && r.content;
+                    const hasDependants = allReqs.some((other) => other.dependency === r.deliverable);
+
+                    return (
+                      <tr
+                        key={r.deliverable}
+                        className={`border-b last:border-b-0 ${pillar.border} ${i % 2 === 0 ? "bg-white" : pillar.bg + "/30"}`}
+                      >
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-1.5">
+                            {isComplete ? (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                            ) : (
+                              <Circle className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
+                            )}
+                            <span className="text-gray-800 font-medium text-xs">
+                              {friendlyName(r.deliverable)}
+                            </span>
+                            {hasDependants && (
+                              <span
+                                className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200"
+                                title="Other activities depend on this"
+                              >
+                                <Link2 className="w-2.5 h-2.5" />
+                                BLOCKER
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2">
+                          {editingCell === cellKey("owner") ? (
+                            <input
+                              autoFocus
+                              className="w-full border border-blue-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                              defaultValue={r.owner}
+                              onBlur={(e) => {
+                                updateField(productId, r.deliverable, "owner", e.target.value);
+                                setEditingCell(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                if (e.key === "Escape") setEditingCell(null);
+                              }}
+                            />
+                          ) : (
+                            <span
+                              onClick={() => setEditingCell(cellKey("owner"))}
+                              className={`cursor-pointer inline-block px-1.5 py-0.5 rounded text-xs font-medium border ${
+                                r.owner
+                                  ? `${pillar.bg} ${pillar.text} ${pillar.border}`
+                                  : "bg-gray-100 text-gray-400 border-gray-200"
+                              }`}
+                            >
+                              {r.owner || "\u2014"}
+                            </span>
+                          )}
+                        </td>
+                        {(["criticalPath", "timeline", "content"] as const).map((field) => (
+                          <td key={field} className="px-3 py-2">
+                            {editingCell === cellKey(field) ? (
+                              <input
+                                autoFocus
+                                className="w-full border border-blue-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                defaultValue={r[field]}
+                                onBlur={(e) => {
+                                  updateField(productId, r.deliverable, field, e.target.value);
+                                  setEditingCell(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                                  if (e.key === "Escape") setEditingCell(null);
+                                }}
+                              />
+                            ) : (
+                              <span
+                                onClick={() => setEditingCell(cellKey(field))}
+                                className={`cursor-pointer block min-h-[20px] px-1.5 py-0.5 rounded text-xs hover:bg-blue-50 transition-colors ${
+                                  r[field] ? "text-gray-700" : "text-gray-300 italic"
+                                }`}
+                              >
+                                {r[field] || "Click to edit"}
+                              </span>
+                            )}
+                          </td>
+                        ))}
+                        <td className="px-3 py-2">
+                          <select
+                            value={r.dependency || ""}
+                            onChange={(e) =>
+                              updateField(productId, r.deliverable, "dependency", e.target.value)
+                            }
+                            className={`w-full text-xs border rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 ${
+                              r.dependency
+                                ? "border-blue-300 bg-blue-50 text-blue-800"
+                                : "border-gray-200 text-gray-400"
+                            }`}
+                          >
+                            <option value="">None</option>
+                            {allReqs
+                              .filter((other) => other.deliverable !== r.deliverable)
+                              .map((other) => (
+                                <option key={other.deliverable} value={other.deliverable}>
+                                  {friendlyName(other.deliverable)}
+                                </option>
+                              ))}
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
