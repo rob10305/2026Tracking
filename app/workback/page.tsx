@@ -145,6 +145,7 @@ export default function LaunchReadinessPage() {
   const { state, updateLaunchRequirements, isLoaded } = useStore();
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [editingCell, setEditingCell] = useState<string | null>(null);
+  const [hideGA, setHideGA] = useState(false);
 
   const toggleProduct = useCallback((id: string) => {
     setExpandedProducts((prev) => {
@@ -155,7 +156,14 @@ export default function LaunchReadinessPage() {
     });
   }, []);
 
-  const expandAll = () => setExpandedProducts(new Set(state.products.map((p) => p.id)));
+  const isAlreadyGA = (p: { generally_available: string }) =>
+    (p.generally_available || "").toLowerCase() === "january";
+
+  const visibleProducts = hideGA
+    ? state.products.filter((p) => !isAlreadyGA(p))
+    : state.products;
+
+  const expandAll = () => setExpandedProducts(new Set(visibleProducts.map((p) => p.id)));
   const collapseAll = () => setExpandedProducts(new Set());
 
   const getReqs = useCallback(
@@ -196,13 +204,15 @@ export default function LaunchReadinessPage() {
     );
   }
 
-  const totalCompletion = state.products.reduce(
+  const totalCompletion = visibleProducts.reduce(
     (acc, p) => {
       const c = completionCount(getReqs(p.id));
       return { done: acc.done + c.done, total: acc.total + c.total };
     },
     { done: 0, total: 0 },
   );
+
+  const hasGAProducts = state.products.some(isAlreadyGA);
   const overallPct =
     totalCompletion.total > 0
       ? Math.round((totalCompletion.done / totalCompletion.total) * 100)
@@ -232,14 +242,27 @@ export default function LaunchReadinessPage() {
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="flex gap-2">
-          <button onClick={expandAll} className="text-xs text-blue-600 hover:text-blue-800">
-            Expand All
-          </button>
-          <span className="text-gray-300">|</span>
-          <button onClick={collapseAll} className="text-xs text-blue-600 hover:text-blue-800">
-            Collapse All
-          </button>
+        <div className="flex items-center gap-4">
+          <div className="flex gap-2">
+            <button onClick={expandAll} className="text-xs text-blue-600 hover:text-blue-800">
+              Expand All
+            </button>
+            <span className="text-gray-300">|</span>
+            <button onClick={collapseAll} className="text-xs text-blue-600 hover:text-blue-800">
+              Collapse All
+            </button>
+          </div>
+          {hasGAProducts && (
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <div
+                onClick={() => setHideGA((v) => !v)}
+                className={`relative w-8 h-[18px] rounded-full transition-colors ${hideGA ? "bg-blue-500" : "bg-gray-300"}`}
+              >
+                <div className={`absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow transition-transform ${hideGA ? "translate-x-[16px]" : "translate-x-[2px]"}`} />
+              </div>
+              <span className="text-xs text-gray-600">Hide already GA products</span>
+            </label>
+          )}
         </div>
 
         <div className="flex items-center gap-1">
@@ -260,7 +283,7 @@ export default function LaunchReadinessPage() {
       </div>
 
       <div className="space-y-4">
-        {state.products.map((p) => {
+        {visibleProducts.map((p) => {
           const reqs = getReqs(p.id);
           const { done, total } = completionCount(reqs);
           const pct = total > 0 ? Math.round((done / total) * 100) : 0;
