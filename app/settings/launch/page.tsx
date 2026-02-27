@@ -506,6 +506,9 @@ export default function ProductLaunchPage() {
                                 <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[170px]`}>
                                   Depends On
                                 </th>
+                                <th className={`px-4 py-2 text-center font-medium ${pillar.text} text-xs w-[70px]`}>
+                                  Complete
+                                </th>
                                 <th className={`px-4 py-2 text-center font-medium ${pillar.text} text-xs w-[40px]`} />
                               </tr>
                             </thead>
@@ -636,6 +639,21 @@ export default function ProductLaunchPage() {
                                             </option>
                                           ))}
                                       </select>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                      <input
+                                        type="checkbox"
+                                        checked={r.complete}
+                                        onChange={() => {
+                                          const updated = reqs.map((rr) =>
+                                            rr.deliverable === r.deliverable
+                                              ? { ...rr, complete: !rr.complete }
+                                              : rr,
+                                          );
+                                          updateLaunchRequirements(p.id, updated);
+                                        }}
+                                        className="w-4 h-4 rounded border-gray-300 text-green-500 focus:ring-green-400 cursor-pointer accent-green-500"
+                                      />
                                     </td>
                                     <td className="px-4 py-2.5 text-center">
                                       {isCustom && (
