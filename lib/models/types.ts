@@ -83,7 +83,8 @@ export interface LaunchRequirement {
 export const STANDARD_DELIVERABLES = [
   "Product Descriptions",
   "Product Pricing",
-  "Product/Beta/MVP/GA",
+  "Product/Beta/MVP",
+  "General Availability (GA)",
   "Marketing - ICP",
   "Marketing - Customer Content",
   "Marketing - Website",

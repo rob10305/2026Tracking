@@ -34,7 +34,7 @@ const PILLARS = [
     lightAccent: "bg-purple-100",
     ring: "ring-purple-200",
     prefix: "Product",
-    standardDeliverables: ["Product Descriptions", "Product Pricing", "Product/Beta/MVP/GA"],
+    standardDeliverables: ["Product Descriptions", "Product Pricing", "Product/Beta/MVP", "General Availability (GA)"],
   },
   {
     id: "marketing",
@@ -128,7 +128,8 @@ function stripPrefix(deliverable: string): string {
 function friendlyName(deliverable: string): string {
   if (deliverable === "Product Descriptions") return "Descriptions";
   if (deliverable === "Product Pricing") return "Pricing";
-  if (deliverable === "Product/Beta/MVP/GA") return "Beta / MVP / GA";
+  if (deliverable === "Product/Beta/MVP") return "Beta / MVP";
+  if (deliverable === "General Availability (GA)") return "GA";
   return stripPrefix(deliverable);
 }
 

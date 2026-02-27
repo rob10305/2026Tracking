@@ -46,7 +46,7 @@ const PILLARS = [
 ];
 
 function getPillar(deliverable: string) {
-  if (deliverable.startsWith("Product") || deliverable === "Product Descriptions" || deliverable === "Product Pricing" || deliverable === "Product/Beta/MVP/GA") return PILLARS[0];
+  if (deliverable.startsWith("Product") || deliverable === "Product Descriptions" || deliverable === "Product Pricing" || deliverable === "Product/Beta/MVP" || deliverable === "General Availability (GA)") return PILLARS[0];
   if (deliverable.startsWith("Marketing")) return PILLARS[1];
   if (deliverable.startsWith("Sales")) return PILLARS[2];
   if (deliverable.startsWith("Delivery")) return PILLARS[3];
@@ -57,7 +57,8 @@ function getPillar(deliverable: string) {
 function friendlyName(deliverable: string): string {
   if (deliverable === "Product Descriptions") return "Descriptions";
   if (deliverable === "Product Pricing") return "Pricing";
-  if (deliverable === "Product/Beta/MVP/GA") return "Beta / MVP / GA";
+  if (deliverable === "Product/Beta/MVP") return "Beta / MVP";
+  if (deliverable === "General Availability (GA)") return "GA";
   return deliverable
     .replace(/^Product\s*[-–—]?\s*/, "")
     .replace(/^Marketing\s*[-–—]\s*/, "")

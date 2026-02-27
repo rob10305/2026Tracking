@@ -99,7 +99,7 @@ function getDealsForMonth(
 }
 
 const CRITICAL_DEPENDENCIES = [
-  { deliverable: "Product/Beta/MVP/GA", label: "Product Launched", category: "Product" },
+  { deliverable: "General Availability (GA)", label: "Product Launched", category: "Product" },
   { deliverable: "Product Pricing", label: "Pricing Defined", category: "Product" },
   { deliverable: "Marketing - ICP", label: "ICP Defined", category: "Marketing" },
   { deliverable: "Marketing - Customer Content", label: "Customer Content", category: "Marketing" },
@@ -921,7 +921,7 @@ const GTM_PILLARS = [
     text: "text-purple-700",
     accent: "bg-purple-500",
     lightAccent: "bg-purple-100",
-    deliverables: ["Product Descriptions", "Product Pricing", "Product/Beta/MVP/GA"],
+    deliverables: ["Product Descriptions", "Product Pricing", "Product/Beta/MVP", "General Availability (GA)"],
   },
   {
     id: "marketing",
@@ -989,7 +989,8 @@ const GTM_PILLARS = [
 function friendlyName(deliverable: string): string {
   if (deliverable === "Product Descriptions") return "Descriptions";
   if (deliverable === "Product Pricing") return "Pricing";
-  if (deliverable === "Product/Beta/MVP/GA") return "Beta / MVP / GA";
+  if (deliverable === "Product/Beta/MVP") return "Beta / MVP";
+  if (deliverable === "General Availability (GA)") return "GA";
   const stripped = deliverable
     .replace(/^Product\s*[-–—]?\s*/, "")
     .replace(/^Marketing\s*[-–—]\s*/, "")

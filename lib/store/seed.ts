@@ -379,7 +379,8 @@ export function createSeedData(): AppState {
   const defaultOwners: Record<string, string> = {
     "Product Descriptions": "Phi",
     "Product Pricing": "Phi",
-    "Product/Beta/MVP/GA": "Phi",
+    "Product/Beta/MVP": "Phi",
+    "General Availability (GA)": "Phi",
     "Marketing - ICP": "Paul",
     "Marketing - Customer Content": "Paul",
     "Marketing - Website": "Paul",

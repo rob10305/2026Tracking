@@ -42,7 +42,7 @@ const PILLARS = [
     accent: "bg-purple-500",
     lightAccent: "bg-purple-100",
     ring: "ring-purple-200",
-    deliverables: ["Product Descriptions", "Product Pricing", "Product/Beta/MVP/GA"],
+    deliverables: ["Product Descriptions", "Product Pricing", "Product/Beta/MVP", "General Availability (GA)"],
   },
   {
     id: "marketing",
@@ -137,7 +137,8 @@ function stripPrefix(deliverable: string): string {
 function friendlyName(deliverable: string): string {
   if (deliverable === "Product Descriptions") return "Descriptions";
   if (deliverable === "Product Pricing") return "Pricing";
-  if (deliverable === "Product/Beta/MVP/GA") return "Beta / MVP / GA";
+  if (deliverable === "Product/Beta/MVP") return "Beta / MVP";
+  if (deliverable === "General Availability (GA)") return "GA";
   return stripPrefix(deliverable);
 }
 
@@ -465,6 +466,10 @@ export default function LaunchReadinessPage() {
                 <h2 className="font-bold text-base leading-tight">{p.name}</h2>
               </div>
               <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">GA Date</span>
+                  <span className="text-sm font-semibold text-gray-700">{p.generally_available || "TBD"}</span>
+                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">FY Revenue</span>
                   <span className={`text-sm font-semibold ${fc.totalRevenue > 0 ? "text-blue-700" : "text-gray-400"}`}>
