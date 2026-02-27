@@ -444,326 +444,271 @@ export default function LaunchReadinessPage() {
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {flashCards.map((fc) => {
-          const { product: p, reqs, done, total, pct, tMinus, nextAction, depsBeforePipeline, depsBeforeClosedDeals, outstanding } = fc;
+          const { product: p, outstanding } = fc;
           const isExpanded = expandedProducts.has(p.id);
 
           return (
-            <div
+            <button
               key={p.id}
-              className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm"
+              onClick={() => toggleProduct(p.id)}
+              className={`bg-white border-2 rounded-xl p-6 transition-all text-left hover:shadow-md ${
+                isExpanded
+                  ? "border-blue-300 ring-2 ring-blue-100"
+                  : "border-blue-100 hover:border-blue-200"
+              }`}
             >
-              <button
-                onClick={() => toggleProduct(p.id)}
-                className="w-full text-left px-5 py-4 hover:bg-gray-50/50 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <ChevronDown
-                      className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
-                    />
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{p.name}</h3>
-                      <span className="text-xs text-gray-500">
-                        GA: {p.generally_available || "TBD"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="hidden md:flex items-center gap-1">
-                      {PILLARS.map((pillar) => {
-                        const pc = pillarCompletion(reqs, pillar.deliverables);
-                        const allDone = pc.done === pc.total && pc.total > 0;
-                        return (
-                          <div
-                            key={pillar.id}
-                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                              allDone
-                                ? `${pillar.accent} text-white`
-                                : pc.done > 0
-                                  ? `${pillar.lightAccent} ${pillar.text}`
-                                  : "bg-gray-100 text-gray-400"
-                            }`}
-                            title={`${pillar.label}: ${pc.done}/${pc.total}`}
-                          >
-                            {pillar.number}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {pct === 100 ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      ) : pct > 0 ? (
-                        <AlertCircle className="w-4 h-4 text-amber-500" />
-                      ) : (
-                        <Circle className="w-4 h-4 text-gray-300" />
-                      )}
-                      <span className="text-sm text-gray-600">
-                        {done}/{total}
-                      </span>
-                    </div>
-                    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${pct === 100 ? "bg-green-500" : pct > 50 ? "bg-blue-500" : "bg-amber-500"}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
+              <div className="mb-4">
+                <Package className="w-8 h-8 text-blue-600" />
+              </div>
+              <h2 className="font-bold text-lg mb-1">{p.name}</h2>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">FY Revenue</span>
+                  <span className={`text-sm font-semibold ${fc.totalRevenue > 0 ? "text-blue-700" : "text-gray-400"}`}>
+                    {fc.totalRevenue > 0 ? formatCurrency(fc.totalRevenue) : "—"}
+                  </span>
                 </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-7 gap-2 ml-8">
-                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-                    <ListChecks className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Outstanding</div>
-                      <div className={`text-sm font-bold ${outstanding === 0 ? "text-green-600" : "text-gray-800"}`}>{outstanding} action{outstanding !== 1 ? "s" : ""}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-                    <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">T-Minus to GA</div>
-                      {tMinus ? (
-                        <div className={`text-sm font-bold ${tMinus.color}`}>{tMinus.label}</div>
-                      ) : (
-                        <div className="text-sm font-bold text-gray-400">TBD</div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-                    <CalendarClock className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Next Due</div>
-                      {nextAction ? (
-                        <div className="text-sm font-bold text-gray-800 truncate" title={friendlyName(nextAction.deliverable)}>
-                          {nextAction.date ? formatDate(nextAction.date) : "No date"} — {friendlyName(nextAction.deliverable)}
-                        </div>
-                      ) : (
-                        <div className="text-sm font-bold text-green-600">All done</div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-                    <GitBranch className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Deps to Pipeline</div>
-                      <div className={`text-sm font-bold ${depsBeforePipeline > 0 ? "text-amber-600" : "text-green-600"}`}>
-                        {depsBeforePipeline > 0 ? `${depsBeforePipeline} blocking` : "Clear"}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-                    <Target className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Deps to Deals</div>
-                      <div className={`text-sm font-bold ${depsBeforeClosedDeals > 0 ? "text-red-600" : "text-green-600"}`}>
-                        {depsBeforeClosedDeals > 0 ? `${depsBeforeClosedDeals} blocking` : "Clear"}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
-                    <DollarSign className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] text-blue-400 uppercase tracking-wider leading-tight">FY Revenue</div>
-                      <div className={`text-sm font-bold ${fc.totalRevenue > 0 ? "text-blue-700" : "text-gray-400"}`}>
-                        {fc.totalRevenue > 0 ? formatCurrency(fc.totalRevenue) : "—"}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
-                    <Hash className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] text-blue-400 uppercase tracking-wider leading-tight">Total Deals</div>
-                      <div className={`text-sm font-bold ${fc.totalDeals > 0 ? "text-blue-700" : "text-gray-400"}`}>
-                        {fc.totalDeals > 0 ? fc.totalDeals : "—"}
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">Steps Pending</span>
+                  <span className={`text-sm font-semibold ${outstanding === 0 ? "text-green-600" : "text-gray-800"}`}>
+                    {outstanding}
+                  </span>
                 </div>
-              </button>
+              </div>
+            </button>
+          );
+        })}
+      </div>
 
-              {isExpanded && (
-                <div className="border-t border-gray-200 px-5 py-4 space-y-5">
-                  <div className="flex items-center justify-end">
-                    <Link
-                      href="/settings/launch"
-                      className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      Edit in Product Launch
-                    </Link>
-                  </div>
-                  {PILLARS.map((pillar, pillarIdx) => {
-                    const pillarReqs = reqs.filter((r) =>
-                      pillar.deliverables.includes(r.deliverable),
-                    );
-                    if (pillarReqs.length === 0) return null;
+      {flashCards.filter((fc) => expandedProducts.has(fc.product.id)).map((fc) => {
+        const { product: p, reqs, done, total, pct, tMinus, nextAction, depsBeforePipeline, depsBeforeClosedDeals, outstanding } = fc;
+        return (
+          <div key={`detail-${p.id}`} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Package className="w-5 h-5 text-blue-600" />
+                <div>
+                  <h3 className="font-semibold text-gray-800">{p.name}</h3>
+                  <span className="text-xs text-gray-500">GA: {p.generally_available || "TBD"}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="hidden md:flex items-center gap-1">
+                  {PILLARS.map((pillar) => {
                     const pc = pillarCompletion(reqs, pillar.deliverables);
-                    const allDone = pc.done === pc.total;
-                    const PillarIcon = pillar.icon;
-
+                    const allDone = pc.done === pc.total && pc.total > 0;
                     return (
-                      <div key={pillar.id}>
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-8 h-8 rounded-lg ${pillar.accent} text-white flex items-center justify-center`}
-                            >
-                              <PillarIcon className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className={`text-xs font-bold uppercase tracking-wider ${pillar.text}`}>
-                                  Pillar {pillar.number}
-                                </span>
-                                <span className="font-semibold text-gray-800 text-sm">
-                                  {pillar.label}
-                                </span>
-                                <span className="text-xs text-gray-400 italic">
-                                  {pillar.subtitle}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex-1 flex items-center gap-2 justify-end">
-                            <span className={`text-xs font-medium ${allDone ? "text-green-600" : "text-gray-400"}`}>
-                              {pc.done}/{pc.total}
-                            </span>
-                            <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${allDone ? "bg-green-500" : pillar.accent}`}
-                                style={{
-                                  width: `${pc.total > 0 ? (pc.done / pc.total) * 100 : 0}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className={`rounded-lg border ${pillar.border} overflow-hidden`}>
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className={`${pillar.bg} border-b ${pillar.border}`}>
-                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[200px]`}>
-                                  Activity
-                                </th>
-                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[90px]`}>
-                                  Owner
-                                </th>
-                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[130px]`}>
-                                  Due Date
-                                </th>
-                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs`}>
-                                  Content
-                                </th>
-                                <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[170px]`}>
-                                  Depends On
-                                </th>
-                                <th className={`px-4 py-2 text-center font-medium ${pillar.text} text-xs w-[70px]`}>
-                                  Complete
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {pillarReqs.map((r, i) => {
-                                const hasDependants = reqs.some((other) => other.dependency === r.deliverable);
-
-                                return (
-                                  <tr
-                                    key={r.deliverable}
-                                    className={`border-b last:border-b-0 ${pillar.border} ${i % 2 === 0 ? "bg-white" : pillar.bg + "/30"}`}
-                                  >
-                                    <td className="px-4 py-2.5">
-                                      <div className="flex items-center gap-2">
-                                        {r.complete ? (
-                                          <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                                        ) : (
-                                          <Circle className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
-                                        )}
-                                        <span className="text-gray-800 font-medium">
-                                          {friendlyName(r.deliverable)}
-                                        </span>
-                                        {hasDependants && (
-                                          <span
-                                            className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200"
-                                            title="Other activities depend on this"
-                                          >
-                                            <Link2 className="w-3 h-3" />
-                                            BLOCKER
-                                          </span>
-                                        )}
-                                      </div>
-                                    </td>
-                                    <td className="px-4 py-2.5">
-                                      <span
-                                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${
-                                          r.owner
-                                            ? `${pillar.bg} ${pillar.text} ${pillar.border}`
-                                            : "bg-gray-100 text-gray-400 border-gray-200"
-                                        }`}
-                                      >
-                                        {r.owner || "\u2014"}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-2.5">
-                                      <span className={`text-xs ${r.timeline ? "text-gray-700" : "text-gray-400"}`}>
-                                        {r.timeline ? formatDate(r.timeline) : "\u2014"}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-2.5">
-                                      <span className={`text-sm ${r.content ? "text-gray-700" : "text-gray-300 italic"}`}>
-                                        {r.content || "\u2014"}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-2.5">
-                                      {r.dependency ? (
-                                        <span className="text-xs px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700">
-                                          {friendlyName(r.dependency)}
-                                        </span>
-                                      ) : (
-                                        <span className="text-xs text-gray-400">\u2014</span>
-                                      )}
-                                    </td>
-                                    <td className="px-4 py-2.5 text-center">
-                                      {r.complete ? (
-                                        <CheckCircle2 className="w-4 h-4 text-green-500 mx-auto" />
-                                      ) : (
-                                        <Circle className="w-4 h-4 text-gray-300 mx-auto" />
-                                      )}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-
-                        {pillarIdx < PILLARS.length - 1 && (
-                          <div className="flex justify-center mt-4">
-                            <div className="flex flex-col items-center">
-                              <div className="w-px h-3 bg-gray-200" />
-                              <ChevronDown className="w-4 h-4 text-gray-300" />
-                            </div>
-                          </div>
-                        )}
+                      <div
+                        key={pillar.id}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                          allDone
+                            ? `${pillar.accent} text-white`
+                            : pc.done > 0
+                              ? `${pillar.lightAccent} ${pillar.text}`
+                              : "bg-gray-100 text-gray-400"
+                        }`}
+                        title={`${pillar.label}: ${pc.done}/${pc.total}`}
+                      >
+                        {pillar.number}
                       </div>
                     );
                   })}
                 </div>
-              )}
+                <div className="flex items-center gap-2">
+                  {pct === 100 ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  ) : pct > 0 ? (
+                    <AlertCircle className="w-4 h-4 text-amber-500" />
+                  ) : (
+                    <Circle className="w-4 h-4 text-gray-300" />
+                  )}
+                  <span className="text-sm text-gray-600">{done}/{total}</span>
+                </div>
+                <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${pct === 100 ? "bg-green-500" : pct > 50 ? "bg-blue-500" : "bg-amber-500"}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <button onClick={() => toggleProduct(p.id)} className="text-gray-400 hover:text-gray-600 transition-colors ml-2">
+                  <ChevronDown className="w-5 h-5 rotate-180" />
+                </button>
+              </div>
             </div>
-          );
-        })}
-      </div>
+            <div className="px-5 py-3">
+              <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
+                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                  <ListChecks className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Outstanding</div>
+                    <div className={`text-sm font-bold ${outstanding === 0 ? "text-green-600" : "text-gray-800"}`}>{outstanding} action{outstanding !== 1 ? "s" : ""}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                  <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">T-Minus to GA</div>
+                    {tMinus ? <div className={`text-sm font-bold ${tMinus.color}`}>{tMinus.label}</div> : <div className="text-sm font-bold text-gray-400">TBD</div>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                  <CalendarClock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Next Due</div>
+                    {nextAction ? (
+                      <div className="text-sm font-bold text-gray-800 truncate" title={friendlyName(nextAction.deliverable)}>
+                        {nextAction.date ? formatDate(nextAction.date) : "No date"} — {friendlyName(nextAction.deliverable)}
+                      </div>
+                    ) : (
+                      <div className="text-sm font-bold text-green-600">All done</div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                  <GitBranch className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Deps to Pipeline</div>
+                    <div className={`text-sm font-bold ${depsBeforePipeline > 0 ? "text-amber-600" : "text-green-600"}`}>
+                      {depsBeforePipeline > 0 ? `${depsBeforePipeline} blocking` : "Clear"}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                  <Target className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Deps to Deals</div>
+                    <div className={`text-sm font-bold ${depsBeforeClosedDeals > 0 ? "text-red-600" : "text-green-600"}`}>
+                      {depsBeforeClosedDeals > 0 ? `${depsBeforeClosedDeals} blocking` : "Clear"}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
+                  <DollarSign className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-blue-400 uppercase tracking-wider leading-tight">FY Revenue</div>
+                    <div className={`text-sm font-bold ${fc.totalRevenue > 0 ? "text-blue-700" : "text-gray-400"}`}>
+                      {fc.totalRevenue > 0 ? formatCurrency(fc.totalRevenue) : "—"}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
+                  <Hash className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-blue-400 uppercase tracking-wider leading-tight">Total Deals</div>
+                    <div className={`text-sm font-bold ${fc.totalDeals > 0 ? "text-blue-700" : "text-gray-400"}`}>
+                      {fc.totalDeals > 0 ? fc.totalDeals : "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-gray-200 px-5 py-4 space-y-5">
+              <div className="flex items-center justify-end">
+                <Link href="/settings/launch" className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Edit in Product Launch
+                </Link>
+              </div>
+              {PILLARS.map((pillar, pillarIdx) => {
+                const pillarReqs = reqs.filter((r) => pillar.deliverables.includes(r.deliverable));
+                if (pillarReqs.length === 0) return null;
+                const pc = pillarCompletion(reqs, pillar.deliverables);
+                const allDone = pc.done === pc.total;
+                const PillarIcon = pillar.icon;
+                return (
+                  <div key={pillar.id}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-lg ${pillar.accent} text-white flex items-center justify-center`}>
+                          <PillarIcon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-bold uppercase tracking-wider ${pillar.text}`}>Pillar {pillar.number}</span>
+                            <span className="font-semibold text-gray-800 text-sm">{pillar.label}</span>
+                            <span className="text-xs text-gray-400 italic">{pillar.subtitle}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex-1 flex items-center gap-2 justify-end">
+                        <span className={`text-xs font-medium ${allDone ? "text-green-600" : "text-gray-400"}`}>{pc.done}/{pc.total}</span>
+                        <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${allDone ? "bg-green-500" : pillar.accent}`} style={{ width: `${pc.total > 0 ? (pc.done / pc.total) * 100 : 0}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className={`rounded-lg border ${pillar.border} overflow-hidden`}>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className={`${pillar.bg} border-b ${pillar.border}`}>
+                            <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[200px]`}>Activity</th>
+                            <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[90px]`}>Owner</th>
+                            <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[130px]`}>Due Date</th>
+                            <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs`}>Content</th>
+                            <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[170px]`}>Depends On</th>
+                            <th className={`px-4 py-2 text-center font-medium ${pillar.text} text-xs w-[70px]`}>Complete</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pillarReqs.map((r, i) => {
+                            const hasDependants = reqs.some((other) => other.dependency === r.deliverable);
+                            return (
+                              <tr key={r.deliverable} className={`border-b last:border-b-0 ${pillar.border} ${i % 2 === 0 ? "bg-white" : pillar.bg + "/30"}`}>
+                                <td className="px-4 py-2.5">
+                                  <div className="flex items-center gap-2">
+                                    {r.complete ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" /> : <Circle className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />}
+                                    <span className="text-gray-800 font-medium">{friendlyName(r.deliverable)}</span>
+                                    {hasDependants && (
+                                      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200" title="Other activities depend on this">
+                                        <Link2 className="w-3 h-3" />BLOCKER
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${r.owner ? `${pillar.bg} ${pillar.text} ${pillar.border}` : "bg-gray-100 text-gray-400 border-gray-200"}`}>
+                                    {r.owner || "\u2014"}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className={`text-xs ${r.timeline ? "text-gray-700" : "text-gray-400"}`}>{r.timeline ? formatDate(r.timeline) : "\u2014"}</span>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className={`text-sm ${r.content ? "text-gray-700" : "text-gray-300 italic"}`}>{r.content || "\u2014"}</span>
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  {r.dependency ? (
+                                    <span className="text-xs px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700">{friendlyName(r.dependency)}</span>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">{"\u2014"}</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2.5 text-center">
+                                  {r.complete ? <CheckCircle2 className="w-4 h-4 text-green-500 mx-auto" /> : <Circle className="w-4 h-4 text-gray-300 mx-auto" />}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {pillarIdx < PILLARS.length - 1 && (
+                      <div className="flex justify-center mt-4">
+                        <div className="flex flex-col items-center">
+                          <div className="w-px h-3 bg-gray-200" />
+                          <ChevronDown className="w-4 h-4 text-gray-300" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
