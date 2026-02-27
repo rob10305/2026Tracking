@@ -77,6 +77,7 @@ export interface LaunchRequirement {
   timeline: string;
   content: string;
   dependency: string;
+  complete: boolean;
 }
 
 export const STANDARD_DELIVERABLES = [

@@ -141,7 +141,7 @@ function friendlyName(deliverable: string): string {
 
 function completionCount(reqs: LaunchRequirement[]): { done: number; total: number } {
   const total = reqs.length;
-  const done = reqs.filter((r) => r.timeline && r.content).length;
+  const done = reqs.filter((r) => r.complete).length;
   return { done, total };
 }
 
@@ -151,7 +151,7 @@ function pillarCompletion(
 ): { done: number; total: number } {
   const relevant = reqs.filter((r) => pillarDeliverables.includes(r.deliverable));
   const total = relevant.length;
-  const done = relevant.filter((r) => r.timeline && r.content).length;
+  const done = relevant.filter((r) => r.complete).length;
   return { done, total };
 }
 
@@ -174,7 +174,7 @@ function getNextActionDue(reqs: LaunchRequirement[]): { deliverable: string; dat
   now.setHours(0, 0, 0, 0);
   let nearest: { deliverable: string; date: string; ts: number } | null = null;
   for (const r of reqs) {
-    if (r.timeline && r.content) continue;
+    if (r.complete) continue;
     if (!r.timeline) continue;
     const ts = new Date(r.timeline).getTime();
     if (isNaN(ts)) continue;
@@ -183,7 +183,7 @@ function getNextActionDue(reqs: LaunchRequirement[]): { deliverable: string; dat
     }
   }
   if (nearest) return { deliverable: nearest.deliverable, date: nearest.date };
-  const incomplete = reqs.filter((r) => !(r.timeline && r.content));
+  const incomplete = reqs.filter((r) => !r.complete);
   if (incomplete.length > 0) return { deliverable: incomplete[0].deliverable, date: "" };
   return null;
 }
@@ -201,7 +201,7 @@ function countDepsBeforeActivity(reqs: LaunchRequirement[], targetDeliverable: s
   walk(targetDeliverable);
   const incomplete = [...visited].filter((d) => {
     const r = reqs.find((rr) => rr.deliverable === d);
-    return r && !(r.timeline && r.content);
+    return r && !r.complete;
   });
   return incomplete.length;
 }
@@ -302,6 +302,7 @@ export default function LaunchReadinessPage() {
         timeline: "",
         content: "",
         dependency: "",
+        complete: false,
       }));
     },
     [state.launchRequirements],
@@ -666,13 +667,15 @@ export default function LaunchReadinessPage() {
                                 <th className={`px-4 py-2 text-left font-medium ${pillar.text} text-xs w-[170px]`}>
                                   Depends On
                                 </th>
+                                <th className={`px-4 py-2 text-center font-medium ${pillar.text} text-xs w-[70px]`}>
+                                  Complete
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
                               {pillarReqs.map((r, i) => {
                                 const cellKey = (field: string) =>
                                   `${p.id}::${r.deliverable}::${field}`;
-                                const isComplete = r.timeline && r.content;
                                 const hasDependants = reqs.some((other) => other.dependency === r.deliverable);
 
                                 return (
@@ -682,7 +685,7 @@ export default function LaunchReadinessPage() {
                                   >
                                     <td className="px-4 py-2.5">
                                       <div className="flex items-center gap-2">
-                                        {isComplete ? (
+                                        {r.complete ? (
                                           <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
                                         ) : (
                                           <Circle className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
@@ -816,6 +819,23 @@ export default function LaunchReadinessPage() {
                                             </option>
                                           ))}
                                       </select>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                      <input
+                                        type="checkbox"
+                                        checked={r.complete}
+                                        onChange={(e) => {
+                                          e.stopPropagation();
+                                          const updated = reqs.map((rr) =>
+                                            rr.deliverable === r.deliverable
+                                              ? { ...rr, complete: !rr.complete }
+                                              : rr,
+                                          );
+                                          updateLaunchRequirements(p.id, updated);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-4 h-4 rounded border-gray-300 text-green-500 focus:ring-green-400 cursor-pointer accent-green-500"
+                                      />
                                     </td>
                                   </tr>
                                 );

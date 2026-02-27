@@ -79,7 +79,7 @@ function getDeliverablesByPillar(pillarPrefix: string): string[] {
 }
 
 function isDeliverableComplete(req: LaunchRequirement): boolean {
-  return !!(req.timeline || req.content);
+  return !!req.complete;
 }
 
 function getDealsForMonth(
@@ -151,6 +151,7 @@ export default function GTMPage() {
         timeline: "",
         content: "",
         dependency: "",
+        complete: false,
       }));
     },
     [state.launchRequirements],
@@ -1021,7 +1022,7 @@ function ReadinessActivities({
         const pillarReqs = allReqs.filter((r) => pillar.deliverables.includes(r.deliverable));
         if (pillarReqs.length === 0) return null;
 
-        const done = pillarReqs.filter((r) => r.timeline && r.content).length;
+        const done = pillarReqs.filter((r) => r.complete).length;
         const total = pillarReqs.length;
         const allDone = done === total && total > 0;
         const PillarIcon = pillar.icon;
@@ -1063,7 +1064,6 @@ function ReadinessActivities({
                 <tbody>
                   {pillarReqs.map((r, i) => {
                     const cellKey = (field: string) => `gtm::${productId}::${r.deliverable}::${field}`;
-                    const isComplete = r.timeline && r.content;
                     const hasDependants = allReqs.some((other) => other.dependency === r.deliverable);
 
                     return (
@@ -1073,7 +1073,7 @@ function ReadinessActivities({
                       >
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-1.5">
-                            {isComplete ? (
+                            {r.complete ? (
                               <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
                             ) : (
                               <Circle className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />

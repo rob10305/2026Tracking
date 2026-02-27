@@ -134,7 +134,7 @@ function friendlyName(deliverable: string): string {
 
 function completionCount(reqs: LaunchRequirement[]): { done: number; total: number } {
   const total = reqs.length;
-  const done = reqs.filter((r) => r.timeline && r.content).length;
+  const done = reqs.filter((r) => r.complete).length;
   return { done, total };
 }
 
@@ -180,6 +180,7 @@ export default function ProductLaunchPage() {
         timeline: "",
         content: "",
         dependency: "",
+        complete: false,
       }));
     },
     [state.launchRequirements],
@@ -219,6 +220,7 @@ export default function ProductLaunchPage() {
         timeline: "",
         content: "",
         dependency: "",
+        complete: false,
       };
 
       const updated = [...reqs];
@@ -342,7 +344,7 @@ export default function ProductLaunchPage() {
                   <div className="hidden md:flex items-center gap-1">
                     {PILLARS.map((pillar) => {
                       const pillarReqs = getReqsForPillar(reqs, pillar);
-                      const pc = { done: pillarReqs.filter((r) => r.timeline && r.content).length, total: pillarReqs.length };
+                      const pc = { done: pillarReqs.filter((r) => r.complete).length, total: pillarReqs.length };
                       const allDone = pc.done === pc.total && pc.total > 0;
                       return (
                         <div
@@ -436,7 +438,7 @@ export default function ProductLaunchPage() {
                       );
                     }
 
-                    const pc = { done: pillarReqs.filter((r) => r.timeline && r.content).length, total: pillarReqs.length };
+                    const pc = { done: pillarReqs.filter((r) => r.complete).length, total: pillarReqs.length };
                     const allDone = pc.done === pc.total && pc.total > 0;
                     const PillarIcon = pillar.icon;
 
@@ -511,7 +513,6 @@ export default function ProductLaunchPage() {
                               {pillarReqs.map((r, i) => {
                                 const cellKey = (field: string) =>
                                   `${p.id}::${r.deliverable}::${field}`;
-                                const isComplete = r.timeline && r.content;
                                 const hasDependants = reqs.some((other) => other.dependency === r.deliverable);
                                 const isCustom = !(STANDARD_DELIVERABLES as readonly string[]).includes(r.deliverable);
 
@@ -522,7 +523,7 @@ export default function ProductLaunchPage() {
                                   >
                                     <td className="px-4 py-2.5">
                                       <div className="flex items-center gap-2">
-                                        {isComplete ? (
+                                        {r.complete ? (
                                           <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
                                         ) : (
                                           <Circle className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />

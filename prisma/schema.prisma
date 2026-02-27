@@ -86,8 +86,9 @@ model LaunchRequirement {
   criticalPath String @default("")
   timeline     String @default("")
   content      String @default("")
-  dependency   String @default("")
-  sort_order   Int    @default(0)
+  dependency   String  @default("")
+  complete     Boolean @default(false)
+  sort_order   Int     @default(0)
 
   product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
 

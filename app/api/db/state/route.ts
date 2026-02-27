@@ -134,6 +134,7 @@ export async function GET() {
       timeline: lr.timeline,
       content: lr.content,
       dependency: lr.dependency,
+      complete: lr.complete,
     });
   }
 

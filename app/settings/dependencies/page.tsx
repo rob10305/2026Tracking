@@ -98,6 +98,7 @@ export default function DependencyMapPage() {
         timeline: "",
         content: "",
         dependency: "",
+        complete: false,
       }));
     },
     [state.launchRequirements],
@@ -106,7 +107,7 @@ export default function DependencyMapPage() {
   const productData = useMemo<ProductDepData[]>(() => {
     return state.products.map((product) => {
       const reqs = getReqs(product.id);
-      const isComplete = (r: LaunchRequirement) => !!(r.timeline && r.content);
+      const isComplete = (r: LaunchRequirement) => !!r.complete;
 
       const chains: DepChain[] = reqs
         .filter((r) => r.dependency)
@@ -476,7 +477,7 @@ function ProductDependencyCard({
                   return false;
                 });
                 if (pillarReqs.length === 0) return null;
-                const done = pillarReqs.filter((r) => r.timeline && r.content).length;
+                const done = pillarReqs.filter((r) => r.complete).length;
                 const total = pillarReqs.length;
                 const pct = total > 0 ? Math.round((done / total) * 100) : 0;
                 const PIcon = pillar.icon;
@@ -493,7 +494,7 @@ function ProductDependencyCard({
                     </div>
                     <div className="space-y-1">
                       {pillarReqs.map((r) => {
-                        const complete = !!(r.timeline && r.content);
+                        const complete = !!r.complete;
                         const isBlocker = blockers.some((b) => b.deliverable === r.deliverable);
                         const isBlocked = chains.some((c) => c.deliverable === r.deliverable && c.isBlocked);
                         return (

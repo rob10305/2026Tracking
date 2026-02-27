@@ -415,6 +415,7 @@ export function createSeedData(): AppState {
       timeline: "",
       content: "",
       dependency: "",
+      complete: false,
     }));
   }
 
