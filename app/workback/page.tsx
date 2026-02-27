@@ -460,10 +460,10 @@ export default function LaunchReadinessPage() {
                   : "border-blue-100 hover:border-blue-200"
               }`}
             >
-              <div className="mb-4">
-                <Package className="w-8 h-8 text-blue-600" />
+              <div className="flex items-center gap-3 mb-3">
+                <Package className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                <h2 className="font-bold text-base leading-tight">{p.name}</h2>
               </div>
-              <h2 className="font-bold text-lg mb-1">{p.name}</h2>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">FY Revenue</span>
