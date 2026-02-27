@@ -25,7 +25,7 @@ The application is built on Next.js 15 (App Router) using a PostgreSQL database 
 - **Launch Readiness:** Tracks 5-pillar activity tables (Product, Marketing, Sales, Delivery, Support & Ops) with inline editing, dependency tracking, and progress indicators. Flash card summaries with 7 metrics: Outstanding Actions, T-Minus to GA, Next Due, Deps to Pipeline, Deps to Deals, FY Revenue, and Total Deals. Forecast selector dropdown integrates saved forecast data for revenue/deal metrics per product (variant-aware pricing).
 - **GTM Readiness:** Features pipeline requirements, timeline visualizations, and launch dependencies checklists, accessible under password-protected settings.
 - **CFO View:** Provides an executive dashboard with key financial KPIs, monthly revenue trends, category breakdowns, and product revenue rankings.
-- **Dependency Mapping:** Visualizes launch dependency chains with KPI cards, per-product cards, and blocker highlights.
+- **Dependency Mapping:** Interactive React Flow diagram visualizing launch dependency chains with custom node types, color-coded animated edges, minimap, legend panel, and blocker highlights. Supports all-products and single-product view modes with filters.
 - **Industry Averages:** Allows configuration and application of industry average sales motion metrics.
 - **State Management:** Uses React context with optimistic updates for a responsive user experience.
 - **Security:** Settings pages are password-protected.
@@ -47,3 +47,4 @@ The application is built on Next.js 15 (App Router) using a PostgreSQL database 
 - **Handsontable**: Spreadsheet component for interactive data input.
 - **Vitest**: Testing framework.
 - **lucide-react**: Icon library.
+- **@xyflow/react**: React Flow library for interactive node-based diagrams (dependency map).
