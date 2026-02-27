@@ -22,7 +22,7 @@ The application is built on Next.js 15 (App Router) using a PostgreSQL database 
 - **Data Persistence:** All application state is stored in PostgreSQL via Prisma, replacing previous localStorage persistence.
 - **Calculation Engine:** Core logic handles revenue, scenario modeling, time periods, and CSV exports.
 - **Product & Variant Management:** Products support S/M/L variants with individual quantity inputs and variant-specific pricing and component splits.
-- **Launch Readiness:** Tracks 5-pillar activity tables (Product, Marketing, Sales, Delivery, Support & Ops) with inline editing, dependency tracking, and progress indicators. Flash card summaries provide key metrics.
+- **Launch Readiness:** Tracks 5-pillar activity tables (Product, Marketing, Sales, Delivery, Support & Ops) with inline editing, dependency tracking, and progress indicators. Flash card summaries with 7 metrics: Outstanding Actions, T-Minus to GA, Next Due, Deps to Pipeline, Deps to Deals, FY Revenue, and Total Deals. Forecast selector dropdown integrates saved forecast data for revenue/deal metrics per product (variant-aware pricing).
 - **GTM Readiness:** Features pipeline requirements, timeline visualizations, and launch dependencies checklists, accessible under password-protected settings.
 - **CFO View:** Provides an executive dashboard with key financial KPIs, monthly revenue trends, category breakdowns, and product revenue rankings.
 - **Dependency Mapping:** Visualizes launch dependency chains with KPI cards, per-product cards, and blocker highlights.

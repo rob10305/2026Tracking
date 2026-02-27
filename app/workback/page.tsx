@@ -2,9 +2,10 @@
 
 import React, { useState, useCallback, useMemo } from "react";
 import { useStore } from "@/lib/store/context";
+import { useSavedForecasts } from "@/lib/store/saved-forecasts-context";
 import type { LaunchRequirement } from "@/lib/models/types";
-import { STANDARD_DELIVERABLES } from "@/lib/models/types";
-import type { Product } from "@/lib/models/types";
+import { STANDARD_DELIVERABLES, MONTHS_2026, forecastKey, variantForecastKey } from "@/lib/models/types";
+import type { Product, ProductVariant } from "@/lib/models/types";
 import {
   ChevronDown,
   CheckCircle2,
@@ -21,6 +22,8 @@ import {
   GitBranch,
   Target,
   ListChecks,
+  DollarSign,
+  Hash,
 } from "lucide-react";
 
 const PILLARS = [
@@ -210,6 +213,41 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+function getProductForecastStats(
+  product: Product,
+  quantities: Record<string, number>,
+): { totalDeals: number; totalRevenue: number } {
+  let totalDeals = 0;
+  let totalRevenue = 0;
+  for (const m of MONTHS_2026) {
+    if (product.has_variants && product.variants) {
+      for (const v of ["small", "medium", "large"] as ProductVariant[]) {
+        const key = variantForecastKey(product.id, v, m);
+        const qty = quantities[key] || 0;
+        if (qty > 0) {
+          totalDeals += qty;
+          const variantPricing = product.variants[v];
+          totalRevenue += qty * (variantPricing?.gross_annual_price ?? product.gross_annual_price);
+        }
+      }
+    } else {
+      const key = forecastKey(product.id, m);
+      const qty = quantities[key] || 0;
+      if (qty > 0) {
+        totalDeals += qty;
+        totalRevenue += qty * product.gross_annual_price;
+      }
+    }
+  }
+  return { totalDeals, totalRevenue };
+}
+
+function formatCurrency(val: number): string {
+  if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `$${(val / 1_000).toFixed(0)}K`;
+  return `$${val.toFixed(0)}`;
+}
+
 interface FlashCardData {
   product: Product;
   reqs: LaunchRequirement[];
@@ -221,13 +259,17 @@ interface FlashCardData {
   depsBeforePipeline: number;
   depsBeforeClosedDeals: number;
   outstanding: number;
+  totalDeals: number;
+  totalRevenue: number;
 }
 
 export default function LaunchReadinessPage() {
   const { state, updateLaunchRequirements, isLoaded } = useStore();
+  const { forecasts, isLoaded: forecastsLoaded } = useSavedForecasts();
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [hideGA, setHideGA] = useState(false);
+  const [selectedForecastId, setSelectedForecastId] = useState<string>("");
 
   const toggleProduct = useCallback((id: string) => {
     setExpandedProducts((prev) => {
@@ -275,6 +317,9 @@ export default function LaunchReadinessPage() {
     [getReqs, updateLaunchRequirements],
   );
 
+  const selectedForecast = forecasts.find((f) => f.id === selectedForecastId) || forecasts[0] || null;
+  const quantities = selectedForecast?.quantities || {};
+
   const flashCards: FlashCardData[] = useMemo(() => {
     return visibleProducts.map((p) => {
       const reqs = getReqs(p.id);
@@ -284,6 +329,7 @@ export default function LaunchReadinessPage() {
       const nextAction = getNextActionDue(reqs);
       const depsBeforePipeline = countDepsBeforeActivity(reqs, "Sales - Pipeline Building");
       const depsBeforeClosedDeals = countDepsBeforeActivity(reqs, "Sales - Closed Deals");
+      const { totalDeals, totalRevenue } = getProductForecastStats(p, quantities);
       return {
         product: p,
         reqs,
@@ -295,9 +341,11 @@ export default function LaunchReadinessPage() {
         depsBeforePipeline,
         depsBeforeClosedDeals,
         outstanding: total - done,
+        totalDeals,
+        totalRevenue,
       };
     });
-  }, [visibleProducts, getReqs]);
+  }, [visibleProducts, getReqs, quantities]);
 
   if (!isLoaded) {
     return (
@@ -330,16 +378,35 @@ export default function LaunchReadinessPage() {
             Track the journey from product definition through launch execution.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-xs text-gray-500">Overall Completion</div>
-            <div className="text-lg font-bold text-gray-800">{overallPct}%</div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500 whitespace-nowrap">Forecast Model</label>
+            <select
+              value={selectedForecast?.id || ""}
+              onChange={(e) => setSelectedForecastId(e.target.value)}
+              className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 min-w-[180px]"
+            >
+              {forecasts.length === 0 && (
+                <option value="">No forecasts</option>
+              )}
+              {forecasts.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all ${overallPct === 100 ? "bg-green-500" : overallPct > 50 ? "bg-blue-500" : "bg-amber-500"}`}
-              style={{ width: `${overallPct}%` }}
-            />
+          <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
+            <div className="text-right">
+              <div className="text-[10px] text-gray-400 uppercase tracking-wider">Completion</div>
+              <div className="text-sm font-bold text-gray-800">{overallPct}%</div>
+            </div>
+            <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${overallPct === 100 ? "bg-green-500" : overallPct > 50 ? "bg-blue-500" : "bg-amber-500"}`}
+                style={{ width: `${overallPct}%` }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -454,10 +521,10 @@ export default function LaunchReadinessPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 ml-8">
+                <div className="grid grid-cols-2 md:grid-cols-7 gap-2 ml-8">
                   <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
                     <ListChecks className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Outstanding</div>
                       <div className={`text-sm font-bold ${outstanding === 0 ? "text-green-600" : "text-gray-800"}`}>{outstanding} action{outstanding !== 1 ? "s" : ""}</div>
                     </div>
@@ -465,7 +532,7 @@ export default function LaunchReadinessPage() {
 
                   <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
                     <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">T-Minus to GA</div>
                       {tMinus ? (
                         <div className={`text-sm font-bold ${tMinus.color}`}>{tMinus.label}</div>
@@ -477,10 +544,10 @@ export default function LaunchReadinessPage() {
 
                   <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
                     <CalendarClock className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Next Due</div>
                       {nextAction ? (
-                        <div className="text-sm font-bold text-gray-800 truncate max-w-[140px]" title={friendlyName(nextAction.deliverable)}>
+                        <div className="text-sm font-bold text-gray-800 truncate" title={friendlyName(nextAction.deliverable)}>
                           {nextAction.date ? formatDate(nextAction.date) : "No date"} — {friendlyName(nextAction.deliverable)}
                         </div>
                       ) : (
@@ -491,7 +558,7 @@ export default function LaunchReadinessPage() {
 
                   <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
                     <GitBranch className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Deps to Pipeline</div>
                       <div className={`text-sm font-bold ${depsBeforePipeline > 0 ? "text-amber-600" : "text-green-600"}`}>
                         {depsBeforePipeline > 0 ? `${depsBeforePipeline} blocking` : "Clear"}
@@ -501,10 +568,30 @@ export default function LaunchReadinessPage() {
 
                   <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
                     <Target className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    <div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Deps to Closed Deals</div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Deps to Deals</div>
                       <div className={`text-sm font-bold ${depsBeforeClosedDeals > 0 ? "text-red-600" : "text-green-600"}`}>
                         {depsBeforeClosedDeals > 0 ? `${depsBeforeClosedDeals} blocking` : "Clear"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
+                    <DollarSign className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-[10px] text-blue-400 uppercase tracking-wider leading-tight">FY Revenue</div>
+                      <div className={`text-sm font-bold ${fc.totalRevenue > 0 ? "text-blue-700" : "text-gray-400"}`}>
+                        {fc.totalRevenue > 0 ? formatCurrency(fc.totalRevenue) : "—"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
+                    <Hash className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-[10px] text-blue-400 uppercase tracking-wider leading-tight">Total Deals</div>
+                      <div className={`text-sm font-bold ${fc.totalDeals > 0 ? "text-blue-700" : "text-gray-400"}`}>
+                        {fc.totalDeals > 0 ? fc.totalDeals : "—"}
                       </div>
                     </div>
                   </div>
