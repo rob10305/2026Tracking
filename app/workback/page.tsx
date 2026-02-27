@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useStore } from "@/lib/store/context";
 import type { LaunchRequirement } from "@/lib/models/types";
 import { STANDARD_DELIVERABLES } from "@/lib/models/types";
+import type { Product } from "@/lib/models/types";
 import {
   ChevronDown,
   CheckCircle2,
@@ -15,6 +16,11 @@ import {
   Rocket,
   HeadphonesIcon,
   Link2,
+  Clock,
+  CalendarClock,
+  GitBranch,
+  Target,
+  ListChecks,
 } from "lucide-react";
 
 const PILLARS = [
@@ -108,6 +114,11 @@ const PILLARS = [
   },
 ];
 
+const MONTH_ORDER = [
+  "january", "february", "march", "april", "may", "june",
+  "july", "august", "september", "october", "november", "december",
+];
+
 function stripPrefix(deliverable: string): string {
   return deliverable
     .replace(/^Product\s*[-–—]?\s*/, "")
@@ -139,6 +150,77 @@ function pillarCompletion(
   const total = relevant.length;
   const done = relevant.filter((r) => r.timeline && r.content).length;
   return { done, total };
+}
+
+function computeTMinus(gaMonth: string): { days: number; label: string; color: string } | null {
+  const idx = MONTH_ORDER.indexOf((gaMonth || "").toLowerCase());
+  if (idx < 0) return null;
+  const now = new Date();
+  let gaYear = now.getFullYear();
+  const gaDate = new Date(gaYear, idx, 1);
+  if (gaDate < now) gaDate.setFullYear(gaYear + 1);
+  const diff = Math.ceil((gaDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  let color = "text-green-600";
+  if (diff <= 30) color = "text-red-600";
+  else if (diff <= 90) color = "text-amber-600";
+  return { days: diff, label: `T-${diff}d`, color };
+}
+
+function getNextActionDue(reqs: LaunchRequirement[]): { deliverable: string; date: string } | null {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  let nearest: { deliverable: string; date: string; ts: number } | null = null;
+  for (const r of reqs) {
+    if (r.timeline && r.content) continue;
+    if (!r.timeline) continue;
+    const ts = new Date(r.timeline).getTime();
+    if (isNaN(ts)) continue;
+    if (!nearest || ts < nearest.ts) {
+      nearest = { deliverable: r.deliverable, date: r.timeline, ts };
+    }
+  }
+  if (nearest) return { deliverable: nearest.deliverable, date: nearest.date };
+  const incomplete = reqs.filter((r) => !(r.timeline && r.content));
+  if (incomplete.length > 0) return { deliverable: incomplete[0].deliverable, date: "" };
+  return null;
+}
+
+function countDepsBeforeActivity(reqs: LaunchRequirement[], targetDeliverable: string): number {
+  const visited = new Set<string>();
+  function walk(deliverable: string) {
+    const req = reqs.find((r) => r.deliverable === deliverable);
+    if (!req) return;
+    if (req.dependency && !visited.has(req.dependency)) {
+      visited.add(req.dependency);
+      walk(req.dependency);
+    }
+  }
+  walk(targetDeliverable);
+  const incomplete = [...visited].filter((d) => {
+    const r = reqs.find((rr) => rr.deliverable === d);
+    return r && !(r.timeline && r.content);
+  });
+  return incomplete.length;
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+interface FlashCardData {
+  product: Product;
+  reqs: LaunchRequirement[];
+  done: number;
+  total: number;
+  pct: number;
+  tMinus: { days: number; label: string; color: string } | null;
+  nextAction: { deliverable: string; date: string } | null;
+  depsBeforePipeline: number;
+  depsBeforeClosedDeals: number;
+  outstanding: number;
 }
 
 export default function LaunchReadinessPage() {
@@ -193,6 +275,30 @@ export default function LaunchReadinessPage() {
     [getReqs, updateLaunchRequirements],
   );
 
+  const flashCards: FlashCardData[] = useMemo(() => {
+    return visibleProducts.map((p) => {
+      const reqs = getReqs(p.id);
+      const { done, total } = completionCount(reqs);
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      const tMinus = computeTMinus(p.generally_available);
+      const nextAction = getNextActionDue(reqs);
+      const depsBeforePipeline = countDepsBeforeActivity(reqs, "Sales - Pipeline Building");
+      const depsBeforeClosedDeals = countDepsBeforeActivity(reqs, "Sales - Closed Deals");
+      return {
+        product: p,
+        reqs,
+        done,
+        total,
+        pct,
+        tMinus,
+        nextAction,
+        depsBeforePipeline,
+        depsBeforeClosedDeals,
+        outstanding: total - done,
+      };
+    });
+  }, [visibleProducts, getReqs]);
+
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -204,11 +310,8 @@ export default function LaunchReadinessPage() {
     );
   }
 
-  const totalCompletion = visibleProducts.reduce(
-    (acc, p) => {
-      const c = completionCount(getReqs(p.id));
-      return { done: acc.done + c.done, total: acc.total + c.total };
-    },
+  const totalCompletion = flashCards.reduce(
+    (acc, fc) => ({ done: acc.done + fc.done, total: acc.total + fc.total }),
     { done: 0, total: 0 },
   );
 
@@ -283,10 +386,8 @@ export default function LaunchReadinessPage() {
       </div>
 
       <div className="space-y-4">
-        {visibleProducts.map((p) => {
-          const reqs = getReqs(p.id);
-          const { done, total } = completionCount(reqs);
-          const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        {flashCards.map((fc) => {
+          const { product: p, reqs, done, total, pct, tMinus, nextAction, depsBeforePipeline, depsBeforeClosedDeals, outstanding } = fc;
           const isExpanded = expandedProducts.has(p.id);
 
           return (
@@ -296,58 +397,116 @@ export default function LaunchReadinessPage() {
             >
               <button
                 onClick={() => toggleProduct(p.id)}
-                className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="w-full text-left px-5 py-4 hover:bg-gray-50/50 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <ChevronDown
-                    className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
-                  />
-                  <div className="text-left">
-                    <h3 className="font-semibold text-gray-800">{p.name}</h3>
-                    <span className="text-xs text-gray-500">
-                      GA: {p.generally_available || "TBD"}
-                    </span>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <ChevronDown
+                      className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                    />
+                    <div>
+                      <h3 className="font-semibold text-gray-800">{p.name}</h3>
+                      <span className="text-xs text-gray-500">
+                        GA: {p.generally_available || "TBD"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="hidden md:flex items-center gap-1">
+                      {PILLARS.map((pillar) => {
+                        const pc = pillarCompletion(reqs, pillar.deliverables);
+                        const allDone = pc.done === pc.total && pc.total > 0;
+                        return (
+                          <div
+                            key={pillar.id}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                              allDone
+                                ? `${pillar.accent} text-white`
+                                : pc.done > 0
+                                  ? `${pillar.lightAccent} ${pillar.text}`
+                                  : "bg-gray-100 text-gray-400"
+                            }`}
+                            title={`${pillar.label}: ${pc.done}/${pc.total}`}
+                          >
+                            {pillar.number}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {pct === 100 ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      ) : pct > 0 ? (
+                        <AlertCircle className="w-4 h-4 text-amber-500" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-gray-300" />
+                      )}
+                      <span className="text-sm text-gray-600">
+                        {done}/{total}
+                      </span>
+                    </div>
+                    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${pct === 100 ? "bg-green-500" : pct > 50 ? "bg-blue-500" : "bg-amber-500"}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="hidden md:flex items-center gap-1">
-                    {PILLARS.map((pillar) => {
-                      const pc = pillarCompletion(reqs, pillar.deliverables);
-                      const allDone = pc.done === pc.total && pc.total > 0;
-                      return (
-                        <div
-                          key={pillar.id}
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                            allDone
-                              ? `${pillar.accent} text-white`
-                              : pc.done > 0
-                                ? `${pillar.lightAccent} ${pillar.text}`
-                                : "bg-gray-100 text-gray-400"
-                          }`}
-                          title={`${pillar.label}: ${pc.done}/${pc.total}`}
-                        >
-                          {pillar.number}
+
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 ml-8">
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                    <ListChecks className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Outstanding</div>
+                      <div className={`text-sm font-bold ${outstanding === 0 ? "text-green-600" : "text-gray-800"}`}>{outstanding} action{outstanding !== 1 ? "s" : ""}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                    <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">T-Minus to GA</div>
+                      {tMinus ? (
+                        <div className={`text-sm font-bold ${tMinus.color}`}>{tMinus.label}</div>
+                      ) : (
+                        <div className="text-sm font-bold text-gray-400">TBD</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                    <CalendarClock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Next Due</div>
+                      {nextAction ? (
+                        <div className="text-sm font-bold text-gray-800 truncate max-w-[140px]" title={friendlyName(nextAction.deliverable)}>
+                          {nextAction.date ? formatDate(nextAction.date) : "No date"} — {friendlyName(nextAction.deliverable)}
                         </div>
-                      );
-                    })}
+                      ) : (
+                        <div className="text-sm font-bold text-green-600">All done</div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {pct === 100 ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    ) : pct > 0 ? (
-                      <AlertCircle className="w-4 h-4 text-amber-500" />
-                    ) : (
-                      <Circle className="w-4 h-4 text-gray-300" />
-                    )}
-                    <span className="text-sm text-gray-600">
-                      {done}/{total}
-                    </span>
+
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                    <GitBranch className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Deps to Pipeline</div>
+                      <div className={`text-sm font-bold ${depsBeforePipeline > 0 ? "text-amber-600" : "text-green-600"}`}>
+                        {depsBeforePipeline > 0 ? `${depsBeforePipeline} blocking` : "Clear"}
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${pct === 100 ? "bg-green-500" : pct > 50 ? "bg-blue-500" : "bg-amber-500"}`}
-                      style={{ width: `${pct}%` }}
-                    />
+
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                    <Target className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wider leading-tight">Deps to Closed Deals</div>
+                      <div className={`text-sm font-bold ${depsBeforeClosedDeals > 0 ? "text-red-600" : "text-green-600"}`}>
+                        {depsBeforeClosedDeals > 0 ? `${depsBeforeClosedDeals} blocking` : "Clear"}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </button>
@@ -478,7 +637,7 @@ export default function LaunchReadinessPage() {
                                         />
                                       ) : (
                                         <span
-                                          onClick={() => setEditingCell(cellKey("owner"))}
+                                          onClick={(e) => { e.stopPropagation(); setEditingCell(cellKey("owner")); }}
                                           className={`cursor-pointer inline-block px-2 py-0.5 rounded text-xs font-medium border ${
                                             r.owner
                                               ? `${pillar.bg} ${pillar.text} ${pillar.border}`
@@ -501,6 +660,7 @@ export default function LaunchReadinessPage() {
                                             e.target.value,
                                           )
                                         }
+                                        onClick={(e) => e.stopPropagation()}
                                         className={`w-full text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 ${
                                           r.timeline
                                             ? "border-gray-300 text-gray-700"
@@ -531,7 +691,7 @@ export default function LaunchReadinessPage() {
                                         />
                                       ) : (
                                         <span
-                                          onClick={() => setEditingCell(cellKey("content"))}
+                                          onClick={(e) => { e.stopPropagation(); setEditingCell(cellKey("content")); }}
                                           className={`cursor-pointer block min-h-[24px] px-2 py-0.5 rounded text-sm hover:bg-blue-50 transition-colors ${
                                             r.content
                                               ? "text-gray-700"
@@ -553,6 +713,7 @@ export default function LaunchReadinessPage() {
                                             e.target.value,
                                           )
                                         }
+                                        onClick={(e) => e.stopPropagation()}
                                         className={`w-full text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 ${
                                           r.dependency
                                             ? "border-blue-300 bg-blue-50 text-blue-800"
