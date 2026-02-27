@@ -144,7 +144,7 @@ function getReqsForPillar(
 ): LaunchRequirement[] {
   return allReqs.filter((r) => {
     if (pillar.standardDeliverables.includes(r.deliverable)) return true;
-    if (r.deliverable.startsWith(pillar.prefix + " - ") && !STANDARD_DELIVERABLES.includes(r.deliverable)) return true;
+    if (r.deliverable.startsWith(pillar.prefix + " - ") && !(STANDARD_DELIVERABLES as readonly string[]).includes(r.deliverable)) return true;
     return false;
   });
 }
@@ -230,7 +230,7 @@ export default function ProductLaunchPage() {
 
   const removeActivity = useCallback(
     (productId: string, deliverable: string) => {
-      if (STANDARD_DELIVERABLES.includes(deliverable)) return;
+      if ((STANDARD_DELIVERABLES as readonly string[]).includes(deliverable)) return;
       const reqs = getReqs(productId).filter((r) => r.deliverable !== deliverable);
       updateLaunchRequirements(productId, reqs);
     },
@@ -513,7 +513,7 @@ export default function ProductLaunchPage() {
                                   `${p.id}::${r.deliverable}::${field}`;
                                 const isComplete = r.timeline && r.content;
                                 const hasDependants = reqs.some((other) => other.dependency === r.deliverable);
-                                const isCustom = !STANDARD_DELIVERABLES.includes(r.deliverable);
+                                const isCustom = !(STANDARD_DELIVERABLES as readonly string[]).includes(r.deliverable);
 
                                 return (
                                   <tr
