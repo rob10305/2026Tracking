@@ -6,6 +6,7 @@ import { useSavedForecasts } from "@/lib/store/saved-forecasts-context";
 import type { LaunchRequirement } from "@/lib/models/types";
 import { STANDARD_DELIVERABLES, MONTHS_2026, forecastKey, variantForecastKey } from "@/lib/models/types";
 import type { Product, ProductVariant } from "@/lib/models/types";
+import Link from "next/link";
 import {
   ChevronDown,
   CheckCircle2,
@@ -24,6 +25,7 @@ import {
   ListChecks,
   DollarSign,
   Hash,
+  ExternalLink,
 } from "lucide-react";
 
 const PILLARS = [
@@ -264,10 +266,9 @@ interface FlashCardData {
 }
 
 export default function LaunchReadinessPage() {
-  const { state, updateLaunchRequirements, isLoaded } = useStore();
-  const { forecasts, isLoaded: forecastsLoaded } = useSavedForecasts();
+  const { state, isLoaded } = useStore();
+  const { forecasts } = useSavedForecasts();
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
-  const [editingCell, setEditingCell] = useState<string | null>(null);
   const [hideGA, setHideGA] = useState(false);
   const [selectedForecastId, setSelectedForecastId] = useState<string>("");
 
@@ -306,16 +307,6 @@ export default function LaunchReadinessPage() {
       }));
     },
     [state.launchRequirements],
-  );
-
-  const updateField = useCallback(
-    (productId: string, deliverable: string, field: keyof LaunchRequirement, value: string) => {
-      const reqs = getReqs(productId).map((r) =>
-        r.deliverable === deliverable ? { ...r, [field]: value } : r,
-      );
-      updateLaunchRequirements(productId, reqs);
-    },
-    [getReqs, updateLaunchRequirements],
   );
 
   const selectedForecast = forecasts.find((f) => f.id === selectedForecastId) || forecasts[0] || null;
@@ -601,6 +592,16 @@ export default function LaunchReadinessPage() {
 
               {isExpanded && (
                 <div className="border-t border-gray-200 px-5 py-4 space-y-5">
+                  <div className="flex items-center justify-end">
+                    <Link
+                      href="/settings/launch"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Edit in Product Launch
+                    </Link>
+                  </div>
                   {PILLARS.map((pillar, pillarIdx) => {
                     const pillarReqs = reqs.filter((r) =>
                       pillar.deliverables.includes(r.deliverable),
@@ -674,8 +675,6 @@ export default function LaunchReadinessPage() {
                             </thead>
                             <tbody>
                               {pillarReqs.map((r, i) => {
-                                const cellKey = (field: string) =>
-                                  `${p.id}::${r.deliverable}::${field}`;
                                 const hasDependants = reqs.some((other) => other.dependency === r.deliverable);
 
                                 return (
@@ -705,137 +704,41 @@ export default function LaunchReadinessPage() {
                                       </div>
                                     </td>
                                     <td className="px-4 py-2.5">
-                                      {editingCell === cellKey("owner") ? (
-                                        <input
-                                          autoFocus
-                                          className="w-full border border-blue-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                          defaultValue={r.owner}
-                                          onBlur={(e) => {
-                                            updateField(
-                                              p.id,
-                                              r.deliverable,
-                                              "owner",
-                                              e.target.value,
-                                            );
-                                            setEditingCell(null);
-                                          }}
-                                          onKeyDown={(e) => {
-                                            if (e.key === "Enter")
-                                              (e.target as HTMLInputElement).blur();
-                                            if (e.key === "Escape") setEditingCell(null);
-                                          }}
-                                        />
-                                      ) : (
-                                        <span
-                                          onClick={(e) => { e.stopPropagation(); setEditingCell(cellKey("owner")); }}
-                                          className={`cursor-pointer inline-block px-2 py-0.5 rounded text-xs font-medium border ${
-                                            r.owner
-                                              ? `${pillar.bg} ${pillar.text} ${pillar.border}`
-                                              : "bg-gray-100 text-gray-400 border-gray-200"
-                                          }`}
-                                        >
-                                          {r.owner || "\u2014"}
-                                        </span>
-                                      )}
-                                    </td>
-                                    <td className="px-4 py-2.5">
-                                      <input
-                                        type="date"
-                                        value={r.timeline || ""}
-                                        onChange={(e) =>
-                                          updateField(
-                                            p.id,
-                                            r.deliverable,
-                                            "timeline",
-                                            e.target.value,
-                                          )
-                                        }
-                                        onClick={(e) => e.stopPropagation()}
-                                        className={`w-full text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 ${
-                                          r.timeline
-                                            ? "border-gray-300 text-gray-700"
-                                            : "border-gray-200 text-gray-400"
-                                        }`}
-                                      />
-                                    </td>
-                                    <td className="px-4 py-2.5">
-                                      {editingCell === cellKey("content") ? (
-                                        <input
-                                          autoFocus
-                                          className="w-full border border-blue-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                          defaultValue={r.content}
-                                          onBlur={(e) => {
-                                            updateField(
-                                              p.id,
-                                              r.deliverable,
-                                              "content",
-                                              e.target.value,
-                                            );
-                                            setEditingCell(null);
-                                          }}
-                                          onKeyDown={(e) => {
-                                            if (e.key === "Enter")
-                                              (e.target as HTMLInputElement).blur();
-                                            if (e.key === "Escape") setEditingCell(null);
-                                          }}
-                                        />
-                                      ) : (
-                                        <span
-                                          onClick={(e) => { e.stopPropagation(); setEditingCell(cellKey("content")); }}
-                                          className={`cursor-pointer block min-h-[24px] px-2 py-0.5 rounded text-sm hover:bg-blue-50 transition-colors ${
-                                            r.content
-                                              ? "text-gray-700"
-                                              : "text-gray-300 italic"
-                                          }`}
-                                        >
-                                          {r.content || "Click to edit"}
-                                        </span>
-                                      )}
-                                    </td>
-                                    <td className="px-4 py-2.5">
-                                      <select
-                                        value={r.dependency || ""}
-                                        onChange={(e) =>
-                                          updateField(
-                                            p.id,
-                                            r.deliverable,
-                                            "dependency",
-                                            e.target.value,
-                                          )
-                                        }
-                                        onClick={(e) => e.stopPropagation()}
-                                        className={`w-full text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 ${
-                                          r.dependency
-                                            ? "border-blue-300 bg-blue-50 text-blue-800"
-                                            : "border-gray-200 text-gray-400"
+                                      <span
+                                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${
+                                          r.owner
+                                            ? `${pillar.bg} ${pillar.text} ${pillar.border}`
+                                            : "bg-gray-100 text-gray-400 border-gray-200"
                                         }`}
                                       >
-                                        <option value="">None</option>
-                                        {reqs
-                                          .filter((other) => other.deliverable !== r.deliverable)
-                                          .map((other) => (
-                                            <option key={other.deliverable} value={other.deliverable}>
-                                              {friendlyName(other.deliverable)}
-                                            </option>
-                                          ))}
-                                      </select>
+                                        {r.owner || "\u2014"}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2.5">
+                                      <span className={`text-xs ${r.timeline ? "text-gray-700" : "text-gray-400"}`}>
+                                        {r.timeline ? formatDate(r.timeline) : "\u2014"}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2.5">
+                                      <span className={`text-sm ${r.content ? "text-gray-700" : "text-gray-300 italic"}`}>
+                                        {r.content || "\u2014"}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2.5">
+                                      {r.dependency ? (
+                                        <span className="text-xs px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700">
+                                          {friendlyName(r.dependency)}
+                                        </span>
+                                      ) : (
+                                        <span className="text-xs text-gray-400">\u2014</span>
+                                      )}
                                     </td>
                                     <td className="px-4 py-2.5 text-center">
-                                      <input
-                                        type="checkbox"
-                                        checked={r.complete}
-                                        onChange={(e) => {
-                                          e.stopPropagation();
-                                          const updated = reqs.map((rr) =>
-                                            rr.deliverable === r.deliverable
-                                              ? { ...rr, complete: !rr.complete }
-                                              : rr,
-                                          );
-                                          updateLaunchRequirements(p.id, updated);
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="w-4 h-4 rounded border-gray-300 text-green-500 focus:ring-green-400 cursor-pointer accent-green-500"
-                                      />
+                                      {r.complete ? (
+                                        <CheckCircle2 className="w-4 h-4 text-green-500 mx-auto" />
+                                      ) : (
+                                        <Circle className="w-4 h-4 text-gray-300 mx-auto" />
+                                      )}
                                     </td>
                                   </tr>
                                 );
