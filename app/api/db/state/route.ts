@@ -92,9 +92,69 @@ async function autoSeedIfEmpty() {
   }
 }
 
+let _migrated = false;
+async function migrateDeliverables() {
+  if (_migrated) return;
+
+  const oldCount = await prisma.launchRequirement.count({
+    where: { deliverable: "Product/Beta/MVP/GA" },
+  });
+  const gaCount = await prisma.launchRequirement.count({
+    where: { deliverable: "General Availability (GA)" },
+  });
+  const productCount = await prisma.product.count();
+
+  if (oldCount === 0 && gaCount >= productCount) {
+    _migrated = true;
+    return;
+  }
+
+  const oldDeliverables = await prisma.launchRequirement.findMany({
+    where: { deliverable: "Product/Beta/MVP/GA" },
+  });
+  for (const req of oldDeliverables) {
+    await prisma.launchRequirement.update({
+      where: { id: req.id },
+      data: { deliverable: "Product/Beta/MVP" },
+    });
+  }
+
+  const products = await prisma.product.findMany({ select: { id: true } });
+  for (const p of products) {
+    const exists = await prisma.launchRequirement.findUnique({
+      where: { product_id_deliverable: { product_id: p.id, deliverable: "General Availability (GA)" } },
+    });
+    if (!exists) {
+      const betaReq = await prisma.launchRequirement.findUnique({
+        where: { product_id_deliverable: { product_id: p.id, deliverable: "Product/Beta/MVP" } },
+      });
+      const sortOrder = betaReq ? betaReq.sort_order + 1 : 3;
+      await prisma.launchRequirement.updateMany({
+        where: { product_id: p.id, sort_order: { gte: sortOrder } },
+        data: { sort_order: { increment: 1 } },
+      });
+      await prisma.launchRequirement.create({
+        data: {
+          product_id: p.id,
+          deliverable: "General Availability (GA)",
+          owner: "Phi",
+          criticalPath: "",
+          timeline: "",
+          content: "",
+          dependency: "",
+          complete: false,
+          sort_order: sortOrder,
+        },
+      });
+    }
+  }
+  _migrated = true;
+}
+
 export async function GET() {
   try {
   await autoSeedIfEmpty();
+  await migrateDeliverables();
 
   const products = await prisma.product.findMany({ orderBy: { sort_order: "asc" } });
   const salesMotions = await prisma.salesMotion.findMany();
