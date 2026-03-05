@@ -36,5 +36,5 @@ externalPort = 80
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["bash", "-c", "next start -H 0.0.0.0 -p 5000"]
-build = ["bash", "-c", "npx prisma generate && npx prisma db push --accept-data-loss && next build"]
+run = ["bash", "-c", "npx next start -H 0.0.0.0 -p 5000"]
+build = ["bash", "-c", "npx prisma generate && npx prisma db push --accept-data-loss && npx next build"]
