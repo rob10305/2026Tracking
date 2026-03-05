@@ -114,6 +114,7 @@ export interface AppState {
 export interface SavedForecast {
   id: string;
   name: string;
+  locked: boolean;
   createdAt: string;
   updatedAt: string;
   quantities: ForecastMap;

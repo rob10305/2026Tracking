@@ -25,6 +25,7 @@ interface SavedForecastsStore {
   setQty: (id: string, productId: string, month: string, qty: number) => void;
   setVariantQty: (id: string, productId: string, variant: ProductVariant, month: string, qty: number) => void;
   setQtyBulk: (id: string, entries: { productId: string; month: string; qty: number }[]) => void;
+  toggleLock: (id: string, locked: boolean, password: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 const SavedForecastsContext = createContext<SavedForecastsStore | null>(null);
@@ -50,6 +51,7 @@ export function SavedForecastsProvider({ children }: { children: React.ReactNode
     const fc: SavedForecast = {
       id: generateId(),
       name,
+      locked: false,
       createdAt: now,
       updatedAt: now,
       quantities: {},
@@ -72,6 +74,7 @@ export function SavedForecastsProvider({ children }: { children: React.ReactNode
       newFc = {
         id: generateId(),
         name: newName,
+        locked: false,
         createdAt: now,
         updatedAt: now,
         quantities: { ...source.quantities },
@@ -183,6 +186,29 @@ export function SavedForecastsProvider({ children }: { children: React.ReactNode
     []
   );
 
+  const toggleLock = useCallback(
+    async (id: string, locked: boolean, password: string): Promise<{ ok: boolean; error?: string }> => {
+      try {
+        const res = await fetch("/api/db/saved-forecasts/lock", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, locked, password }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          return { ok: false, error: data.error || "Failed to update lock" };
+        }
+        setForecasts((prev) =>
+          prev.map((f) => (f.id === id ? { ...f, locked } : f))
+        );
+        return { ok: true };
+      } catch {
+        return { ok: false, error: "Network error" };
+      }
+    },
+    []
+  );
+
   return (
     <SavedForecastsContext.Provider
       value={{
@@ -196,6 +222,7 @@ export function SavedForecastsProvider({ children }: { children: React.ReactNode
         setQty,
         setVariantQty,
         setQtyBulk,
+        toggleLock,
       }}
     >
       {children}

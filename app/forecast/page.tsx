@@ -20,6 +20,8 @@ import {
   Trash2,
   ArrowRight,
   DollarSign,
+  Lock,
+  Unlock,
 } from "lucide-react";
 
 function fmt(n: number): string {
@@ -31,12 +33,15 @@ function fmt(n: number): string {
 export default function BuildForecastListPage() {
   const router = useRouter();
   const { state } = useStore();
-  const { forecasts, isLoaded, addForecast, deleteForecast, renameForecast, duplicateForecast } =
+  const { forecasts, isLoaded, addForecast, deleteForecast, renameForecast, duplicateForecast, toggleLock } =
     useSavedForecasts();
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [lockModalId, setLockModalId] = useState<string | null>(null);
+  const [lockPassword, setLockPassword] = useState("");
+  const [lockError, setLockError] = useState("");
 
   if (!isLoaded) {
     return (
@@ -80,6 +85,27 @@ export default function BuildForecastListPage() {
   const handleDuplicate = (id: string, name: string) => {
     duplicateForecast(id, `${name} (Copy)`);
     setMenuOpenId(null);
+  };
+
+  const handleLockToggle = (id: string) => {
+    setLockModalId(id);
+    setLockPassword("");
+    setLockError("");
+    setMenuOpenId(null);
+  };
+
+  const handleLockSubmit = async () => {
+    if (!lockModalId) return;
+    const fc = forecasts.find((f) => f.id === lockModalId);
+    if (!fc) return;
+    const result = await toggleLock(lockModalId, !fc.locked, lockPassword);
+    if (result.ok) {
+      setLockModalId(null);
+      setLockPassword("");
+      setLockError("");
+    } else {
+      setLockError(result.error || "Invalid password");
+    }
   };
 
   const VARIANTS: ProductVariant[] = ["small", "medium", "large"];
@@ -274,7 +300,10 @@ export default function BuildForecastListPage() {
                             </button>
                           </div>
                         ) : (
-                          <h3 className="font-semibold text-gray-900 text-lg truncate">{fc.name}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-gray-900 text-lg truncate">{fc.name}</h3>
+                            {fc.locked && <Lock className="w-4 h-4 text-amber-500 flex-shrink-0" />}
+                          </div>
                         )}
                         <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
@@ -306,10 +335,18 @@ export default function BuildForecastListPage() {
                             >
                               <Copy className="w-3.5 h-3.5" /> Duplicate
                             </button>
+                            <button
+                              onClick={() => handleLockToggle(fc.id)}
+                              className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              {fc.locked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                              {fc.locked ? "Unlock" : "Lock"}
+                            </button>
                             <hr className="my-1 border-gray-100" />
                             <button
                               onClick={() => handleDelete(fc.id, fc.name)}
-                              className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                              className={`flex items-center gap-2 w-full px-4 py-2.5 text-sm transition-colors ${fc.locked ? "text-gray-300 cursor-not-allowed" : "text-red-600 hover:bg-red-50"}`}
+                              disabled={fc.locked}
                             >
                               <Trash2 className="w-3.5 h-3.5" /> Delete
                             </button>
@@ -387,6 +424,62 @@ export default function BuildForecastListPage() {
       {menuOpenId && (
         <div className="fixed inset-0 z-10" onClick={() => setMenuOpenId(null)} />
       )}
+
+      {lockModalId && (() => {
+        const targetFc = forecasts.find((f) => f.id === lockModalId);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${targetFc?.locked ? "bg-green-100" : "bg-amber-100"}`}>
+                  {targetFc?.locked ? <Unlock className="w-5 h-5 text-green-600" /> : <Lock className="w-5 h-5 text-amber-600" />}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">
+                    {targetFc?.locked ? "Unlock Forecast" : "Lock Forecast"}
+                  </h3>
+                  <p className="text-xs text-gray-500">{targetFc?.name}</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                {targetFc?.locked
+                  ? "Enter the password to unlock this forecast for editing."
+                  : "Enter the password to lock this forecast and prevent changes."}
+              </p>
+              <input
+                type="password"
+                value={lockPassword}
+                onChange={(e) => { setLockPassword(e.target.value); setLockError(""); }}
+                onKeyDown={(e) => e.key === "Enter" && handleLockSubmit()}
+                placeholder="Password"
+                autoFocus
+                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
+              />
+              {lockError && (
+                <p className="text-sm text-red-600 mb-3">{lockError}</p>
+              )}
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => setLockModalId(null)}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLockSubmit}
+                  className={`flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-xl transition-colors ${
+                    targetFc?.locked
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-amber-600 hover:bg-amber-700"
+                  }`}
+                >
+                  {targetFc?.locked ? "Unlock" : "Lock"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

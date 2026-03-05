@@ -61,6 +61,7 @@ model ForecastEntry {
 model SavedForecast {
   id        String   @id
   name      String
+  locked    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

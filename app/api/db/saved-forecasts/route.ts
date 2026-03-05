@@ -15,6 +15,7 @@ export async function GET() {
     return {
       id: f.id,
       name: f.name,
+      locked: f.locked,
       createdAt: f.createdAt.toISOString(),
       updatedAt: f.updatedAt.toISOString(),
       quantities,
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     id: fc.id,
     name: fc.name,
+    locked: fc.locked,
     createdAt: fc.createdAt.toISOString(),
     updatedAt: fc.updatedAt.toISOString(),
     quantities: quantities ?? {},

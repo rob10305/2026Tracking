@@ -40,6 +40,7 @@ import {
   ChevronDown,
   ChevronRight,
   Download,
+  Lock,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -138,6 +139,7 @@ export default function ForecastDetailPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("revenue");
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const forecast = getForecast(forecastId);
+  const isLocked = forecast?.locked ?? false;
   const products = state.products;
   const quantities = forecast?.quantities ?? {};
 
@@ -536,7 +538,15 @@ export default function ForecastDetailPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{forecast.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-900">{forecast.name}</h1>
+              {isLocked && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-medium border border-amber-200">
+                  <Lock className="w-3 h-3" />
+                  Locked
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-400 mt-0.5">
               Last updated {new Date(forecast.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
             </p>
@@ -650,7 +660,8 @@ export default function ForecastDetailPage() {
                                 value={(quantities[forecastKey(product.id, m)] ?? 0) || ""}
                                 placeholder="0"
                                 onChange={(e) => handleQtyDirect(product.id, m, e.target.value)}
-                                className="w-14 text-center text-sm font-medium bg-gray-50 border border-gray-200 rounded-md py-1.5 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                disabled={isLocked}
+                                className={`w-14 text-center text-sm font-medium border rounded-md py-1.5 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isLocked ? "bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed" : "bg-gray-50 border-gray-200 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white"}`}
                               />
                             )}
                           </td>
@@ -694,7 +705,8 @@ export default function ForecastDetailPage() {
                                     placeholder="0"
                                     onClick={(e) => e.stopPropagation()}
                                     onChange={(e) => handleVariantQtyDirect(product.id, vd.variant, m, e.target.value)}
-                                    className="w-14 text-center text-xs font-medium bg-white border border-gray-200 rounded-md py-1 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    disabled={isLocked}
+                                    className={`w-14 text-center text-xs font-medium border rounded-md py-1 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isLocked ? "bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed" : "bg-white border-gray-200 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"}`}
                                   />
                                 )}
                               </td>
