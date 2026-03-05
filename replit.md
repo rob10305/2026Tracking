@@ -37,7 +37,9 @@ The application is built on Next.js 15 (App Router) using a PostgreSQL database 
 - **GTM Workback Analysis:** Calculates opportunities and prospects required based on sales motion data and visualizes timelines.
 - **CFO Dashboard:** Displays gross/net revenue, one-time/recurring revenue, total deals, gross margin, and various financial charts.
 - **Dependency Map:** Visualizes and manages launch dependencies, identifying blockers and products at risk.
+- **Monthly Scorecard:** Tracks business health against a selected forecast model with 3 metric sections (Lead Generation, Pipeline, Portfolio). Shows target vs actual values with risk indicators derived from workback engine lead times. Actuals data sources to be connected later.
 - **Product Management:** Includes configuration for 12 core products with variant pricing, component mix, and readiness status.
+- **Forecast Locking:** Forecasts can be locked/unlocked (password-protected) to prevent accidental edits. Locked forecasts show disabled inputs and a lock badge.
 
 ## External Dependencies
 - **PostgreSQL**: Primary database for all application data.

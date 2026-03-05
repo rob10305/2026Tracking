@@ -154,18 +154,20 @@ export default function ForecastDetailPage() {
 
   const handleQtyDirect = useCallback(
     (productId: string, month: string, value: string) => {
+      if (isLocked) return;
       const parsed = parseInt(value, 10);
       setQty(forecastId, productId, month, isNaN(parsed) ? 0 : Math.max(0, parsed));
     },
-    [forecastId, setQty]
+    [forecastId, setQty, isLocked]
   );
 
   const handleVariantQtyDirect = useCallback(
     (productId: string, variant: ProductVariant, month: string, value: string) => {
+      if (isLocked) return;
       const parsed = parseInt(value, 10);
       setVariantQty(forecastId, productId, variant, month, isNaN(parsed) ? 0 : Math.max(0, parsed));
     },
-    [forecastId, setVariantQty]
+    [forecastId, setVariantQty, isLocked]
   );
 
   const monthlyProductData: MonthlyProductData[] = useMemo(() => {
