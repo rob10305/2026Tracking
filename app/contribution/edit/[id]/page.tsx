@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   CONTRIBUTORS,
@@ -15,10 +15,10 @@ import {
 } from "@/lib/contribution/data";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
 
-const TEAM_ACCENT: Record<string, string> = {
-  cs:      "bg-teal-600",
-  sales:   "bg-orange-600",
-  partner: "bg-green-600",
+const TEAM_ACCENT: Record<string, { bg: string; badge: string }> = {
+  cs:      { bg: "bg-teal-600",   badge: "bg-teal-100 text-teal-800 border border-teal-200" },
+  sales:   { bg: "bg-orange-600", badge: "bg-orange-100 text-orange-800 border border-orange-200" },
+  partner: { bg: "bg-emerald-600",badge: "bg-emerald-100 text-emerald-800 border border-emerald-200" },
 };
 
 function fmtCurrency(n: number): string {
@@ -28,53 +28,92 @@ function fmtCurrency(n: number): string {
   return `$${Math.round(n).toLocaleString()}`;
 }
 
+function fmtVal(n: number, format: "number" | "currency"): string {
+  return format === "currency" ? fmtCurrency(n) : String(Math.round(n));
+}
+
+function pctColor(p: number, hasActual: boolean): string {
+  if (!hasActual) return "text-gray-300";
+  if (p >= 100) return "text-emerald-600";
+  if (p >= 75) return "text-amber-600";
+  return "text-red-500";
+}
+
+type FieldKey = string;
+type SaveState = "idle" | "saving" | "saved";
+
 export default function EditContributionPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
 
   const contributor = CONTRIBUTORS.find((c) => c.id === id);
 
-  const [actuals, setActuals] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState<Record<string, boolean>>({});
-  const [saved, setSaved] = useState<Record<string, boolean>>({});
+  const defaultMonthIdx = (() => {
+    const now = new Date();
+    const nowYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const idx = CONTRIBUTION_MONTHS.findIndex((m) => m >= nowYM);
+    return Math.max(0, idx === -1 ? CONTRIBUTION_MONTHS.length - 1 : idx);
+  })();
+
+  const [selectedMonthIdx, setSelectedMonthIdx] = useState(defaultMonthIdx);
+  const selectedMonth = CONTRIBUTION_MONTHS[selectedMonthIdx];
+
+  const [data, setData] = useState<Record<FieldKey, string>>({});
+  const [saveState, setSaveState] = useState<Record<FieldKey, SaveState>>({});
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     if (!contributor) return;
     fetch("/api/db/contribution")
       .then((r) => r.json())
-      .then((data: Record<string, number>) => {
+      .then((raw: Record<string, number | string>) => {
         const init: Record<string, string> = {};
         for (const metric of METRICS) {
           for (const month of CONTRIBUTION_MONTHS) {
-            const key = actualKey(id, metric.id, month);
-            if (data[key] !== undefined) {
-              init[key] = String(data[key]);
-            }
+            const base = actualKey(id, metric.id, month);
+            if (raw[base] !== undefined) init[base] = String(raw[base]);
+            const nk = `${base}::notes`;
+            if (raw[nk]) init[nk] = String(raw[nk]);
+            const sk = `${base}::sources`;
+            if (raw[sk]) init[sk] = String(raw[sk]);
           }
         }
-        setActuals(init);
+        setData(init);
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
   }, [id, contributor]);
 
-  const saveActual = useCallback(async (metricId: string, month: string, rawValue: string) => {
-    const key = actualKey(id, metricId, month);
-    const value = parseFloat(rawValue.replace(/[^0-9.]/g, "")) || 0;
-    setSaving((p) => ({ ...p, [key]: true }));
+  const saveField = useCallback(async (
+    metricId: string,
+    month: string,
+    field: "value" | "notes" | "sources",
+    rawValue: string,
+  ) => {
+    const base = actualKey(id, metricId, month);
+    const fieldKey = field === "value" ? base : `${base}::${field}`;
+
+    setSaveState((p) => ({ ...p, [fieldKey]: "saving" }));
+
+    const body: Record<string, any> = { contributorId: id, metricId, month };
+    if (field === "value") body.value = parseFloat(rawValue.replace(/[^0-9.]/g, "")) || 0;
+    else body[field] = rawValue;
+
     try {
       await fetch("/api/db/contribution", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contributorId: id, metricId, month, value }),
+        body: JSON.stringify(body),
       });
-      setSaved((p) => ({ ...p, [key]: true }));
-      setTimeout(() => setSaved((p) => ({ ...p, [key]: false })), 2000);
-    } finally {
-      setSaving((p) => ({ ...p, [key]: false }));
+      setSaveState((p) => ({ ...p, [fieldKey]: "saved" }));
+      setTimeout(() => setSaveState((p) => ({ ...p, [fieldKey]: "idle" })), 2000);
+    } catch {
+      setSaveState((p) => ({ ...p, [fieldKey]: "idle" }));
     }
   }, [id]);
+
+  const handleChange = useCallback((fieldKey: string, value: string) => {
+    setData((p) => ({ ...p, [fieldKey]: value }));
+  }, []);
 
   if (!contributor) {
     return (
@@ -89,21 +128,44 @@ export default function EditContributionPage() {
 
   const accent = TEAM_ACCENT[contributor.color];
 
+  function SaveIndicator({ fieldKey }: { fieldKey: string }) {
+    const s = saveState[fieldKey] ?? "idle";
+    if (s === "saving") return <Loader2 className="w-3 h-3 animate-spin text-gray-400 flex-shrink-0" />;
+    if (s === "saved") return <Check className="w-3 h-3 text-emerald-500 flex-shrink-0" />;
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+
         <div className="flex items-center gap-4 mb-6">
           <Link href="/contribution" className="text-gray-400 hover:text-gray-600 transition-colors p-1">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full ${accent} flex items-center justify-center text-white font-bold text-sm`}>
+          <div className="flex items-center gap-3 flex-1">
+            <div className={`w-10 h-10 rounded-full ${accent.bg} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
               {contributor.name[0]}
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">{contributor.name}</h1>
-              <p className="text-sm text-gray-500">{contributor.team} · Monthly Attainment Entry</p>
+              <p className="text-sm text-gray-500">{contributor.team} · Monthly Attainment</p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-600">Month</label>
+            <select
+              value={selectedMonthIdx}
+              onChange={(e) => setSelectedMonthIdx(Number(e.target.value))}
+              className="text-sm font-semibold border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+            >
+              {CONTRIBUTION_MONTHS.map((m, i) => (
+                <option key={m} value={i}>
+                  {CONTRIBUTION_MONTH_LABELS[i]} 2026
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -113,124 +175,121 @@ export default function EditContributionPage() {
             Loading...
           </div>
         ) : (
-          <div className="space-y-6">
-            {METRICS.map((metric) => {
-              const annualGoal = GOALS[contributor.id as ContributorId]?.[metric.id as MetricId]?.reduce((s, v) => s + v, 0) ?? 0;
-              return (
-                <div key={metric.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
-                    <div className="flex items-baseline gap-3">
-                      <h3 className="text-sm font-bold text-gray-900">{metric.label}</h3>
-                      <span className="text-xs text-gray-500">{metric.description}</span>
-                      <span className="ml-auto text-xs font-medium text-gray-500">
-                        Annual goal:{" "}
-                        <span className="text-gray-800 font-semibold">
-                          {metric.format === "currency" ? fmtCurrency(annualGoal) : annualGoal}
-                        </span>
-                      </span>
-                    </div>
-                  </div>
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                {CONTRIBUTION_MONTH_LABELS[selectedMonthIdx]} 2026 — Goals & Attainment
+              </h2>
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${accent.badge}`}>
+                {contributor.name} · {contributor.team}
+              </span>
+            </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-100">
-                          <th className="text-left px-5 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-28">Month</th>
-                          <th className="text-right px-5 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Goal</th>
-                          <th className="text-right px-5 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Actual</th>
-                          <th className="text-right px-5 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-20">%</th>
-                          <th className="w-10" />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {CONTRIBUTION_MONTHS.map((month, mi) => {
-                          const goal = GOALS[contributor.id as ContributorId]?.[metric.id as MetricId]?.[mi] ?? 0;
-                          const key = actualKey(id, metric.id, month);
-                          const rawActual = actuals[key] ?? "";
-                          const numActual = parseFloat(rawActual) || 0;
-                          const attainPct = goal === 0 ? (numActual === 0 ? 100 : 0) : Math.round((numActual / goal) * 100);
-                          const pctColor = attainPct >= 100 ? "text-emerald-600" : attainPct >= 75 ? "text-amber-600" : rawActual ? "text-red-500" : "text-gray-300";
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/50">
+                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-48">Goal</th>
+                  <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-48">Attainment</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Notes</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider w-64">Sources / Links</th>
+                </tr>
+              </thead>
+              <tbody>
+                {METRICS.map((metric, mi) => {
+                  const monthIdx = CONTRIBUTION_MONTHS.indexOf(selectedMonth);
+                  const goal = GOALS[contributor.id as ContributorId]?.[metric.id as MetricId]?.[monthIdx] ?? 0;
+                  const base = actualKey(id, metric.id, selectedMonth);
+                  const notesKey = `${base}::notes`;
+                  const sourcesKey = `${base}::sources`;
 
-                          return (
-                            <tr key={month} className="border-b border-gray-50 hover:bg-gray-50/50">
-                              <td className="px-5 py-2.5 font-medium text-gray-700">
-                                {CONTRIBUTION_MONTH_LABELS[mi]} 2026
-                              </td>
-                              <td className="px-5 py-2.5 text-right text-gray-500 tabular-nums">
-                                {metric.format === "currency" ? fmtCurrency(goal) : goal}
-                              </td>
-                              <td className="px-5 py-2.5 text-right">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  step={metric.format === "currency" ? 100 : 1}
-                                  value={rawActual}
-                                  placeholder={metric.format === "currency" ? "0" : "0"}
-                                  onChange={(e) =>
-                                    setActuals((prev) => ({ ...prev, [key]: e.target.value }))
-                                  }
-                                  onBlur={() => {
-                                    if (rawActual !== "") saveActual(metric.id, month, rawActual);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") saveActual(metric.id, month, rawActual);
-                                  }}
-                                  className="w-28 text-right text-sm font-medium bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                />
-                              </td>
-                              <td className={`px-5 py-2.5 text-right font-semibold tabular-nums text-sm ${pctColor}`}>
-                                {rawActual ? `${attainPct}%` : "—"}
-                              </td>
-                              <td className="px-2 py-2.5 w-10 text-center">
-                                {saving[key] ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400 inline-block" />
-                                ) : saved[key] ? (
-                                  <Check className="w-3.5 h-3.5 text-emerald-500 inline-block" />
-                                ) : null}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        <tr className="bg-gray-50 border-t-2 border-gray-200">
-                          <td className="px-5 py-2.5 font-bold text-gray-700 text-xs uppercase tracking-wide">Total</td>
-                          <td className="px-5 py-2.5 text-right font-semibold text-gray-700 tabular-nums text-sm">
-                            {metric.format === "currency" ? fmtCurrency(annualGoal) : annualGoal}
-                          </td>
-                          <td className="px-5 py-2.5 text-right font-semibold text-gray-800 tabular-nums text-sm">
-                            {(() => {
-                              const total = CONTRIBUTION_MONTHS.reduce((s, m) => {
-                                const k = actualKey(id, metric.id, m);
-                                return s + (parseFloat(actuals[k] ?? "0") || 0);
-                              }, 0);
-                              return total > 0
-                                ? metric.format === "currency" ? fmtCurrency(total) : total
-                                : "—";
-                            })()}
-                          </td>
-                          <td className="px-5 py-2.5 text-right font-semibold tabular-nums text-sm text-gray-500">
-                            {(() => {
-                              const total = CONTRIBUTION_MONTHS.reduce((s, m) => {
-                                const k = actualKey(id, metric.id, m);
-                                return s + (parseFloat(actuals[k] ?? "0") || 0);
-                              }, 0);
-                              if (total === 0) return "—";
-                              const p = annualGoal === 0 ? 0 : Math.round((total / annualGoal) * 100);
-                              const c = p >= 100 ? "text-emerald-600" : p >= 75 ? "text-amber-600" : "text-red-500";
-                              return <span className={c}>{p}%</span>;
-                            })()}
-                          </td>
-                          <td />
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              );
-            })}
+                  const rawActual = data[base] ?? "";
+                  const numActual = parseFloat(rawActual) || 0;
+                  const hasActual = rawActual !== "";
+                  const attainPct = goal === 0 ? (numActual === 0 ? 100 : 0) : Math.round((numActual / goal) * 100);
 
-            <p className="text-xs text-gray-400 text-center pb-4">
-              Changes are saved automatically when you move between fields or press Enter.
-            </p>
+                  const notes = data[notesKey] ?? "";
+                  const sources = data[sourcesKey] ?? "";
+
+                  return (
+                    <tr key={metric.id} className={`border-b border-gray-100 ${mi % 2 === 0 ? "bg-white" : "bg-gray-50/30"}`}>
+                      <td className="px-6 py-4 align-top">
+                        <div className="font-semibold text-gray-800 text-sm leading-tight">{metric.label}</div>
+                        <div className="text-[11px] text-gray-400 mt-0.5">{metric.description}</div>
+                        <div className="text-[11px] text-gray-400 mt-1">
+                          Goal: <span className="font-medium text-gray-600">{fmtVal(goal, metric.format)}</span>
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-4 align-top">
+                        <div className="flex flex-col items-center gap-1.5">
+                          <input
+                            type="number"
+                            min={0}
+                            step={metric.format === "currency" ? 100 : 1}
+                            value={rawActual}
+                            placeholder="0"
+                            onChange={(e) => handleChange(base, e.target.value)}
+                            onBlur={() => { if (rawActual !== "") saveField(metric.id, selectedMonth, "value", rawActual); }}
+                            onKeyDown={(e) => { if (e.key === "Enter") saveField(metric.id, selectedMonth, "value", rawActual); }}
+                            className="w-32 text-center text-sm font-semibold border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-base font-bold ${pctColor(attainPct, hasActual)}`}>
+                              {hasActual ? `${attainPct}%` : "—"}
+                            </span>
+                            <SaveIndicator fieldKey={base} />
+                          </div>
+                          {hasActual && (
+                            <div className="text-[11px] text-gray-400">
+                              {fmtVal(numActual, metric.format)} of {fmtVal(goal, metric.format)}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-4 align-top">
+                        <div className="flex items-start gap-1.5">
+                          <textarea
+                            rows={3}
+                            value={notes}
+                            placeholder="Explain under/over achievement…"
+                            onChange={(e) => handleChange(notesKey, e.target.value)}
+                            onBlur={() => saveField(metric.id, selectedMonth, "notes", notes)}
+                            className="w-full text-sm text-gray-700 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors resize-none placeholder:text-gray-300"
+                          />
+                          <div className="pt-2">
+                            <SaveIndicator fieldKey={notesKey} />
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-4 align-top">
+                        <div className="flex items-start gap-1.5">
+                          <input
+                            type="text"
+                            value={sources}
+                            placeholder="SFDC link, doc URL…"
+                            onChange={(e) => handleChange(sourcesKey, e.target.value)}
+                            onBlur={() => saveField(metric.id, selectedMonth, "sources", sources)}
+                            onKeyDown={(e) => { if (e.key === "Enter") saveField(metric.id, selectedMonth, "sources", sources); }}
+                            className="w-full text-sm text-gray-700 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors placeholder:text-gray-300"
+                          />
+                          <div className="pt-2">
+                            <SaveIndicator fieldKey={sourcesKey} />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div className="px-6 py-3 bg-gray-50 border-t border-gray-100">
+              <p className="text-xs text-gray-400">
+                Changes save automatically when you move between fields or press Enter.
+              </p>
+            </div>
           </div>
         )}
       </div>

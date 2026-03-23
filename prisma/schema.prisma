@@ -85,6 +85,8 @@ model ContributorActual {
   metric_id      String
   month          String
   value          Float  @default(0)
+  notes          String @default("")
+  sources        String @default("")
 
   @@unique([contributor_id, metric_id, month])
 }
