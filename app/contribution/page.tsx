@@ -10,6 +10,7 @@ import {
   CONTRIBUTION_MONTH_LABELS,
   getAnnualGoal,
   actualKey,
+  type ContributionMonth,
   type MetricId,
   type ContributorId,
   type ContributorInfo,
@@ -115,7 +116,7 @@ export default function ContributionPage() {
   }, []);
 
   const [selectedMonthIdx, setSelectedMonthIdx] = useState(defaultMonthIdx);
-  const selectedMonth = CONTRIBUTION_MONTHS[selectedMonthIdx];
+  const selectedMonth = CONTRIBUTION_MONTHS[selectedMonthIdx] as ContributionMonth;
 
   useEffect(() => {
     fetch("/api/db/contribution")

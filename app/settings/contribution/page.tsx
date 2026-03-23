@@ -10,6 +10,7 @@ import {
   CONTRIBUTION_MONTHS,
   CONTRIBUTION_MONTH_LABELS,
   actualKey,
+  type ContributionMonth,
   type ContributorId,
   type ContributorInfo,
   type MetricId,
@@ -128,7 +129,7 @@ export default function ContributorAccessPage() {
     return null;
   }
 
-  const editMonth = CONTRIBUTION_MONTHS[editMonthIdx];
+  const editMonth = CONTRIBUTION_MONTHS[editMonthIdx] as ContributionMonth;
   const editContributorObj = CONTRIBUTORS.find(c => c.id === editContributor) as ContributorInfo | undefined;
 
   return (

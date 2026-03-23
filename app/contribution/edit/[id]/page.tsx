@@ -11,6 +11,7 @@ import {
   CONTRIBUTION_MONTHS,
   CONTRIBUTION_MONTH_LABELS,
   actualKey,
+  type ContributionMonth,
   type ContributorId,
   type ContributorInfo,
   type MetricId,
@@ -60,7 +61,7 @@ export default function EditContributionPage() {
   })();
 
   const [selectedMonthIdx, setSelectedMonthIdx] = useState(defaultMonthIdx);
-  const selectedMonth = CONTRIBUTION_MONTHS[selectedMonthIdx];
+  const selectedMonth = CONTRIBUTION_MONTHS[selectedMonthIdx] as ContributionMonth;
   const [data, setData] = useState<Record<FieldKey, string>>({});
   const [saveState, setSaveState] = useState<Record<FieldKey, SaveState>>({});
   const [loaded, setLoaded] = useState(false);
