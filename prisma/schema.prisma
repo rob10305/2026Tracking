@@ -79,6 +79,16 @@ model SavedForecastEntry {
   @@unique([forecast_id, key])
 }
 
+model ContributorActual {
+  id             String @id @default(cuid())
+  contributor_id String
+  metric_id      String
+  month          String
+  value          Float  @default(0)
+
+  @@unique([contributor_id, metric_id, month])
+}
+
 model LaunchRequirement {
   id           String @id @default(cuid())
   product_id   String

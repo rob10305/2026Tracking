@@ -38,6 +38,7 @@ The application is built on Next.js 15 (App Router) using a PostgreSQL database 
 - **CFO Dashboard:** Displays gross/net revenue, one-time/recurring revenue, total deals, gross margin, and various financial charts.
 - **Dependency Map:** Visualizes and manages launch dependencies, identifying blockers and products at risk.
 - **Monthly Scorecard:** Tracks business health against a selected forecast model with 3 metric sections (Lead Generation, Pipeline, Portfolio). Shows target vs actual values with risk indicators derived from workback engine lead times. Actuals data sources to be connected later.
+- **Contribution Tracker:** Individual goals tracker (April–December) for 5 contributors across CS, Sales, and Partner teams. Tracks 6 metrics: BETA Customer/PoC, Monthly Pipeline Added ($), Monthly Pipeline Added (# Opps), New Logo Pipeline ($), Reference Customers, and Multi-Year Customers. Each person has a personal edit page (`/contribution/edit/[id]`) to log their monthly actuals. Attainment % is shown when actuals are present. Goal data is sourced from the 2026 Goals spreadsheet. Stored in PostgreSQL via `ContributorActual` model.
 - **Product Management:** Includes configuration for 12 core products with variant pricing, component mix, and readiness status.
 - **Forecast Locking:** Forecasts can be locked/unlocked (password-protected) to prevent accidental edits. Locked forecasts show disabled inputs and a lock badge.
 
