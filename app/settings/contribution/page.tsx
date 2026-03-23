@@ -11,6 +11,7 @@ import {
   CONTRIBUTION_MONTH_LABELS,
   actualKey,
   type ContributorId,
+  type ContributorInfo,
   type MetricId,
 } from "@/lib/contribution/data";
 import { Lock, LockOpen, ShieldCheck, Check, Loader2, Edit2 } from "lucide-react";
@@ -128,7 +129,7 @@ export default function ContributorAccessPage() {
   }
 
   const editMonth = CONTRIBUTION_MONTHS[editMonthIdx];
-  const editContributorObj = CONTRIBUTORS.find(c => c.id === editContributor);
+  const editContributorObj = CONTRIBUTORS.find(c => c.id === editContributor) as ContributorInfo | undefined;
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">

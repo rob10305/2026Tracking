@@ -12,6 +12,7 @@ import {
   actualKey,
   type MetricId,
   type ContributorId,
+  type ContributorInfo,
 } from "@/lib/contribution/data";
 import { Edit2, LayoutGrid, CalendarDays } from "lucide-react";
 import Image from "next/image";
@@ -20,7 +21,7 @@ const TEAM_BG: Record<string, string> = {
   cs: "bg-teal-600", sales: "bg-orange-600", partner: "bg-emerald-600",
 };
 
-function Avatar({ contributor, size = 28 }: { contributor: typeof CONTRIBUTORS[number]; size?: number }) {
+function Avatar({ contributor, size = 28 }: { contributor: ContributorInfo; size?: number }) {
   if (contributor.photo) {
     return (
       <Image

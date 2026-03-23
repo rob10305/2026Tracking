@@ -12,6 +12,7 @@ import {
   CONTRIBUTION_MONTH_LABELS,
   actualKey,
   type ContributorId,
+  type ContributorInfo,
   type MetricId,
 } from "@/lib/contribution/data";
 import { ArrowLeft, Check, Loader2, Lock, LockOpen, ShieldCheck } from "lucide-react";
@@ -47,7 +48,7 @@ type LockStatus = { isLocked: boolean; hasPassword: boolean } | null;
 
 export default function EditContributionPage() {
   const { id } = useParams<{ id: string }>();
-  const contributor = CONTRIBUTORS.find((c) => c.id === id);
+  const contributor = CONTRIBUTORS.find((c) => c.id === id) as ContributorInfo | undefined;
 
   const SESSION_KEY = `contribution-unlocked-${id}`;
 

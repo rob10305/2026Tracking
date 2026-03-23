@@ -19,6 +19,14 @@ export const CONTRIBUTORS = [
 
 export type ContributorId = (typeof CONTRIBUTORS)[number]["id"];
 
+export type ContributorInfo = {
+  readonly id: string;
+  readonly name: string;
+  readonly team: string;
+  readonly color: string;
+  readonly photo: string | null;
+};
+
 export const METRICS = [
   {
     id: "beta_customer",
