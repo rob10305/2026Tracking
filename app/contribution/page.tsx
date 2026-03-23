@@ -14,6 +14,34 @@ import {
   type ContributorId,
 } from "@/lib/contribution/data";
 import { Edit2, LayoutGrid, CalendarDays } from "lucide-react";
+import Image from "next/image";
+
+const TEAM_BG: Record<string, string> = {
+  cs: "bg-teal-600", sales: "bg-orange-600", partner: "bg-emerald-600",
+};
+
+function Avatar({ contributor, size = 28 }: { contributor: typeof CONTRIBUTORS[number]; size?: number }) {
+  if (contributor.photo) {
+    return (
+      <Image
+        src={contributor.photo}
+        alt={contributor.name}
+        width={size}
+        height={size}
+        className="rounded-full object-cover flex-shrink-0"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return (
+    <div
+      className={`${TEAM_BG[contributor.color]} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}
+      style={{ width: size, height: size, fontSize: size * 0.38 }}
+    >
+      {contributor.name[0]}
+    </div>
+  );
+}
 
 const TEAM_STYLES: Record<string, { row: string; badge: string; text: string; header: string }> = {
   cs:      { row: "bg-teal-50",    badge: "bg-teal-100 text-teal-800 border border-teal-200",       text: "text-teal-900",    header: "bg-teal-50/80" },
@@ -130,8 +158,8 @@ export default function ContributionPage() {
         const style = TEAM_STYLES[c.color];
         return (
           <Link key={c.id} href={`/contribution/edit/${c.id}`}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80 ${style.badge}`}>
-            <Edit2 className="w-3 h-3" />
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80 ${style.badge}`}>
+            <Avatar contributor={c} size={20} />
             {c.name} ({c.team})
           </Link>
         );
@@ -250,9 +278,12 @@ function SummaryView({
               {CONTRIBUTORS.map((c) => {
                 const style = TEAM_STYLES[c.color];
                 return (
-                  <th key={c.id} className={`text-center px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-600 ${style.header}`}>
-                    <div>{c.name}</div>
-                    <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal">{c.team}</div>
+                  <th key={c.id} className={`text-center px-3 py-2.5 ${style.header}`}>
+                    <div className="flex flex-col items-center gap-1">
+                      <Avatar contributor={c} size={32} />
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-700">{c.name}</div>
+                      <div className="text-[10px] font-normal text-gray-400">{c.team}</div>
+                    </div>
                   </th>
                 );
               })}

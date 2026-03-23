@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   CONTRIBUTORS,
   METRICS,
@@ -144,8 +145,14 @@ export default function EditContributionPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex items-center gap-3 flex-1">
-            <div className={`w-10 h-10 rounded-full ${accent.bg} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
-              {contributor.name[0]}
+            <div className="w-10 h-10 flex-shrink-0">
+              {contributor.photo ? (
+                <Image src={contributor.photo} alt={contributor.name} width={40} height={40} className="rounded-full object-cover w-10 h-10" />
+              ) : (
+                <div className={`w-10 h-10 rounded-full ${accent.bg} flex items-center justify-center text-white font-bold text-sm`}>
+                  {contributor.name[0]}
+                </div>
+              )}
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">{contributor.name}</h1>

@@ -10,11 +10,11 @@ export const CONTRIBUTION_MONTH_LABELS = [
 export type ContributionMonth = typeof CONTRIBUTION_MONTHS[number];
 
 export const CONTRIBUTORS = [
-  { id: "jaime",           name: "Jaime",   team: "CS",      color: "cs" },
-  { id: "danielr-cs",      name: "DanielR", team: "CS",      color: "cs" },
-  { id: "mike",            name: "Mike",    team: "Sales",   color: "sales" },
-  { id: "shane",           name: "Shane",   team: "Sales",   color: "sales" },
-  { id: "danielr-partner", name: "DanielR", team: "Partner", color: "partner" },
+  { id: "jaime",           name: "Jaime",   team: "CS",      color: "cs",      photo: null },
+  { id: "danielr-cs",      name: "DanielR", team: "CS",      color: "cs",      photo: "/avatars/danielr-cs.jpeg" },
+  { id: "mike",            name: "Mike",    team: "Sales",   color: "sales",   photo: null },
+  { id: "shane",           name: "Shane",   team: "Sales",   color: "sales",   photo: null },
+  { id: "danielr-partner", name: "DanielR", team: "Partner", color: "partner", photo: null },
 ] as const;
 
 export type ContributorId = (typeof CONTRIBUTORS)[number]["id"];
