@@ -282,8 +282,12 @@ function SummaryView({
               return (
                 <tr key={metric.id} className={`border-b border-gray-100 ${mi % 2 === 0 ? "bg-white" : "bg-gray-50/20"}`}>
                   <td className={`px-5 py-3.5 sticky left-0 ${mi % 2 === 0 ? "bg-white" : "bg-gray-50/20"}`}>
-                    <div className="font-semibold text-gray-800 text-sm leading-tight">{metric.label}</div>
-                    <div className="text-[11px] text-gray-400 mt-0.5">{metric.description}</div>
+                    <div className="relative group inline-block">
+                      <div className="font-semibold text-gray-800 text-sm leading-tight cursor-default">{metric.label}</div>
+                      <div className="pointer-events-none absolute left-0 top-full mt-1.5 z-50 hidden group-hover:block w-52 rounded-lg bg-gray-800 px-2.5 py-1.5 text-[11px] text-white shadow-lg">
+                        {metric.description}
+                      </div>
+                    </div>
                   </td>
                   {cells.map(({ c, goal, actual }) => {
                     const style = TEAM_STYLES[c.color];
