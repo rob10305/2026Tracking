@@ -14,7 +14,7 @@ import {
   type ContributorId,
   type MetricId,
 } from "@/lib/contribution/data";
-import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Lock, LockOpen, ShieldCheck } from "lucide-react";
 
 const TEAM_ACCENT: Record<string, { bg: string; badge: string }> = {
   cs:      { bg: "bg-teal-600",   badge: "bg-teal-100 text-teal-800 border border-teal-200" },
@@ -43,10 +43,13 @@ function pctColor(p: number, hasActual: boolean): string {
 type FieldKey = string;
 type SaveState = "idle" | "saving" | "saved";
 
+type LockStatus = { isLocked: boolean; hasPassword: boolean } | null;
+
 export default function EditContributionPage() {
   const { id } = useParams<{ id: string }>();
-
   const contributor = CONTRIBUTORS.find((c) => c.id === id);
+
+  const SESSION_KEY = `contribution-unlocked-${id}`;
 
   const defaultMonthIdx = (() => {
     const now = new Date();
@@ -57,13 +60,51 @@ export default function EditContributionPage() {
 
   const [selectedMonthIdx, setSelectedMonthIdx] = useState(defaultMonthIdx);
   const selectedMonth = CONTRIBUTION_MONTHS[selectedMonthIdx];
-
   const [data, setData] = useState<Record<FieldKey, string>>({});
   const [saveState, setSaveState] = useState<Record<FieldKey, SaveState>>({});
   const [loaded, setLoaded] = useState(false);
 
+  const [lockStatus, setLockStatus] = useState<LockStatus>(null);
+  const [lockLoading, setLockLoading] = useState(true);
+  const [sessionUnlocked, setSessionUnlocked] = useState(false);
+
+  const [gateInput, setGateInput] = useState("");
+  const [gateError, setGateError] = useState("");
+  const [gateLoading, setGateLoading] = useState(false);
+  const [showAdminGate, setShowAdminGate] = useState(false);
+
+  const [showSetLockModal, setShowSetLockModal] = useState(false);
+  const [lockModalPw, setLockModalPw] = useState("");
+  const [lockModalConfirm, setLockModalConfirm] = useState("");
+  const [lockModalCurrent, setLockModalCurrent] = useState("");
+  const [lockModalError, setLockModalError] = useState("");
+  const [lockModalSaving, setLockModalSaving] = useState(false);
+
+  const fetchLockStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/db/contribution/lock");
+      const all = await res.json();
+      const status = all[id] ?? { isLocked: false, hasPassword: false };
+      setLockStatus(status);
+      if (!status.isLocked) {
+        setSessionUnlocked(true);
+      } else if (sessionStorage.getItem(SESSION_KEY) === "true") {
+        setSessionUnlocked(true);
+      }
+    } catch {
+      setLockStatus({ isLocked: false, hasPassword: false });
+      setSessionUnlocked(true);
+    } finally {
+      setLockLoading(false);
+    }
+  }, [id, SESSION_KEY]);
+
   useEffect(() => {
-    if (!contributor) return;
+    fetchLockStatus();
+  }, [fetchLockStatus]);
+
+  useEffect(() => {
+    if (!contributor || !sessionUnlocked) return;
     fetch("/api/db/contribution")
       .then((r) => r.json())
       .then((raw: Record<string, number | string>) => {
@@ -82,7 +123,7 @@ export default function EditContributionPage() {
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
-  }, [id, contributor]);
+  }, [id, contributor, sessionUnlocked]);
 
   const saveField = useCallback(async (
     metricId: string,
@@ -92,13 +133,10 @@ export default function EditContributionPage() {
   ) => {
     const base = actualKey(id, metricId, month);
     const fieldKey = field === "value" ? base : `${base}::${field}`;
-
     setSaveState((p) => ({ ...p, [fieldKey]: "saving" }));
-
     const body: Record<string, any> = { contributorId: id, metricId, month };
     if (field === "value") body.value = parseFloat(rawValue.replace(/[^0-9.]/g, "")) || 0;
     else body[field] = rawValue;
-
     try {
       await fetch("/api/db/contribution", {
         method: "PUT",
@@ -115,6 +153,79 @@ export default function EditContributionPage() {
   const handleChange = useCallback((fieldKey: string, value: string) => {
     setData((p) => ({ ...p, [fieldKey]: value }));
   }, []);
+
+  const handleGateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGateLoading(true);
+    setGateError("");
+    try {
+      const res = await fetch("/api/db/contribution/lock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify", contributorId: id, password: gateInput }),
+      });
+      if (res.ok) {
+        sessionStorage.setItem(SESSION_KEY, "true");
+        setSessionUnlocked(true);
+        setGateInput("");
+      } else {
+        setGateError("Incorrect password. Try again.");
+        setGateInput("");
+      }
+    } catch {
+      setGateError("Something went wrong. Please try again.");
+    } finally {
+      setGateLoading(false);
+    }
+  };
+
+  const handleSetLock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLockModalError("");
+    if (!lockModalPw.trim()) { setLockModalError("Password cannot be empty."); return; }
+    if (lockModalPw !== lockModalConfirm) { setLockModalError("Passwords do not match."); return; }
+    setLockModalSaving(true);
+    try {
+      const res = await fetch("/api/db/contribution/lock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "set-lock",
+          contributorId: id,
+          password: lockModalPw,
+          currentPassword: lockModalCurrent,
+        }),
+      });
+      if (res.ok) {
+        await fetchLockStatus();
+        setShowSetLockModal(false);
+        setLockModalPw(""); setLockModalConfirm(""); setLockModalCurrent("");
+        sessionStorage.setItem(SESSION_KEY, "true");
+        setSessionUnlocked(true);
+      } else {
+        const d = await res.json();
+        setLockModalError(d.error ?? "Failed to set lock.");
+      }
+    } finally {
+      setLockModalSaving(false);
+    }
+  };
+
+  const handleRemoveLock = async () => {
+    const pw = prompt("Enter your password to remove the lock:");
+    if (!pw) return;
+    const res = await fetch("/api/db/contribution/lock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "unlock", contributorId: id, password: pw }),
+    });
+    if (res.ok) {
+      sessionStorage.removeItem(SESSION_KEY);
+      await fetchLockStatus();
+    } else {
+      alert("Incorrect password.");
+    }
+  };
 
   if (!contributor) {
     return (
@@ -136,6 +247,103 @@ export default function EditContributionPage() {
     return null;
   }
 
+  if (lockLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (lockStatus?.isLocked && !sessionUnlocked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8 w-full max-w-sm">
+          <div className="flex flex-col items-center mb-6">
+            {contributor.photo ? (
+              <Image src={contributor.photo} alt={contributor.name} width={56} height={56} className="rounded-full object-cover mb-3" />
+            ) : (
+              <div className={`w-14 h-14 rounded-full ${accent.bg} flex items-center justify-center text-white font-bold text-xl mb-3`}>
+                {contributor.name[0]}
+              </div>
+            )}
+            <h2 className="text-lg font-semibold text-gray-800">{contributor.name}</h2>
+            <p className="text-sm text-gray-400 mt-0.5 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5" /> Page is locked
+            </p>
+          </div>
+
+          {!showAdminGate ? (
+            <>
+              <form onSubmit={handleGateSubmit} className="space-y-3">
+                <input
+                  type="password"
+                  value={gateInput}
+                  onChange={(e) => { setGateInput(e.target.value); setGateError(""); }}
+                  placeholder="Enter your password"
+                  autoFocus
+                  className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${gateError ? "border-red-300 bg-red-50" : "border-gray-300"}`}
+                />
+                {gateError && <p className="text-xs text-red-500">{gateError}</p>}
+                <button
+                  type="submit"
+                  disabled={gateLoading}
+                  className="w-full py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {gateLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Unlock
+                </button>
+              </form>
+              <button
+                onClick={() => { setShowAdminGate(true); setGateInput(""); setGateError(""); }}
+                className="mt-4 w-full text-xs text-gray-400 hover:text-gray-600 transition-colors text-center"
+              >
+                Admin override →
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-gray-500 text-center mb-3 flex items-center justify-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> Enter the admin password
+              </p>
+              <form onSubmit={handleGateSubmit} className="space-y-3">
+                <input
+                  type="password"
+                  value={gateInput}
+                  onChange={(e) => { setGateInput(e.target.value); setGateError(""); }}
+                  placeholder="Admin password"
+                  autoFocus
+                  className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${gateError ? "border-red-300 bg-red-50" : "border-gray-300"}`}
+                />
+                {gateError && <p className="text-xs text-red-500">{gateError}</p>}
+                <button
+                  type="submit"
+                  disabled={gateLoading}
+                  className="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {gateLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Admin Unlock
+                </button>
+              </form>
+              <button
+                onClick={() => { setShowAdminGate(false); setGateInput(""); setGateError(""); }}
+                className="mt-3 w-full text-xs text-gray-400 hover:text-gray-600 transition-colors text-center"
+              >
+                ← Back
+              </button>
+            </>
+          )}
+
+          <div className="mt-5 pt-4 border-t border-gray-100">
+            <Link href="/contribution" className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to tracker
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-6 py-8">
@@ -155,12 +363,31 @@ export default function EditContributionPage() {
               )}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{contributor.name}</h1>
+              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                {contributor.name}
+                {lockStatus?.isLocked && <Lock className="w-4 h-4 text-amber-500" />}
+              </h1>
               <p className="text-sm text-gray-500">{contributor.team} · Monthly Attainment</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {lockStatus?.isLocked ? (
+              <button
+                onClick={handleRemoveLock}
+                className="flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors"
+              >
+                <LockOpen className="w-3.5 h-3.5" /> Remove Lock
+              </button>
+            ) : (
+              <button
+                onClick={() => { setShowSetLockModal(true); setLockModalPw(""); setLockModalConfirm(""); setLockModalError(""); }}
+                className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <Lock className="w-3.5 h-3.5" /> Lock My Page
+              </button>
+            )}
+
             <label className="text-sm font-medium text-gray-600">Month</label>
             <select
               value={selectedMonthIdx}
@@ -168,9 +395,7 @@ export default function EditContributionPage() {
               className="text-sm font-semibold border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
             >
               {CONTRIBUTION_MONTHS.map((m, i) => (
-                <option key={m} value={i}>
-                  {CONTRIBUTION_MONTH_LABELS[i]} 2026
-                </option>
+                <option key={m} value={i}>{CONTRIBUTION_MONTH_LABELS[i]} 2026</option>
               ))}
             </select>
           </div>
@@ -208,12 +433,10 @@ export default function EditContributionPage() {
                   const base = actualKey(id, metric.id, selectedMonth);
                   const notesKey = `${base}::notes`;
                   const sourcesKey = `${base}::sources`;
-
                   const rawActual = data[base] ?? "";
                   const numActual = parseFloat(rawActual) || 0;
                   const hasActual = rawActual !== "";
                   const attainPct = goal === 0 ? (numActual === 0 ? 100 : 0) : Math.round((numActual / goal) * 100);
-
                   const notes = data[notesKey] ?? "";
                   const sources = data[sourcesKey] ?? "";
 
@@ -226,7 +449,6 @@ export default function EditContributionPage() {
                           Goal: <span className="font-medium text-gray-600">{fmtVal(goal, metric.format)}</span>
                         </div>
                       </td>
-
                       <td className="px-4 py-4 align-top">
                         <div className="flex flex-col items-center gap-1.5">
                           <input
@@ -253,7 +475,6 @@ export default function EditContributionPage() {
                           )}
                         </div>
                       </td>
-
                       <td className="px-4 py-4 align-top">
                         <div className="flex items-start gap-1.5">
                           <textarea
@@ -264,12 +485,9 @@ export default function EditContributionPage() {
                             onBlur={() => saveField(metric.id, selectedMonth, "notes", notes)}
                             className="w-full text-sm text-gray-700 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors resize-none placeholder:text-gray-300"
                           />
-                          <div className="pt-2">
-                            <SaveIndicator fieldKey={notesKey} />
-                          </div>
+                          <div className="pt-2"><SaveIndicator fieldKey={notesKey} /></div>
                         </div>
                       </td>
-
                       <td className="px-4 py-4 align-top">
                         <div className="flex items-start gap-1.5">
                           <input
@@ -281,9 +499,7 @@ export default function EditContributionPage() {
                             onKeyDown={(e) => { if (e.key === "Enter") saveField(metric.id, selectedMonth, "sources", sources); }}
                             className="w-full text-sm text-gray-700 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors placeholder:text-gray-300"
                           />
-                          <div className="pt-2">
-                            <SaveIndicator fieldKey={sourcesKey} />
-                          </div>
+                          <div className="pt-2"><SaveIndicator fieldKey={sourcesKey} /></div>
                         </div>
                       </td>
                     </tr>
@@ -300,6 +516,71 @@ export default function EditContributionPage() {
           </div>
         )}
       </div>
+
+      {showSetLockModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-2 mb-1">
+              <Lock className="w-4 h-4 text-gray-700" />
+              <h3 className="text-base font-semibold text-gray-800">Lock Your Page</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-5">Set a password so only you (or an admin) can edit your attainment data.</p>
+            <form onSubmit={handleSetLock} className="space-y-3">
+              {lockStatus?.hasPassword && (
+                <div>
+                  <label className="text-xs font-medium text-gray-600 block mb-1">Current Password</label>
+                  <input
+                    type="password"
+                    value={lockModalCurrent}
+                    onChange={(e) => setLockModalCurrent(e.target.value)}
+                    placeholder="Your existing password"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">New Password</label>
+                <input
+                  type="password"
+                  value={lockModalPw}
+                  onChange={(e) => setLockModalPw(e.target.value)}
+                  placeholder="Choose a password"
+                  autoFocus={!lockStatus?.hasPassword}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  value={lockModalConfirm}
+                  onChange={(e) => setLockModalConfirm(e.target.value)}
+                  placeholder="Repeat password"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {lockModalError && <p className="text-xs text-red-500">{lockModalError}</p>}
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowSetLockModal(false)}
+                  className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={lockModalSaving}
+                  className="flex-1 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {lockModalSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Set Lock
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -79,6 +79,12 @@ model SavedForecastEntry {
   @@unique([forecast_id, key])
 }
 
+model ContributorLock {
+  contributor_id String  @id
+  password       String  @default("")
+  is_locked      Boolean @default(false)
+}
+
 model ContributorActual {
   id             String @id @default(cuid())
   contributor_id String
