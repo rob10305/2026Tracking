@@ -147,7 +147,7 @@ export default function ContributorAccessPage() {
           <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Page Locks</h2>
         </div>
         <div className="divide-y divide-gray-100">
-          {CONTRIBUTORS.map((c) => {
+          {CONTRIBUTORS.map((c: ContributorInfo) => {
             const lock = locks[c.id];
             const accent = TEAM_ACCENT[c.color];
             const isLocked = lock?.isLocked ?? false;
