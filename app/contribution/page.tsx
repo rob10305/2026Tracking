@@ -260,7 +260,7 @@ function SummaryView({
   actuals,
   loaded,
 }: {
-  selectedMonth: string;
+  selectedMonth: ContributionMonth;
   selectedMonthIdx: number;
   actuals: Record<string, number>;
   loaded: boolean;
