@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 export async function GET() {
   const rows = await prisma.contributorActual.findMany();
@@ -19,23 +20,21 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  const updateData: Record<string, any> = {};
-  const createData: Record<string, any> = {
-    contributor_id: contributorId,
-    metric_id: metricId,
-    month,
-    value: value ?? 0,
-    notes: notes ?? "",
-    sources: sources ?? "",
-  };
-
+  const updateData: Prisma.ContributorActualUpdateInput = {};
   if (value !== undefined) updateData.value = value;
   if (notes !== undefined) updateData.notes = notes;
   if (sources !== undefined) updateData.sources = sources;
 
   await prisma.contributorActual.upsert({
     where: { contributor_id_metric_id_month: { contributor_id: contributorId, metric_id: metricId, month } },
-    create: createData,
+    create: {
+      contributor_id: contributorId,
+      metric_id: metricId,
+      month,
+      value: value ?? 0,
+      notes: notes ?? "",
+      sources: sources ?? "",
+    },
     update: updateData,
   });
   return NextResponse.json({ ok: true });
