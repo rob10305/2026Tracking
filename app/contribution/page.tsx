@@ -10,16 +10,23 @@ import {
   CONTRIBUTION_MONTH_LABELS,
   getAnnualGoal,
   actualKey,
-  type ContributorId,
   type MetricId,
-  type ContributionMonth,
 } from "@/lib/contribution/data";
 import { Edit2 } from "lucide-react";
 
-const TEAM_STYLES: Record<string, { row: string; team: string; badge: string }> = {
-  cs:      { row: "bg-teal-950/90 text-white",   team: "bg-teal-700 text-white",    badge: "bg-teal-600" },
-  sales:   { row: "bg-orange-900/90 text-white",  team: "bg-orange-700 text-white",  badge: "bg-orange-600" },
-  partner: { row: "bg-green-900/90 text-white",   team: "bg-green-700 text-white",   badge: "bg-green-600" },
+const TEAM_STYLES: Record<string, { row: string; rowAlt: string; badge: string; text: string }> = {
+  cs:      { row: "bg-teal-50",    rowAlt: "bg-teal-50/60",   badge: "bg-teal-100 text-teal-800 border border-teal-200",    text: "text-teal-900" },
+  sales:   { row: "bg-orange-50",  rowAlt: "bg-orange-50/60", badge: "bg-orange-100 text-orange-800 border border-orange-200", text: "text-orange-900" },
+  partner: { row: "bg-emerald-50", rowAlt: "bg-emerald-50/60",badge: "bg-emerald-100 text-emerald-800 border border-emerald-200", text: "text-emerald-900" },
+};
+
+const SECTION_ACCENT: Record<string, string> = {
+  beta_customer:       "border-l-4 border-l-violet-400",
+  pipeline_value:      "border-l-4 border-l-blue-400",
+  pipeline_opps:       "border-l-4 border-l-blue-300",
+  new_logo_value:      "border-l-4 border-l-indigo-400",
+  reference_customers: "border-l-4 border-l-amber-400",
+  multi_year:          "border-l-4 border-l-emerald-400",
 };
 
 function fmtCurrency(n: number): string {
@@ -41,11 +48,11 @@ function pct(actual: number, goal: number): number {
 
 function AttainmentBadge({ actual, goal, format }: { actual: number; goal: number; format: "number" | "currency" }) {
   const p = pct(actual, goal);
-  const color = p >= 100 ? "text-emerald-300" : p >= 75 ? "text-amber-300" : "text-red-300";
+  const color = p >= 100 ? "text-emerald-600" : p >= 75 ? "text-amber-600" : "text-red-500";
   return (
     <div className="text-center leading-tight">
-      <div className="text-[11px] font-semibold text-white/90">{fmtVal(actual, format)}</div>
-      <div className={`text-[10px] font-medium ${color}`}>{p}%</div>
+      <div className="text-[12px] font-semibold text-gray-800">{fmtVal(actual, format)}</div>
+      <div className={`text-[10px] font-semibold ${color}`}>{p}%</div>
     </div>
   );
 }
@@ -85,62 +92,67 @@ export default function ContributionPage() {
   const hasAnyActuals = Object.keys(actuals).length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      <div className="px-4 py-6 max-w-[1600px] mx-auto">
-        <div className="flex items-start justify-between mb-5">
+    <div className="min-h-screen bg-gray-50">
+      <div className="px-6 py-8 max-w-[1600px] mx-auto">
+        <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-xl font-bold text-white">2026 Individual Goals Tracker</h1>
-            <p className="text-sm text-gray-400 mt-0.5">April to December · Goals vs Attainment</p>
+            <h1 className="text-2xl font-bold text-gray-900">2026 Individual Goals Tracker</h1>
+            <p className="text-sm text-gray-500 mt-1">April to December · Goals vs Attainment</p>
           </div>
-          <div className="flex items-center gap-2">
-            {CONTRIBUTORS.map((c) => (
-              <Link
-                key={c.id}
-                href={`/contribution/edit/${c.id}`}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-800 text-gray-200 hover:bg-gray-700 transition-colors border border-gray-700"
-              >
-                <Edit2 className="w-3 h-3" />
-                {c.name} ({c.team})
-              </Link>
-            ))}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {CONTRIBUTORS.map((c) => {
+              const style = TEAM_STYLES[c.color];
+              return (
+                <Link
+                  key={c.id}
+                  href={`/contribution/edit/${c.id}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80 ${style.badge}`}
+                >
+                  <Edit2 className="w-3 h-3" />
+                  {c.name} ({c.team})
+                </Link>
+              );
+            })}
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           {METRICS.map((metric) => (
-            <div key={metric.id} className="rounded-xl overflow-hidden border border-gray-800">
-              <div className="bg-gray-800 px-4 py-2.5 flex items-baseline gap-3">
-                <span className="text-xs font-bold uppercase tracking-widest text-gray-200">{metric.label}</span>
-                <span className="text-xs text-gray-500">— {metric.description}</span>
+            <div key={metric.id} className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm ${SECTION_ACCENT[metric.id]}`}>
+              <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/60">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xs font-bold uppercase tracking-widest text-gray-700">{metric.label}</span>
+                  <span className="text-xs text-gray-400">— {metric.description}</span>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-sm border-collapse">
                   <thead>
-                    <tr className="bg-gray-900/80">
-                      <th className="text-left px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 w-36 sticky left-0 bg-gray-900">Individual</th>
-                      <th className="text-center px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 w-20">Team</th>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="text-left px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-36 sticky left-0 bg-gray-50">Individual</th>
+                      <th className="text-center px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-20">Team</th>
                       {CONTRIBUTION_MONTH_LABELS.map((lbl) => (
-                        <th key={lbl} className="text-center px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 w-24">{lbl}</th>
+                        <th key={lbl} className="text-center px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-24">{lbl}</th>
                       ))}
-                      <th className="text-center px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-amber-500 w-28">Total</th>
+                      <th className="text-center px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-600 w-28">Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {CONTRIBUTORS.map((c, ci) => {
+                    {CONTRIBUTORS.map((c) => {
                       const style = TEAM_STYLES[c.color];
                       const annualGoal = getAnnualGoal(c.id, metric.id as MetricId);
                       const annualActual = CONTRIBUTION_MONTHS.reduce((s, m) => s + (actuals[actualKey(c.id, metric.id, m)] ?? 0), 0);
                       return (
                         <tr
                           key={c.id}
-                          className={`${style.row} border-b border-black/20 hover:brightness-110 transition-all`}
+                          className={`${style.row} border-b border-gray-100 hover:brightness-[0.97] transition-all`}
                         >
-                          <td className={`px-4 py-2.5 font-semibold text-sm sticky left-0 ${style.row}`}>
+                          <td className={`px-5 py-2.5 font-semibold text-sm sticky left-0 ${style.row} ${style.text}`}>
                             {c.name}
                           </td>
                           <td className="px-3 py-2.5 text-center">
-                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${style.team}`}>
+                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${style.badge}`}>
                               {c.team}
                             </span>
                           </td>
@@ -152,7 +164,7 @@ export default function ContributionPage() {
                                 {actual !== null && hasAnyActuals ? (
                                   <AttainmentBadge actual={actual} goal={goal} format={metric.format} />
                                 ) : (
-                                  <span className="text-[12px] font-medium text-white/80">
+                                  <span className={`text-[12px] font-medium ${style.text}`}>
                                     {fmtVal(goal, metric.format)}
                                   </span>
                                 )}
@@ -163,7 +175,7 @@ export default function ContributionPage() {
                             {hasAnyActuals && annualActual > 0 ? (
                               <AttainmentBadge actual={annualActual} goal={annualGoal} format={metric.format} />
                             ) : (
-                              <span className="text-[12px] font-semibold text-amber-400">
+                              <span className={`text-[12px] font-semibold ${style.text}`}>
                                 {fmtVal(annualGoal, metric.format)}
                               </span>
                             )}
@@ -171,8 +183,8 @@ export default function ContributionPage() {
                         </tr>
                       );
                     })}
-                    <tr className="bg-gray-900 border-t-2 border-gray-600">
-                      <td className="px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-gray-300 sticky left-0 bg-gray-900">Total</td>
+                    <tr className="bg-gray-50 border-t-2 border-gray-200">
+                      <td className="px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-gray-600 sticky left-0 bg-gray-50">Total</td>
                       <td />
                       {CONTRIBUTION_MONTHS.map((month) => {
                         const { goal, actual } = totals[metric.id]?.[month] ?? { goal: 0, actual: 0 };
@@ -181,7 +193,7 @@ export default function ContributionPage() {
                             {hasAnyActuals && actual > 0 ? (
                               <AttainmentBadge actual={actual} goal={goal} format={metric.format} />
                             ) : (
-                              <span className="text-[12px] font-bold text-emerald-400">
+                              <span className="text-[12px] font-bold text-gray-800">
                                 {fmtVal(goal, metric.format)}
                               </span>
                             )}
@@ -194,7 +206,7 @@ export default function ContributionPage() {
                           return hasAnyActuals && actual > 0 ? (
                             <AttainmentBadge actual={actual} goal={goal} format={metric.format} />
                           ) : (
-                            <span className="text-[12px] font-bold text-emerald-400">
+                            <span className="text-[12px] font-bold text-blue-700">
                               {fmtVal(goal, metric.format)}
                             </span>
                           );
@@ -208,9 +220,8 @@ export default function ContributionPage() {
           ))}
         </div>
 
-        <p className="text-xs text-gray-600 mt-6 text-center">
-          Goal values shown. When actuals are entered, attainment % appears below each value.
-          Use the edit links above to log your numbers.
+        <p className="text-xs text-gray-400 mt-6 text-center">
+          Goal values shown. When actuals are entered via the edit links above, attainment % appears below each value.
         </p>
       </div>
     </div>

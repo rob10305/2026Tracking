@@ -27,7 +27,8 @@ The application is built on Next.js 15 (App Router) using a PostgreSQL database 
 - **CFO View:** Provides an executive dashboard with key financial KPIs, monthly revenue trends, category breakdowns, and product revenue rankings.
 - **Dependency Mapping:** Interactive React Flow diagram visualizing launch dependency chains with custom node types, color-coded animated edges, minimap, legend panel, and blocker highlights. Supports all-products and single-product view modes with filters.
 - **Industry Averages:** Allows configuration and application of industry average sales motion metrics.
-- **State Management:** Uses React context with optimistic updates for a responsive user experience.
+- **State Management:** Uses React context with optimistic updates for a responsive user experience. `lib/store/context.tsx` manages all app state (products, margins, sales motions, forecast entries, launch requirements). `lib/store/saved-forecasts-context.tsx` manages named forecast models. Both load from the database on mount and persist every mutation via API calls — no localStorage anywhere.
+- **API Routes:** All database operations go through `/api/db/` routes: `state` (full app state load + auto-seed), `products`, `settings`, `sales-motion`, `forecast-entry`, `launch-requirements`, `saved-forecasts` (CRUD + duplicate + lock), `reset`, `contribution`.
 - **Security:** Settings pages are password-protected.
 
 **Feature Specifications:**
