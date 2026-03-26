@@ -1,5 +1,6 @@
+import Link from 'next/link';
 import { formatCurrency } from '@/lib/sales-motion/utils/currency';
-import { Users, TrendingUp, Target, Trophy } from 'lucide-react';
+import { Users, TrendingUp, Target, Trophy, ChevronRight } from 'lucide-react';
 
 interface AggregateMotionCardProps {
   name: string;
@@ -9,6 +10,7 @@ interface AggregateMotionCardProps {
   winsTotal: number;
   repCount: number;
   repNames: string[];
+  motionId: string;
 }
 
 function StatBox({
@@ -33,9 +35,12 @@ function StatBox({
   );
 }
 
-export function AggregateMotionCard({ name, color, revenueTotal, leadsTotal, winsTotal, repCount, repNames }: AggregateMotionCardProps) {
+export function AggregateMotionCard({ name, color, revenueTotal, leadsTotal, winsTotal, repCount, repNames, motionId }: AggregateMotionCardProps) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 relative overflow-hidden">
+    <Link
+      href={motionId ? `/sales-motion/motion/${motionId}` : '#'}
+      className="block bg-white rounded-xl shadow-sm border border-gray-200 relative overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+    >
       <div className="absolute top-0 left-0 w-1.5 h-full" style={{ backgroundColor: color }} />
 
       <div className="ml-4 mr-3 py-4 flex items-center gap-4 flex-wrap">
@@ -72,7 +77,9 @@ export function AggregateMotionCard({ name, color, revenueTotal, leadsTotal, win
             accent="border-amber-200 bg-amber-50 text-amber-800"
           />
         </div>
+
+        <ChevronRight size={18} className="text-gray-400 shrink-0 ml-auto" />
       </div>
-    </div>
+    </Link>
   );
 }
