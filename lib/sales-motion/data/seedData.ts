@@ -62,6 +62,22 @@ function getCurrentMonth(): string {
   return `${year}-${month}`;
 }
 
+function makeEventsCategory(): Category {
+  return {
+    id: crypto.randomUUID(),
+    name: 'Events/In Person',
+    tasks: [],
+    assignedTo: '',
+    status: 'Not Started',
+    priority: 'Medium',
+    dueDate: '',
+    completedDate: '',
+    target: '',
+    rag: '' as RAG,
+    notes: '',
+  };
+}
+
 function makeMotion(
   id: string,
   name: string,
@@ -85,7 +101,7 @@ function makeMotion(
     leads: '',
     wins: '',
     actual: '',
-    categories,
+    categories: [makeEventsCategory(), ...categories],
     kpiRows,
   };
 }

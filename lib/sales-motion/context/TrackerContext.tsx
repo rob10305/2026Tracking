@@ -76,6 +76,7 @@ function createNewMotion(name: string, color: string, reportingMonths: string[])
     leads: '',
     wins: '',
     categories: [
+      { id: crypto.randomUUID(), name: 'Events/In Person', tasks: [], assignedTo: '', status: 'Not Started', priority: 'Medium', dueDate: '', completedDate: '', target: '', rag: '', notes: '' },
       { id: crypto.randomUUID(), name: 'Strategy & Planning', tasks: [], assignedTo: '', status: 'Not Started', priority: 'Medium', dueDate: '', completedDate: '', target: '', rag: '', notes: '' },
       { id: crypto.randomUUID(), name: 'Execution', tasks: [], assignedTo: '', status: 'Not Started', priority: 'Medium', dueDate: '', completedDate: '', target: '', rag: '', notes: '' },
     ],

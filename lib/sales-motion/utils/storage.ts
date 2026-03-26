@@ -1,6 +1,37 @@
-import type { AppState, MultiUserState, UserId } from '../types';
+import type { AppState, MultiUserState, UserId, Category } from '../types';
 import { USERS } from '../types';
 import { createSeedData } from '../data/seedData';
+
+const EVENTS_CATEGORY_NAME = 'Events/In Person';
+
+function makeEventsCategory(): Category {
+  return {
+    id: crypto.randomUUID(),
+    name: EVENTS_CATEGORY_NAME,
+    tasks: [],
+    assignedTo: '',
+    status: 'Not Started',
+    priority: 'Medium',
+    dueDate: '',
+    completedDate: '',
+    target: '',
+    rag: '' as import('../types').RAG,
+    notes: '',
+  };
+}
+
+function migrateAddEventsCategory(state: MultiUserState): MultiUserState {
+  const newUsers = { ...state.users };
+  for (const userId of Object.keys(newUsers) as UserId[]) {
+    const userState = newUsers[userId];
+    const newMotions = userState.motions.map((motion) => {
+      if (motion.categories.some((c) => c.name === EVENTS_CATEGORY_NAME)) return motion;
+      return { ...motion, categories: [makeEventsCategory(), ...motion.categories] };
+    });
+    newUsers[userId] = { ...userState, motions: newMotions };
+  }
+  return { ...state, users: newUsers };
+}
 
 const STORAGE_KEY_V1 = 'sales-motion-tracker-v1';
 const STORAGE_KEY = 'sales-motion-tracker-v2';
@@ -37,7 +68,12 @@ export function createFreshMultiUserState(): MultiUserState {
 export function loadMultiUserState(): MultiUserState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as MultiUserState;
+    if (raw) {
+      const parsed = JSON.parse(raw) as MultiUserState;
+      const migrated = migrateAddEventsCategory(parsed);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      return migrated;
+    }
 
     const v1 = loadV1State();
     if (v1) {
