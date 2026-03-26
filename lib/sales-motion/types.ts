@@ -52,6 +52,8 @@ export interface Motion {
   ragStatus: RAG;
   contributionGoal: string;
   actual: string;
+  leads: string;
+  wins: string;
   categories: Category[];
   kpiRows: KPIRow[];
 }

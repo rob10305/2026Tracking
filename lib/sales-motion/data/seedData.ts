@@ -82,6 +82,8 @@ function makeMotion(
     focusNote: '',
     ragStatus: '' as RAG,
     contributionGoal: '',
+    leads: '',
+    wins: '',
     actual: '',
     categories,
     kpiRows,

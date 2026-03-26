@@ -48,28 +48,26 @@ export function Dashboard() {
 
   const aggregateMotions = useMemo(() => {
     if (!viewAll) return [];
-    const map = new Map<string, { color: string; goalTotal: number; actualTotal: number; reps: Set<UserId> }>();
+    const map = new Map<string, { color: string; revenueTotal: number; leadsTotal: number; winsTotal: number; reps: Set<UserId> }>();
     const insertionOrder: string[] = [];
     for (const user of USERS) {
       for (const motion of fullState.users[user.id].motions) {
         const key = motion.name;
         if (!map.has(key)) {
-          map.set(key, { color: motion.color, goalTotal: 0, actualTotal: 0, reps: new Set() });
+          map.set(key, { color: motion.color, revenueTotal: 0, leadsTotal: 0, winsTotal: 0, reps: new Set() });
           insertionOrder.push(key);
         }
         const entry = map.get(key)!;
-        entry.goalTotal += parseCurrency(motion.contributionGoal);
-        entry.actualTotal += parseCurrency(motion.actual);
+        entry.revenueTotal += parseCurrency(motion.contributionGoal);
+        entry.leadsTotal += parseCurrency(motion.leads);
+        entry.winsTotal += parseCurrency(motion.wins);
         entry.reps.add(user.id);
       }
     }
     return insertionOrder.map((name) => {
       const entry = map.get(name)!;
       const repNames = USERS.filter((u) => entry.reps.has(u.id)).map((u) => u.displayName);
-      const uniqueRep = entry.reps.size === 1
-        ? USERS.find((u) => u.id === [...entry.reps][0])?.displayName
-        : undefined;
-      return { name, color: entry.color, goalTotal: entry.goalTotal, actualTotal: entry.actualTotal, repCount: entry.reps.size, repNames, uniqueRep };
+      return { name, color: entry.color, revenueTotal: entry.revenueTotal, leadsTotal: entry.leadsTotal, winsTotal: entry.winsTotal, repCount: entry.reps.size, repNames };
     });
   }, [viewAll, fullState]);
 
