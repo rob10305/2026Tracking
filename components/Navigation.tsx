@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/scorecard", label: "Scorecard" },
   { href: "/performance", label: "Performance Tracker" },
   { href: "/workback", label: "Launch Readiness" },
+  { href: "/sales-motion", label: "Sales Tracker" },
   { href: "/settings", label: "Settings" },
 ];
 
