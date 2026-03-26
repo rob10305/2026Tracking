@@ -1,9 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
 import { LayoutDashboard, BarChart3 } from 'lucide-react';
+
+const MOTION_LOGOS: Record<string, string> = {
+  'Archera': '/logos/archera.png',
+};
 
 export function SMSidebar() {
   const { state } = useTracker();
@@ -34,8 +39,14 @@ export function SMSidebar() {
 
         {state.motions.map((m) => (
           <Link key={m.id} href={`/sales-motion/motion/${m.id}`} className={linkClass(`/sales-motion/motion/${m.id}`)}>
-            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
-            {m.name}
+            {MOTION_LOGOS[m.name] ? (
+              <Image src={MOTION_LOGOS[m.name]} alt={m.name} width={56} height={16} className="object-contain shrink-0" style={{ maxHeight: 16 }} unoptimized />
+            ) : (
+              <>
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
+                {m.name}
+              </>
+            )}
           </Link>
         ))}
 
