@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import type { Motion } from '@/lib/sales-motion/types';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
-import { ChevronRight, Users, TrendingUp, Target, Trophy } from 'lucide-react';
+import { ChevronRight, Users, TrendingUp, Target, Trophy, Trash2 } from 'lucide-react';
 import { formatCurrency, parseCurrency } from '@/lib/sales-motion/utils/currency';
 
 function StatBox({
@@ -111,7 +111,20 @@ export function MotionCard({ motion }: { motion: Motion }) {
           />
         </div>
 
-        <ChevronRight size={18} className="text-gray-400 shrink-0 ml-auto" />
+        <div className="flex items-center gap-2 shrink-0 ml-auto" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => {
+              if (confirm(`Remove "${motion.name}" from your motions? This cannot be undone.`)) {
+                dispatch({ type: 'DELETE_MOTION', motionId: motion.id });
+              }
+            }}
+            className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+            title="Remove motion"
+          >
+            <Trash2 size={15} />
+          </button>
+          <ChevronRight size={18} className="text-gray-400" />
+        </div>
       </div>
     </div>
   );
