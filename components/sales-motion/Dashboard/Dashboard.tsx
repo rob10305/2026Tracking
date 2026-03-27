@@ -7,7 +7,7 @@ import { AggregateMotionCard } from './AggregateMotionCard';
 import { StatusLegend } from './StatusLegend';
 import { exportJSON, importJSON } from '@/lib/sales-motion/utils/exportImport';
 import { useToast } from '@/components/sales-motion/shared/Toast';
-import { Download, Upload, RotateCcw, Plus, Users, FileDown } from 'lucide-react';
+import { Download, Upload, RotateCcw, Plus, Users, FileDown, Copy } from 'lucide-react';
 import { MonthMultiSelect } from '@/components/sales-motion/shared/MonthMultiSelect';
 import { USERS } from '@/lib/sales-motion/types';
 import type { UserId } from '@/lib/sales-motion/types';
@@ -22,6 +22,7 @@ export function Dashboard() {
   const [showAddMotion, setShowAddMotion] = useState(false);
   const [newMotionName, setNewMotionName] = useState('');
   const [newMotionColor, setNewMotionColor] = useState(MOTION_COLORS[5]);
+  const [selectedCloneKey, setSelectedCloneKey] = useState('');
 
   const handleExport = () => {
     exportJSON(fullState);
@@ -45,6 +46,23 @@ export function Dashboard() {
   const availableSharedMotions = sharedMotionLibrary.filter(
     (e) => e.createdBy !== activeUser && !myMotionNames.has(e.name.toLowerCase()),
   );
+
+  const cloneableMotions = useMemo(() => {
+    if (viewAll) return [];
+    const myNames = new Set(fullState.users[activeUser].motions.map((m) => m.name.toLowerCase()));
+    const seen = new Set<string>();
+    const result: { key: string; label: string; ownerName: string; motion: import('@/lib/sales-motion/types').Motion }[] = [];
+    for (const user of USERS) {
+      if (user.id === activeUser) continue;
+      for (const motion of fullState.users[user.id].motions) {
+        const nameKey = motion.name.toLowerCase();
+        if (myNames.has(nameKey) || seen.has(nameKey)) continue;
+        seen.add(nameKey);
+        result.push({ key: `${user.id}::${motion.id}`, label: motion.name, ownerName: user.displayName, motion });
+      }
+    }
+    return result;
+  }, [viewAll, fullState, activeUser]);
 
   const aggregateMotions = useMemo(() => {
     if (!viewAll) return [];
@@ -94,6 +112,14 @@ export function Dashboard() {
     toast(`Motion "${name}" added from library`);
   };
 
+  const handleCloneMotion = () => {
+    const entry = cloneableMotions.find((m) => m.key === selectedCloneKey);
+    if (!entry) return;
+    dispatch({ type: 'CLONE_MOTION', source: entry.motion });
+    toast(`"${entry.label}" cloned from ${entry.ownerName}`);
+    setSelectedCloneKey('');
+  };
+
   return (
     <div className="flex-1 overflow-auto">
       <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between flex-wrap gap-3">
@@ -134,6 +160,32 @@ export function Dashboard() {
 
         {!viewAll && (
           <>
+            {cloneableMotions.length > 0 && (
+              <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3 flex-wrap">
+                <Copy size={15} className="text-gray-400 shrink-0" />
+                <span className="text-sm font-medium text-gray-700 shrink-0">Clone Existing Motion</span>
+                <select
+                  value={selectedCloneKey}
+                  onChange={(e) => setSelectedCloneKey(e.target.value)}
+                  className="flex-1 min-w-[180px] border border-gray-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-blue-400 bg-white"
+                >
+                  <option value="">Select a motion to clone…</option>
+                  {cloneableMotions.map((m) => (
+                    <option key={m.key} value={m.key}>
+                      {m.label} — from {m.ownerName}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleCloneMotion}
+                  disabled={!selectedCloneKey}
+                  className="px-4 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                >
+                  Clone
+                </button>
+              </div>
+            )}
+
             {showAddMotion ? (
               <div className="bg-white rounded-xl border border-dashed border-blue-300 p-4 flex items-center gap-3">
                 <input

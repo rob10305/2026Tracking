@@ -23,6 +23,7 @@ type Action =
   | { type: 'UPDATE_KPI_ROW'; motionId: string; kpiId: string; field: string; value: string }
   | { type: 'DELETE_KPI_ROW'; motionId: string; kpiId: string }
   | { type: 'ADD_MOTION'; name: string; color: string }
+  | { type: 'CLONE_MOTION'; source: Motion }
   | { type: 'DELETE_MOTION'; motionId: string }
   | { type: 'IMPORT_STATE'; state: MultiUserState }
   | { type: 'RESET_STATE' };
@@ -114,6 +115,27 @@ function appReducer(state: AppState, action: Action): AppState {
       return mapMotion(state, action.motionId, (m) => ({ ...m, kpiRows: m.kpiRows.filter((k) => k.id !== action.kpiId) }));
     case 'ADD_MOTION':
       return { ...state, motions: [...state.motions, createNewMotion(action.name, action.color, state.reportingMonths)] };
+    case 'CLONE_MOTION': {
+      const src = action.source;
+      const cloned: Motion = {
+        ...src,
+        id: crypto.randomUUID(),
+        owner: '',
+        ragStatus: '' as import('@/lib/sales-motion/types').RAG,
+        contributionGoal: '',
+        actual: '',
+        leads: '',
+        wins: '',
+        focusNote: '',
+        categories: src.categories.map((c) => ({
+          ...c,
+          id: crypto.randomUUID(),
+          tasks: c.tasks.map((t) => ({ ...t, id: crypto.randomUUID() })),
+        })),
+        kpiRows: src.kpiRows.map((k) => ({ ...k, id: crypto.randomUUID() })),
+      };
+      return { ...state, motions: [...state.motions, cloned] };
+    }
     case 'DELETE_MOTION':
       return { ...state, motions: state.motions.filter((m) => m.id !== action.motionId) };
     default:
