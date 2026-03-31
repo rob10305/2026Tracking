@@ -7,7 +7,7 @@ import { ActivityTracker } from './ActivityTracker';
 import { KPITab } from './KPITab';
 import { ProgressBar } from '@/components/sales-motion/shared/ProgressBar';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
-import { ArrowLeft, ListTodo, BarChart3, Link2, GitBranch } from 'lucide-react';
+import { ArrowLeft, ListTodo, BarChart3, Link2, GitBranch, Lock, LockOpen } from 'lucide-react';
 import { getParentMotion, isChildMotion, countChildren } from '@/lib/sales-motion/utils/inheritance';
 
 export function MotionDetail() {
@@ -116,6 +116,19 @@ export function MotionDetail() {
         <div className="mt-3 max-w-md">
           <ProgressBar percent={percent} color={motion.color} />
         </div>
+
+        {motion.locked && (
+          <div className="mt-3 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+            <Lock size={15} className="text-amber-600 shrink-0" />
+            <span className="text-sm text-amber-800 font-medium">This motion is locked — editing and deletion are disabled.</span>
+            <button
+              onClick={() => { if (confirm('Unlock this motion? This will allow editing and deletion.')) dispatch({ type: 'TOGGLE_MOTION_LOCK', motionId: motion.id }); }}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-amber-700 border border-amber-300 rounded-lg hover:bg-amber-100 transition-colors"
+            >
+              <LockOpen size={12} /> Unlock
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="px-6 py-2 border-b border-gray-200 bg-white flex gap-1">
@@ -134,7 +147,7 @@ export function MotionDetail() {
       </div>
 
       <div className="p-6">
-        {activeTab === 'activities' ? <ActivityTracker motion={motion} /> : <KPITab motion={motion} />}
+        {activeTab === 'activities' ? <ActivityTracker motion={motion} locked={!!motion.locked} /> : <KPITab motion={motion} />}
       </div>
     </div>
   );

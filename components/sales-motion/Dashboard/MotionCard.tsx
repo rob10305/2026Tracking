@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import type { Motion } from '@/lib/sales-motion/types';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
-import { ChevronRight, Users, TrendingUp, Target, Trophy, Trash2, Link2, GitBranch } from 'lucide-react';
+import { ChevronRight, Users, TrendingUp, Target, Trophy, Trash2, Link2, GitBranch, Lock, LockOpen } from 'lucide-react';
 import { formatCurrency, parseCurrency } from '@/lib/sales-motion/utils/currency';
 import { isChildMotion, countChildren } from '@/lib/sales-motion/utils/inheritance';
 
@@ -56,10 +56,15 @@ export function MotionCard({ motion }: { motion: Motion }) {
 
   return (
     <div
-      className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden"
+      className={`bg-white rounded-xl shadow-sm border transition-shadow cursor-pointer relative overflow-hidden hover:shadow-md ${motion.locked ? 'border-amber-200 bg-amber-50/20' : 'border-gray-200'}`}
       onClick={() => router.push(`/sales-motion/motion/${motion.id}`)}
     >
-      <div className="absolute top-0 left-0 w-1.5 h-full" style={{ backgroundColor: motion.color }} />
+      <div className="absolute top-0 left-0 w-1.5 h-full" style={{ backgroundColor: motion.locked ? '#f59e0b' : motion.color }} />
+      {motion.locked && (
+        <div className="absolute top-2 right-12 flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
+          <Lock size={9} /> Locked
+        </div>
+      )}
 
       <div className="ml-4 mr-3 py-4 flex items-center gap-4 flex-wrap">
         {/* Motion name / type */}
@@ -130,15 +135,32 @@ export function MotionCard({ motion }: { motion: Motion }) {
           />
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 ml-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1 shrink-0 ml-auto" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => {
+              if (motion.locked) {
+                if (confirm(`Unlock "${motion.name}"? This will allow editing and deletion.`)) {
+                  dispatch({ type: 'TOGGLE_MOTION_LOCK', motionId: motion.id });
+                }
+              } else {
+                dispatch({ type: 'TOGGLE_MOTION_LOCK', motionId: motion.id });
+              }
+            }}
+            title={motion.locked ? 'Unlock motion' : 'Lock motion'}
+            className={`p-1.5 rounded-lg transition-colors ${motion.locked ? 'text-amber-500 hover:text-amber-600 bg-amber-50 hover:bg-amber-100' : 'text-gray-300 hover:text-amber-500 hover:bg-amber-50'}`}
+          >
+            {motion.locked ? <Lock size={15} /> : <LockOpen size={15} />}
+          </button>
+          <button
+            onClick={() => {
+              if (motion.locked) return;
               if (confirm(`Remove "${motion.name}" from your motions? This cannot be undone.`)) {
                 dispatch({ type: 'DELETE_MOTION', motionId: motion.id });
               }
             }}
-            className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-            title="Remove motion"
+            disabled={!!motion.locked}
+            className={`p-1.5 rounded-lg transition-colors ${motion.locked ? 'text-gray-200 cursor-not-allowed' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}
+            title={motion.locked ? 'Unlock motion to delete' : 'Remove motion'}
           >
             <Trash2 size={15} />
           </button>

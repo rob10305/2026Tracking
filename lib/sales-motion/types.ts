@@ -61,6 +61,7 @@ export interface Motion {
   kpiRows: KPIRow[];
   parentMotionId?: string;
   parentUserId?: string;
+  locked?: boolean;
 }
 
 export interface AppState {

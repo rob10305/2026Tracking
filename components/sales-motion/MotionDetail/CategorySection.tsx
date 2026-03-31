@@ -6,7 +6,7 @@ import { STATUS_OPTIONS, PRIORITY_OPTIONS, RAG_OPTIONS } from '@/lib/sales-motio
 import { TaskRow } from './TaskRow';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { SelectDropdown } from '@/components/sales-motion/shared/SelectDropdown';
-import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Trash2, Lock } from 'lucide-react';
 import { useToast } from '@/components/sales-motion/shared/Toast';
 import { resolveEffectiveTask } from '@/lib/sales-motion/utils/inheritance';
 
@@ -15,6 +15,7 @@ interface CategorySectionProps {
   showDetail: boolean;
   parentMotion: Motion | null;
   isChildMotion: boolean;
+  locked: boolean;
   onUpdateTask: (categoryId: string, taskId: string, field: keyof Task, value: string) => void;
   onDeleteTask: (categoryId: string, taskId: string) => void;
   onAddTask: (categoryId: string) => void;
@@ -25,7 +26,7 @@ interface CategorySectionProps {
 }
 
 export function CategorySection({
-  category, showDetail, parentMotion, isChildMotion,
+  category, showDetail, parentMotion, isChildMotion, locked,
   onUpdateTask, onDeleteTask, onAddTask, onDeleteCategory,
   onUpdateCategoryName, onUpdateCategoryField, onResetTaskOverride,
 }: CategorySectionProps) {
@@ -33,6 +34,7 @@ export function CategorySection({
   const { toast } = useToast();
 
   const handleDeleteCategory = () => {
+    if (locked) return;
     if (confirm(`Delete category "${category.name}" and all its tasks?`)) {
       onDeleteCategory(category.id);
       toast(`Category "${category.name}" deleted`);
@@ -40,6 +42,7 @@ export function CategorySection({
   };
 
   const handleDeleteTask = (taskId: string) => {
+    if (locked) return;
     if (confirm('Delete this task?')) {
       onDeleteTask(category.id, taskId);
       toast('Task deleted');
@@ -55,35 +58,35 @@ export function CategorySection({
           </button>
         </td>
         <td className="px-2 py-2 font-semibold text-sm text-gray-800">
-          <EditableField value={category.name} onSave={(name) => onUpdateCategoryName(category.id, name)} className="font-semibold text-sm text-gray-800" />
+          {locked ? <span className="font-semibold text-sm text-gray-800">{category.name}</span> : <EditableField value={category.name} onSave={(name) => onUpdateCategoryName(category.id, name)} className="font-semibold text-sm text-gray-800" />}
           <span className="text-[10px] text-gray-400 font-normal ml-1">({category.tasks.length})</span>
         </td>
         <td className="px-2 py-2">
-          <EditableField value={category.assignedTo} onSave={(v) => onUpdateCategoryField(category.id, 'assignedTo', v)} placeholder="—" className="text-xs" />
+          {locked ? <span className="text-xs text-gray-600">{category.assignedTo || '—'}</span> : <EditableField value={category.assignedTo} onSave={(v) => onUpdateCategoryField(category.id, 'assignedTo', v)} placeholder="—" className="text-xs" />}
         </td>
         <td className="px-2 py-2">
-          <SelectDropdown<Status> value={category.status} options={STATUS_OPTIONS} onChange={(v) => onUpdateCategoryField(category.id, 'status', v)} />
+          {locked ? <span className="text-xs text-gray-700">{category.status}</span> : <SelectDropdown<Status> value={category.status} options={STATUS_OPTIONS} onChange={(v) => onUpdateCategoryField(category.id, 'status', v)} />}
         </td>
         <td className="px-2 py-2">
-          <SelectDropdown<Priority> value={category.priority} options={PRIORITY_OPTIONS} onChange={(v) => onUpdateCategoryField(category.id, 'priority', v)} />
+          {locked ? <span className="text-xs text-gray-700">{category.priority}</span> : <SelectDropdown<Priority> value={category.priority} options={PRIORITY_OPTIONS} onChange={(v) => onUpdateCategoryField(category.id, 'priority', v)} />}
         </td>
         <td className="px-2 py-2">
-          <input type="date" value={category.dueDate} onChange={(e) => onUpdateCategoryField(category.id, 'dueDate', e.target.value)} className="border border-gray-300 rounded px-1 py-0.5 text-xs" />
+          <input type="date" value={category.dueDate} disabled={locked} onChange={(e) => onUpdateCategoryField(category.id, 'dueDate', e.target.value)} className={`border border-gray-300 rounded px-1 py-0.5 text-xs ${locked ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} />
         </td>
         <td className="px-2 py-2">
-          <input type="date" value={category.completedDate} onChange={(e) => onUpdateCategoryField(category.id, 'completedDate', e.target.value)} className="border border-gray-300 rounded px-1 py-0.5 text-xs" />
+          <input type="date" value={category.completedDate} disabled={locked} onChange={(e) => onUpdateCategoryField(category.id, 'completedDate', e.target.value)} className={`border border-gray-300 rounded px-1 py-0.5 text-xs ${locked ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} />
         </td>
         <td className="px-2 py-2">
-          <EditableField value={category.target} onSave={(v) => onUpdateCategoryField(category.id, 'target', v)} placeholder="—" className="text-xs" />
+          {locked ? <span className="text-xs text-gray-600">{category.target || '—'}</span> : <EditableField value={category.target} onSave={(v) => onUpdateCategoryField(category.id, 'target', v)} placeholder="—" className="text-xs" />}
         </td>
         <td className="px-2 py-2">
-          <SelectDropdown<RAG> value={category.rag} options={RAG_OPTIONS} onChange={(v) => onUpdateCategoryField(category.id, 'rag', v)} />
+          {locked ? <span className="text-xs text-gray-700">{category.rag || '—'}</span> : <SelectDropdown<RAG> value={category.rag} options={RAG_OPTIONS} onChange={(v) => onUpdateCategoryField(category.id, 'rag', v)} />}
         </td>
         <td className="px-2 py-2">
-          <EditableField value={category.notes} onSave={(v) => onUpdateCategoryField(category.id, 'notes', v)} placeholder="—" className="text-xs" />
+          {locked ? <span className="text-xs text-gray-600">{category.notes || '—'}</span> : <EditableField value={category.notes} onSave={(v) => onUpdateCategoryField(category.id, 'notes', v)} placeholder="—" className="text-xs" />}
         </td>
         <td className="px-2 py-2 w-8 text-center">
-          <button onClick={handleDeleteCategory} className="text-gray-400 hover:text-red-500" title="Delete category"><Trash2 size={14} /></button>
+          {locked ? <Lock size={12} className="text-amber-400 mx-auto" /> : <button onClick={handleDeleteCategory} className="text-gray-400 hover:text-red-500" title="Delete category"><Trash2 size={14} /></button>}
         </td>
       </tr>
 
@@ -94,13 +97,14 @@ export function CategorySection({
           effectiveTask={resolveEffectiveTask(task, parentMotion)}
           index={idx}
           isChildMotion={isChildMotion}
+          locked={locked}
           onUpdate={(field, value) => onUpdateTask(category.id, task.id, field, value)}
           onDelete={() => handleDeleteTask(task.id)}
           onResetOverride={() => onResetTaskOverride(category.id, task.id)}
         />
       ))}
 
-      {showDetail && expanded && (
+      {showDetail && expanded && !locked && (
         <tr className="border-b border-gray-100">
           <td colSpan={11} className="px-2 py-1">
             <button onClick={() => onAddTask(category.id)} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 pl-4">

@@ -25,6 +25,7 @@ type Action =
   | { type: 'ADD_MOTION'; name: string; color: string }
   | { type: 'CLONE_MOTION'; source: Motion; sourceUserId: string }
   | { type: 'RESET_TASK_OVERRIDE'; motionId: string; categoryId: string; taskId: string }
+  | { type: 'TOGGLE_MOTION_LOCK'; motionId: string }
   | { type: 'DELETE_MOTION'; motionId: string }
   | { type: 'IMPORT_STATE'; state: MultiUserState }
   | { type: 'RESET_STATE' };
@@ -155,6 +156,8 @@ function appReducer(state: AppState, action: Action): AppState {
       };
       return { ...state, motions: [...state.motions, cloned] };
     }
+    case 'TOGGLE_MOTION_LOCK':
+      return mapMotion(state, action.motionId, (m) => ({ ...m, locked: !m.locked }));
     case 'DELETE_MOTION':
       return { ...state, motions: state.motions.filter((m) => m.id !== action.motionId) };
     default:
