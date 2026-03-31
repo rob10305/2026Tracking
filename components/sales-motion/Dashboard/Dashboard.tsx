@@ -70,18 +70,24 @@ export function Dashboard() {
     return result;
   }, [viewAll, fullState, activeUser]);
 
-  const aggregateMotions = useMemo(() => {
-    if (!viewAll) return [];
-    const map = new Map<string, { color: string; revenueTotal: number; leadsTotal: number; winsTotal: number; reps: Set<UserId>; motionIdByUser: Map<UserId, string> }>();
-    const insertionOrder: string[] = [];
+  const { aggregateMotions, childAggregates } = useMemo(() => {
+    if (!viewAll) return { aggregateMotions: [], childAggregates: [] };
+    const parentMap = new Map<string, { color: string; revenueTotal: number; leadsTotal: number; winsTotal: number; reps: Set<UserId>; motionIdByUser: Map<UserId, string> }>();
+    const parentOrder: string[] = [];
+    const childList: { userId: UserId; displayName: string; motion: import('@/lib/sales-motion/types').Motion }[] = [];
+
     for (const user of USERS) {
       for (const motion of fullState.users[user.id].motions) {
-        const key = motion.name;
-        if (!map.has(key)) {
-          map.set(key, { color: motion.color, revenueTotal: 0, leadsTotal: 0, winsTotal: 0, reps: new Set(), motionIdByUser: new Map() });
-          insertionOrder.push(key);
+        if (isChildMotion(motion)) {
+          childList.push({ userId: user.id, displayName: user.displayName, motion });
+          continue;
         }
-        const entry = map.get(key)!;
+        const key = motion.name;
+        if (!parentMap.has(key)) {
+          parentMap.set(key, { color: motion.color, revenueTotal: 0, leadsTotal: 0, winsTotal: 0, reps: new Set(), motionIdByUser: new Map() });
+          parentOrder.push(key);
+        }
+        const entry = parentMap.get(key)!;
         entry.revenueTotal += parseCurrency(motion.contributionGoal);
         entry.leadsTotal += parseCurrency(motion.leads);
         entry.winsTotal += parseCurrency(motion.wins);
@@ -89,12 +95,13 @@ export function Dashboard() {
         entry.motionIdByUser.set(user.id, motion.id);
       }
     }
-    return insertionOrder.map((name) => {
-      const entry = map.get(name)!;
+    const aggregateMotions = parentOrder.map((name) => {
+      const entry = parentMap.get(name)!;
       const repNames = USERS.filter((u) => entry.reps.has(u.id)).map((u) => u.displayName);
       const motionId = entry.motionIdByUser.get(fullState.activeUser) ?? [...entry.motionIdByUser.values()][0] ?? '';
       return { name, color: entry.color, revenueTotal: entry.revenueTotal, leadsTotal: entry.leadsTotal, winsTotal: entry.winsTotal, repCount: entry.reps.size, repNames, motionId };
     });
+    return { aggregateMotions, childAggregates: childList };
   }, [viewAll, fullState]);
 
   const handleReset = () => {
@@ -186,9 +193,63 @@ export function Dashboard() {
 
       <div className="p-6 space-y-3">
         {viewAll ? (
-          aggregateMotions.map((m) => (
-            <AggregateMotionCard key={m.name} {...m} />
-          ))
+          <>
+            {aggregateMotions.map((m) => (
+              <AggregateMotionCard key={m.name} {...m} />
+            ))}
+            {childAggregates.length > 0 && (
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-3 pt-2 border-t border-gray-200">
+                  <Link2 size={14} className="text-indigo-500" />
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Child Campaigns in Play</span>
+                  <span className="text-[11px] text-gray-400">— cloned from other reps' motions</span>
+                </div>
+                <div className="space-y-2">
+                  {childAggregates.map(({ motion, displayName, userId }) => {
+                    const rev = parseCurrency(motion.contributionGoal);
+                    return (
+                      <div key={motion.id} className="bg-white rounded-xl border border-indigo-100 shadow-sm overflow-hidden flex items-center gap-4 px-4 py-3">
+                        <div className="w-1.5 h-10 rounded shrink-0" style={{ backgroundColor: motion.color }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold text-gray-900">{motion.name}</span>
+                            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">
+                              <Link2 size={9} /> Child Campaign
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-500">{motion.type}</p>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-gray-600">
+                          <div className="text-center">
+                            <div className="font-semibold text-gray-800">{displayName}</div>
+                            <div className="text-[10px] text-gray-400">Rep</div>
+                          </div>
+                          {rev > 0 && (
+                            <div className="text-center">
+                              <div className="font-semibold text-green-700">{motion.contributionGoal}</div>
+                              <div className="text-[10px] text-gray-400">Revenue</div>
+                            </div>
+                          )}
+                          {motion.leads && (
+                            <div className="text-center">
+                              <div className="font-semibold text-blue-700">{motion.leads}</div>
+                              <div className="text-[10px] text-gray-400">Leads</div>
+                            </div>
+                          )}
+                          {motion.wins && (
+                            <div className="text-center">
+                              <div className="font-semibold text-amber-700">{motion.wins}</div>
+                              <div className="text-[10px] text-gray-400">Wins</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           visibleMotions.map((m) => <MotionCard key={m.id} motion={m} />)
         )}
