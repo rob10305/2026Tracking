@@ -4,9 +4,9 @@ import { useRouter } from 'next/navigation';
 import type { Motion } from '@/lib/sales-motion/types';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
-import { ChevronRight, Users, TrendingUp, Target, Trophy, Trash2, Link2 } from 'lucide-react';
+import { ChevronRight, Users, TrendingUp, Target, Trophy, Trash2, Link2, GitBranch } from 'lucide-react';
 import { formatCurrency, parseCurrency } from '@/lib/sales-motion/utils/currency';
-import { isChildMotion } from '@/lib/sales-motion/utils/inheritance';
+import { isChildMotion, countChildren } from '@/lib/sales-motion/utils/inheritance';
 
 function StatBox({
   icon,
@@ -47,11 +47,12 @@ function StatBox({
 
 export function MotionCard({ motion }: { motion: Motion }) {
   const router = useRouter();
-  const { dispatch } = useTracker();
+  const { dispatch, fullState } = useTracker();
 
   const revenue = parseCurrency(motion.contributionGoal);
   const revenueDisplay = revenue > 0 ? formatCurrency(revenue) : motion.contributionGoal || '';
   const childMotion = isChildMotion(motion);
+  const childCount = countChildren(motion, fullState);
 
   return (
     <div
@@ -66,8 +67,13 @@ export function MotionCard({ motion }: { motion: Motion }) {
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-base font-semibold text-gray-900">{motion.name}</h3>
             {childMotion && (
-              <span className="flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
-                <Link2 size={9} /> Child
+              <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">
+                <Link2 size={9} /> Child Campaign
+              </span>
+            )}
+            {!childMotion && childCount > 0 && (
+              <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+                <GitBranch size={9} /> Parent · {childCount} {childCount === 1 ? 'child' : 'children'}
               </span>
             )}
           </div>
