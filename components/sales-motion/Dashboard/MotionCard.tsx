@@ -4,8 +4,9 @@ import { useRouter } from 'next/navigation';
 import type { Motion } from '@/lib/sales-motion/types';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
-import { ChevronRight, Users, TrendingUp, Target, Trophy, Trash2 } from 'lucide-react';
+import { ChevronRight, Users, TrendingUp, Target, Trophy, Trash2, Link2 } from 'lucide-react';
 import { formatCurrency, parseCurrency } from '@/lib/sales-motion/utils/currency';
+import { isChildMotion } from '@/lib/sales-motion/utils/inheritance';
 
 function StatBox({
   icon,
@@ -50,6 +51,7 @@ export function MotionCard({ motion }: { motion: Motion }) {
 
   const revenue = parseCurrency(motion.contributionGoal);
   const revenueDisplay = revenue > 0 ? formatCurrency(revenue) : motion.contributionGoal || '';
+  const childMotion = isChildMotion(motion);
 
   return (
     <div
@@ -61,7 +63,14 @@ export function MotionCard({ motion }: { motion: Motion }) {
       <div className="ml-4 mr-3 py-4 flex items-center gap-4 flex-wrap">
         {/* Motion name / type */}
         <div className="min-w-[160px] shrink-0">
-          <h3 className="text-base font-semibold text-gray-900">{motion.name}</h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-base font-semibold text-gray-900">{motion.name}</h3>
+            {childMotion && (
+              <span className="flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                <Link2 size={9} /> Child
+              </span>
+            )}
+          </div>
           <p className="text-[11px] text-gray-500 leading-tight">{motion.type}</p>
           <div className="flex items-center gap-1.5 mt-1" onClick={(e) => e.stopPropagation()}>
             <span className="text-[11px] text-gray-400">Owner:</span>

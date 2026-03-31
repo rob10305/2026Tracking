@@ -115,7 +115,8 @@ export function Dashboard() {
   const handleCloneMotion = () => {
     const entry = cloneableMotions.find((m) => m.key === selectedCloneKey);
     if (!entry) return;
-    dispatch({ type: 'CLONE_MOTION', source: entry.motion });
+    const sourceUserId = entry.key.split('::')[0];
+    dispatch({ type: 'CLONE_MOTION', source: entry.motion, sourceUserId });
     toast(`"${entry.label}" cloned from ${entry.ownerName}`);
     setSelectedCloneKey('');
   };

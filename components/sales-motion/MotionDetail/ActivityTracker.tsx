@@ -6,13 +6,17 @@ import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
 import { useToast } from '@/components/sales-motion/shared/Toast';
 import { Plus, List } from 'lucide-react';
 import { useState } from 'react';
+import { getParentMotion, isChildMotion } from '@/lib/sales-motion/utils/inheritance';
 
 export function ActivityTracker({ motion }: { motion: Motion }) {
-  const { dispatch } = useTracker();
+  const { dispatch, fullState } = useTracker();
   const { toast } = useToast();
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+
+  const parentMotion = getParentMotion(motion, fullState);
+  const childMotion = isChildMotion(motion);
 
   const handleUpdateTask = (categoryId: string, taskId: string, field: keyof Task, value: string) => {
     dispatch({ type: 'UPDATE_TASK', motionId: motion.id, categoryId, taskId, field, value });
@@ -33,6 +37,10 @@ export function ActivityTracker({ motion }: { motion: Motion }) {
   const handleUpdateCategoryField = (categoryId: string, field: string, value: string) => {
     dispatch({ type: 'UPDATE_CATEGORY_FIELD', motionId: motion.id, categoryId, field, value });
   };
+  const handleResetTaskOverride = (categoryId: string, taskId: string) => {
+    dispatch({ type: 'RESET_TASK_OVERRIDE', motionId: motion.id, categoryId, taskId });
+    toast('Activity reset to parent status');
+  };
   const handleAddCategory = () => {
     if (!newCategoryName.trim()) return;
     dispatch({ type: 'ADD_CATEGORY', motionId: motion.id, name: newCategoryName.trim() });
@@ -43,10 +51,16 @@ export function ActivityTracker({ motion }: { motion: Motion }) {
 
   return (
     <div>
-      <div className="flex items-center justify-end mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        {childMotion && (
+          <div className="flex items-center gap-2 text-[11px] text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-1.5">
+            <span className="font-semibold">Inheritance:</span>
+            <span>Activities showing <span className="font-medium">blue</span> are inheriting status from the parent motion. Click the pencil icon to take ownership, or the reset icon to revert.</span>
+          </div>
+        )}
         <button
           onClick={() => setShowDetail(!showDetail)}
-          className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg border transition-colors ${showDetail ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+          className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg border transition-colors ml-auto ${showDetail ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
         >
           <List size={14} />
           Show Detail Activities
@@ -85,12 +99,15 @@ export function ActivityTracker({ motion }: { motion: Motion }) {
                 key={category.id}
                 category={category}
                 showDetail={showDetail}
+                parentMotion={parentMotion}
+                isChildMotion={childMotion}
                 onUpdateTask={handleUpdateTask}
                 onDeleteTask={handleDeleteTask}
                 onAddTask={handleAddTask}
                 onDeleteCategory={handleDeleteCategory}
                 onUpdateCategoryName={handleUpdateCategoryName}
                 onUpdateCategoryField={handleUpdateCategoryField}
+                onResetTaskOverride={handleResetTaskOverride}
               />
             ))}
           </tbody>

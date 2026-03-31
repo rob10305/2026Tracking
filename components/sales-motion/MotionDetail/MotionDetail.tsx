@@ -7,15 +7,21 @@ import { ActivityTracker } from './ActivityTracker';
 import { KPITab } from './KPITab';
 import { ProgressBar } from '@/components/sales-motion/shared/ProgressBar';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
-import { ArrowLeft, ListTodo, BarChart3 } from 'lucide-react';
+import { ArrowLeft, ListTodo, BarChart3, Link2, GitBranch } from 'lucide-react';
+import { getParentMotion, isChildMotion, countChildren } from '@/lib/sales-motion/utils/inheritance';
 
 export function MotionDetail() {
   const { id } = useParams<{ id: string }>();
-  const { state, dispatch } = useTracker();
+  const { state, dispatch, fullState } = useTracker();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'activities' | 'kpis'>('activities');
 
   const motion = state.motions.find((m) => m.id === id);
+
+  const parentMotion = motion ? getParentMotion(motion, fullState) : null;
+  const childMotion = motion ? isChildMotion(motion) : false;
+  const childCount = motion ? countChildren(motion, fullState) : 0;
+
   if (!motion) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -46,7 +52,19 @@ export function MotionDetail() {
             <div className="flex items-center gap-3">
               <div className="w-3 h-8 rounded" style={{ backgroundColor: motion.color }} />
               <div>
-                <h1 className="text-xl font-bold text-gray-900">{motion.name}</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl font-bold text-gray-900">{motion.name}</h1>
+                  {childMotion && (
+                    <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">
+                      <Link2 size={10} /> Child of {parentMotion?.name ?? 'parent'}
+                    </span>
+                  )}
+                  {!childMotion && childCount > 0 && (
+                    <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+                      <GitBranch size={10} /> Parent · {childCount} {childCount === 1 ? 'child' : 'children'}
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-gray-500">{motion.type}</p>
               </div>
             </div>

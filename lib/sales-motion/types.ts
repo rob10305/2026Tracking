@@ -17,6 +17,8 @@ export interface Task {
   actual: string;
   rag: RAG;
   notes: string;
+  parentTaskId?: string;
+  isOverridden?: boolean;
 }
 
 export interface Category {
@@ -31,6 +33,7 @@ export interface Category {
   rag: RAG;
   notes: string;
   tasks: Task[];
+  parentCategoryId?: string;
 }
 
 export interface KPIRow {
@@ -56,6 +59,8 @@ export interface Motion {
   wins: string;
   categories: Category[];
   kpiRows: KPIRow[];
+  parentMotionId?: string;
+  parentUserId?: string;
 }
 
 export interface AppState {

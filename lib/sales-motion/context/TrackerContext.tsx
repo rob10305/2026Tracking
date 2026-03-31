@@ -23,7 +23,8 @@ type Action =
   | { type: 'UPDATE_KPI_ROW'; motionId: string; kpiId: string; field: string; value: string }
   | { type: 'DELETE_KPI_ROW'; motionId: string; kpiId: string }
   | { type: 'ADD_MOTION'; name: string; color: string }
-  | { type: 'CLONE_MOTION'; source: Motion }
+  | { type: 'CLONE_MOTION'; source: Motion; sourceUserId: string }
+  | { type: 'RESET_TASK_OVERRIDE'; motionId: string; categoryId: string; taskId: string }
   | { type: 'DELETE_MOTION'; motionId: string }
   | { type: 'IMPORT_STATE'; state: MultiUserState }
   | { type: 'RESET_STATE' };
@@ -96,7 +97,17 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'ADD_TASK':
       return mapMotion(state, action.motionId, (m) => mapCategory(m, action.categoryId, (c) => ({ ...c, tasks: [...c.tasks, createDefaultTask()] })));
     case 'UPDATE_TASK':
-      return mapMotion(state, action.motionId, (m) => mapCategory(m, action.categoryId, (c) => ({ ...c, tasks: c.tasks.map((t) => (t.id === action.taskId ? { ...t, [action.field]: action.value } : t)) })));
+      return mapMotion(state, action.motionId, (m) => mapCategory(m, action.categoryId, (c) => ({
+        ...c,
+        tasks: c.tasks.map((t) => t.id === action.taskId
+          ? { ...t, [action.field]: action.value, isOverridden: t.parentTaskId ? true : t.isOverridden }
+          : t),
+      })));
+    case 'RESET_TASK_OVERRIDE':
+      return mapMotion(state, action.motionId, (m) => mapCategory(m, action.categoryId, (c) => ({
+        ...c,
+        tasks: c.tasks.map((t) => t.id === action.taskId ? { ...t, isOverridden: false } : t),
+      })));
     case 'DELETE_TASK':
       return mapMotion(state, action.motionId, (m) => mapCategory(m, action.categoryId, (c) => ({ ...c, tasks: c.tasks.filter((t) => t.id !== action.taskId) })));
     case 'ADD_CATEGORY':
@@ -127,10 +138,18 @@ function appReducer(state: AppState, action: Action): AppState {
         leads: '',
         wins: '',
         focusNote: '',
+        parentMotionId: src.id,
+        parentUserId: action.sourceUserId,
         categories: src.categories.map((c) => ({
           ...c,
           id: crypto.randomUUID(),
-          tasks: c.tasks.map((t) => ({ ...t, id: crypto.randomUUID() })),
+          parentCategoryId: c.id,
+          tasks: c.tasks.map((t) => ({
+            ...t,
+            id: crypto.randomUUID(),
+            parentTaskId: t.id,
+            isOverridden: false,
+          })),
         })),
         kpiRows: src.kpiRows.map((k) => ({ ...k, id: crypto.randomUUID() })),
       };

@@ -1,26 +1,34 @@
 'use client';
 
 import { useState } from 'react';
-import type { Category, Task, Status, Priority, RAG } from '@/lib/sales-motion/types';
+import type { Category, Task, Motion, Status, Priority, RAG } from '@/lib/sales-motion/types';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS, RAG_OPTIONS } from '@/lib/sales-motion/types';
 import { TaskRow } from './TaskRow';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { SelectDropdown } from '@/components/sales-motion/shared/SelectDropdown';
 import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/sales-motion/shared/Toast';
+import { resolveEffectiveTask } from '@/lib/sales-motion/utils/inheritance';
 
 interface CategorySectionProps {
   category: Category;
   showDetail: boolean;
+  parentMotion: Motion | null;
+  isChildMotion: boolean;
   onUpdateTask: (categoryId: string, taskId: string, field: keyof Task, value: string) => void;
   onDeleteTask: (categoryId: string, taskId: string) => void;
   onAddTask: (categoryId: string) => void;
   onDeleteCategory: (categoryId: string) => void;
   onUpdateCategoryName: (categoryId: string, name: string) => void;
   onUpdateCategoryField: (categoryId: string, field: string, value: string) => void;
+  onResetTaskOverride: (categoryId: string, taskId: string) => void;
 }
 
-export function CategorySection({ category, showDetail, onUpdateTask, onDeleteTask, onAddTask, onDeleteCategory, onUpdateCategoryName, onUpdateCategoryField }: CategorySectionProps) {
+export function CategorySection({
+  category, showDetail, parentMotion, isChildMotion,
+  onUpdateTask, onDeleteTask, onAddTask, onDeleteCategory,
+  onUpdateCategoryName, onUpdateCategoryField, onResetTaskOverride,
+}: CategorySectionProps) {
   const [expanded, setExpanded] = useState(true);
   const { toast } = useToast();
 
@@ -83,9 +91,12 @@ export function CategorySection({ category, showDetail, onUpdateTask, onDeleteTa
         <TaskRow
           key={task.id}
           task={task}
+          effectiveTask={resolveEffectiveTask(task, parentMotion)}
           index={idx}
+          isChildMotion={isChildMotion}
           onUpdate={(field, value) => onUpdateTask(category.id, task.id, field, value)}
           onDelete={() => handleDeleteTask(task.id)}
+          onResetOverride={() => onResetTaskOverride(category.id, task.id)}
         />
       ))}
 
