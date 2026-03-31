@@ -66,10 +66,14 @@ export function MotionCard({ motion }: { motion: Motion }) {
         <div className="min-w-[160px] shrink-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-base font-semibold text-gray-900">{motion.name}</h3>
-            {childMotion && (
-              <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">
-                <Link2 size={9} /> Child Campaign
-              </span>
+            {childMotion && motion.parentMotionId && (
+              <button
+                onClick={(e) => { e.stopPropagation(); router.push(`/sales-motion/motion/${motion.parentMotionId}`); }}
+                title="Go to parent campaign"
+                className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200 transition-colors"
+              >
+                <Link2 size={9} /> Child Campaign ↗
+              </button>
             )}
             {!childMotion && childCount > 0 && (
               <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">

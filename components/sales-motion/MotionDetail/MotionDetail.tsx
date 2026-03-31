@@ -54,9 +54,18 @@ export function MotionDetail() {
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-xl font-bold text-gray-900">{motion.name}</h1>
-                  {childMotion && (
+                  {childMotion && parentMotion && (
+                    <button
+                      onClick={() => router.push(`/sales-motion/motion/${parentMotion.id}`)}
+                      title="Go to parent campaign"
+                      className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200 transition-colors"
+                    >
+                      <Link2 size={10} /> Child of <span className="font-semibold">{parentMotion.name}</span> ↗
+                    </button>
+                  )}
+                  {childMotion && !parentMotion && (
                     <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">
-                      <Link2 size={10} /> Child of {parentMotion?.name ?? 'parent'}
+                      <Link2 size={10} /> Child Campaign
                     </span>
                   )}
                   {!childMotion && childCount > 0 && (
