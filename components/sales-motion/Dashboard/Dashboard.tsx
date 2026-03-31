@@ -7,7 +7,8 @@ import { AggregateMotionCard } from './AggregateMotionCard';
 import { StatusLegend } from './StatusLegend';
 import { exportJSON, importJSON } from '@/lib/sales-motion/utils/exportImport';
 import { useToast } from '@/components/sales-motion/shared/Toast';
-import { Download, Upload, RotateCcw, Plus, Users, FileDown, Copy } from 'lucide-react';
+import { Download, Upload, RotateCcw, Plus, Users, FileDown, Copy, GitBranch, Link2 } from 'lucide-react';
+import { isChildMotion } from '@/lib/sales-motion/utils/inheritance';
 import { MonthMultiSelect } from '@/components/sales-motion/shared/MonthMultiSelect';
 import { USERS } from '@/lib/sales-motion/types';
 import type { UserId } from '@/lib/sales-motion/types';
@@ -23,6 +24,7 @@ export function Dashboard() {
   const [newMotionName, setNewMotionName] = useState('');
   const [newMotionColor, setNewMotionColor] = useState(MOTION_COLORS[5]);
   const [selectedCloneKey, setSelectedCloneKey] = useState('');
+  const [showChildMotions, setShowChildMotions] = useState(false);
 
   const handleExport = () => {
     exportJSON(fullState);
@@ -41,6 +43,10 @@ export function Dashboard() {
     }
     e.target.value = '';
   };
+
+  const topLineMotions = state.motions.filter((m) => !isChildMotion(m));
+  const childMotionsList = state.motions.filter((m) => isChildMotion(m));
+  const visibleMotions = showChildMotions ? state.motions : topLineMotions;
 
   const myMotionNames = new Set(state.motions.map((m) => m.name.toLowerCase()));
   const availableSharedMotions = sharedMotionLibrary.filter(
@@ -150,13 +156,41 @@ export function Dashboard() {
         </div>
       </div>
 
+      {!viewAll && (
+        <div className="px-6 py-2 border-b border-gray-100 bg-gray-50 flex items-center gap-3">
+          <button
+            onClick={() => setShowChildMotions(false)}
+            className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded-full font-medium transition-colors ${!showChildMotions ? 'bg-white border border-gray-300 text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <GitBranch size={12} /> Top-line Campaigns
+            <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${!showChildMotions ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-600'}`}>
+              {topLineMotions.length}
+            </span>
+          </button>
+          <button
+            onClick={() => setShowChildMotions(true)}
+            className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded-full font-medium transition-colors ${showChildMotions ? 'bg-white border border-gray-300 text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <Link2 size={12} /> All Campaigns
+            <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${showChildMotions ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-600'}`}>
+              {state.motions.length}
+            </span>
+          </button>
+          {childMotionsList.length > 0 && !showChildMotions && (
+            <span className="text-[11px] text-gray-400 ml-1">
+              + {childMotionsList.length} child {childMotionsList.length === 1 ? 'campaign' : 'campaigns'} hidden
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="p-6 space-y-3">
         {viewAll ? (
           aggregateMotions.map((m) => (
             <AggregateMotionCard key={m.name} {...m} />
           ))
         ) : (
-          state.motions.map((m) => <MotionCard key={m.id} motion={m} />)
+          visibleMotions.map((m) => <MotionCard key={m.id} motion={m} />)
         )}
 
         {!viewAll && (
