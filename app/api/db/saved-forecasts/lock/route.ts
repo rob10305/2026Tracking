@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-const FORECAST_LOCK_PASSWORD = "itmethods";
+const FORECAST_LOCK_PASSWORD = process.env.FORECAST_LOCK_PASSWORD ?? "changeme";
 
 export async function PUT(req: Request) {
   const { id, locked, password } = await req.json();

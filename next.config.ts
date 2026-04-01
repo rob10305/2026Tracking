@@ -5,10 +5,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
     "127.0.0.1",
     "localhost",
-    process.env.REPLIT_DEV_DOMAIN || "",
-    ...(process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(",") : []),
-    ".replit.dev",
-  ].filter(Boolean),
+  ],
   async headers() {
     return [
       {

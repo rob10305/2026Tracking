@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-const ADMIN_PASSWORD = "itmethods";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "changeme";
 
 export async function GET() {
   const locks = await prisma.contributorLock.findMany();

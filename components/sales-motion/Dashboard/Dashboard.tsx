@@ -7,7 +7,7 @@ import { ParentMotionCard } from './ParentMotionCard';
 import { StatusLegend } from './StatusLegend';
 import { exportJSON, importJSON } from '@/lib/sales-motion/utils/exportImport';
 import { useToast } from '@/components/sales-motion/shared/Toast';
-import { Download, Upload, RotateCcw, Plus, CloudUpload, GitBranch, Link2, Copy, Sparkles } from 'lucide-react';
+import { Download, Upload, RotateCcw, Plus, GitBranch, Link2, Copy, Sparkles } from 'lucide-react';
 import { USERS } from '@/lib/sales-motion/types';
 import type { UserId } from '@/lib/sales-motion/types';
 import { parseCurrency } from '@/lib/sales-motion/utils/currency';
@@ -18,7 +18,7 @@ export function Dashboard() {
   const { state, fullState, dispatch, parentMotions, activeUser, viewAll } = useTracker();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [syncing, setSyncing] = useState(false);
+
 
   // ── Parent campaign creation (All view) ────────────────────────────────────
   const [showAddParent, setShowAddParent] = useState(false);
@@ -79,20 +79,6 @@ export function Dashboard() {
     }
   };
 
-  const handleSyncToProduction = async () => {
-    if (!confirm('Push all data to production (forecast-2.replit.app)?\n\nThis will overwrite the production database.')) return;
-    setSyncing(true);
-    try {
-      const res = await fetch('/api/admin/sync-to-production', { method: 'POST' });
-      const json = await res.json();
-      if (json.ok) toast('Synced to production successfully');
-      else toast(json.error ?? 'Sync failed', 'error');
-    } catch {
-      toast('Network error during sync', 'error');
-    } finally {
-      setSyncing(false);
-    }
-  };
 
   const handleAddParent = () => {
     if (!newParentName.trim()) return;
@@ -132,9 +118,6 @@ export function Dashboard() {
           <Upload size={14} /> Import
         </button>
         <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
-        <button onClick={handleSyncToProduction} disabled={syncing} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 rounded-lg hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed">
-          <CloudUpload size={14} /> {syncing ? 'Syncing…' : '→ Production'}
-        </button>
         <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50">
           <RotateCcw size={14} /> Reset
         </button>
