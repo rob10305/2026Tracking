@@ -5,9 +5,9 @@ import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
 import { MotionCard } from './MotionCard';
 import { ParentMotionCard } from './ParentMotionCard';
 import { StatusLegend } from './StatusLegend';
-import { exportJSON, importJSON } from '@/lib/sales-motion/utils/exportImport';
+import { exportJSON, exportUserJSON, exportUserExcel, exportAllExcel, importJSON } from '@/lib/sales-motion/utils/exportImport';
 import { useToast } from '@/components/sales-motion/shared/Toast';
-import { Download, Upload, RotateCcw, Plus, GitBranch, Link2, Copy, Sparkles } from 'lucide-react';
+import { Download, Upload, RotateCcw, Plus, GitBranch, Link2, Copy, Sparkles, ChevronDown, FileSpreadsheet, FileJson } from 'lucide-react';
 import { USERS } from '@/lib/sales-motion/types';
 import type { UserId } from '@/lib/sales-motion/types';
 import { parseCurrency } from '@/lib/sales-motion/utils/currency';
@@ -19,6 +19,8 @@ export function Dashboard() {
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
 
+
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // ── Parent campaign creation (All view) ────────────────────────────────────
   const [showAddParent, setShowAddParent] = useState(false);
@@ -111,9 +113,37 @@ export function Dashboard() {
     <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4 flex-wrap">
       <h1 className="text-xl font-bold text-gray-900">Sales Motion Monthly Impact Tracker</h1>
       <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
-          <Download size={14} /> Export
-        </button>
+        <div className="relative">
+          <button onClick={() => setShowExportMenu(!showExportMenu)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+            <Download size={14} /> Export <ChevronDown size={12} />
+          </button>
+          {showExportMenu && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowExportMenu(false)} />
+              <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
+                {!viewAll && (
+                  <>
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">My Data ({USERS.find((u) => u.id === activeUser)?.displayName})</div>
+                    <button onClick={() => { exportUserJSON(activeUser, fullState); toast('JSON exported'); setShowExportMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                      <FileJson size={14} className="text-blue-500" /> My Data (JSON)
+                    </button>
+                    <button onClick={() => { exportUserExcel(activeUser, fullState); toast('Excel exported'); setShowExportMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                      <FileSpreadsheet size={14} className="text-green-600" /> My Data (Excel)
+                    </button>
+                    <div className="border-t border-gray-100 my-1" />
+                  </>
+                )}
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">All Users</div>
+                <button onClick={() => { exportJSON(fullState); toast('JSON exported'); setShowExportMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <FileJson size={14} className="text-blue-500" /> All Users (JSON)
+                </button>
+                <button onClick={() => { exportAllExcel(fullState); toast('Excel exported'); setShowExportMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <FileSpreadsheet size={14} className="text-green-600" /> All Users (Excel)
+                </button>
+              </div>
+            </>
+          )}
+        </div>
         <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
           <Upload size={14} /> Import
         </button>
