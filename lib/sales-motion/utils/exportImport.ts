@@ -46,16 +46,21 @@ export function exportUserJSON(userId: UserId, fullState: MultiUserState): void 
 
 // ── Excel helpers ───────────────────────────────────────────────────────────
 
-function motionRow(m: Motion, userName?: string) {
+function motionRow(m: Motion, userName?: string, parentMotions?: Motion[]) {
   const allTasks = m.categories.flatMap((c) => c.tasks);
   const total = allTasks.length;
   const complete = allTasks.filter((t) => t.status === 'Complete').length;
   const inProgress = allTasks.filter((t) => t.status === 'In Progress').length;
   const blocked = allTasks.filter((t) => t.status === 'Blocked').length;
 
+  const parentName = m.parentMotionId && parentMotions
+    ? (parentMotions.find((p) => p.id === m.parentMotionId)?.name ?? '')
+    : '';
+
   const row: Record<string, string | number> = {};
   if (userName !== undefined) row['Rep'] = userName;
   row['Campaign'] = m.name;
+  row['Parent Campaign'] = parentName;
   row['Type'] = m.type;
   row['Owner'] = m.owner;
   row['RAG Status'] = m.ragStatus;
@@ -144,9 +149,10 @@ export function exportUserExcel(userId: UserId, fullState: MultiUserState): void
   const userData = fullState.users[userId];
   const motions = userData.motions;
 
+  const parents = fullState.parentMotions ?? [];
   const wb = XLSX.utils.book_new();
 
-  addSheet(wb, 'Motions', motions.map((m) => motionRow(m)));
+  addSheet(wb, 'Motions', motions.map((m) => motionRow(m, undefined, parents)));
   addSheet(wb, 'Activities', motions.flatMap((m) => taskRows(m)));
   addSheet(wb, 'KPIs', motions.flatMap((m) => kpiRows(m)));
 
@@ -156,6 +162,7 @@ export function exportUserExcel(userId: UserId, fullState: MultiUserState): void
 }
 
 export function exportAllExcel(fullState: MultiUserState): void {
+  const parents = fullState.parentMotions ?? [];
   const wb = XLSX.utils.book_new();
 
   // Summary sheet — one row per user
@@ -177,7 +184,7 @@ export function exportAllExcel(fullState: MultiUserState): void {
   // All motions sheet
   const allMotionRows = USERS.flatMap((u) => {
     const userData = fullState.users[u.id];
-    return (userData?.motions ?? []).map((m) => motionRow(m, u.displayName));
+    return (userData?.motions ?? []).map((m) => motionRow(m, u.displayName, parents));
   });
   addSheet(wb, 'All Motions', allMotionRows);
 
@@ -196,7 +203,6 @@ export function exportAllExcel(fullState: MultiUserState): void {
   addSheet(wb, 'All KPIs', allKpiRows);
 
   // Parent campaigns sheet
-  const parents = fullState.parentMotions ?? [];
   const parentMotionRows = parents.map((m) => motionRow(m, '(Parent)'));
   addSheet(wb, 'Parent Campaigns', parentMotionRows);
 
