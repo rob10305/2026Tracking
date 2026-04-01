@@ -1,7 +1,7 @@
 'use client';
 
-import type { Task, Status, Priority, RAG } from '@/lib/sales-motion/types';
-import { STATUS_OPTIONS, PRIORITY_OPTIONS, RAG_OPTIONS } from '@/lib/sales-motion/types';
+import type { Task, Status, RAG } from '@/lib/sales-motion/types';
+import { STATUS_OPTIONS, RAG_OPTIONS } from '@/lib/sales-motion/types';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { SelectDropdown } from '@/components/sales-motion/shared/SelectDropdown';
 import { Trash2, Link2, Pencil, RotateCcw, Lock } from 'lucide-react';
@@ -17,10 +17,20 @@ interface TaskRowProps {
   onResetOverride: () => void;
 }
 
+const DEP_STATUS_COLOURS: Record<string, string> = {
+  Complete: 'bg-green-100 text-green-700 border-green-200',
+  'In Progress': 'bg-blue-100 text-blue-700 border-blue-200',
+  Blocked: 'bg-red-100 text-red-700 border-red-200',
+  'At Risk': 'bg-orange-100 text-orange-700 border-orange-200',
+  'Not Started': 'bg-gray-100 text-gray-600 border-gray-200',
+};
+
 export function TaskRow({ task, effectiveTask, index, isChildMotion, locked, onUpdate, onDelete, onResetOverride }: TaskRowProps) {
   const isInherited = isChildMotion && !!task.parentTaskId && task.isOverridden === false;
   const isOverridden = isChildMotion && !!task.parentTaskId && task.isOverridden === true;
   const isBlocked = effectiveTask.status === 'Blocked';
+  const hasDep = task.keyDependency && task.keyDependency.trim() !== '';
+  const depOutstanding = hasDep && task.dependencyStatus !== 'Complete';
 
   const rowClass = isInherited
     ? `border-b border-gray-100 text-xs bg-indigo-50/40`
@@ -62,16 +72,27 @@ export function TaskRow({ task, effectiveTask, index, isChildMotion, locked, onU
         )}
       </td>
       <td className="px-2 py-1.5">
-        {locked ? <span className="text-xs text-gray-700">{task.priority}</span> : <SelectDropdown<Priority> value={task.priority} options={PRIORITY_OPTIONS} onChange={(v) => onUpdate('priority', v)} />}
-      </td>
-      <td className="px-2 py-1.5">
         <input type="date" value={task.dueDate} disabled={locked} onChange={(e) => onUpdate('dueDate', e.target.value)} className={`border border-gray-300 rounded px-1 py-0.5 text-xs ${locked ? 'bg-gray-50 cursor-not-allowed' : ''}`} />
       </td>
       <td className="px-2 py-1.5">
-        <input type="date" value={task.completedDate} disabled={locked} onChange={(e) => onUpdate('completedDate', e.target.value)} className={`border border-gray-300 rounded px-1 py-0.5 text-xs ${locked ? 'bg-gray-50 cursor-not-allowed' : ''}`} />
-      </td>
-      <td className="px-2 py-1.5">
-        {locked ? <span className="text-xs text-gray-600">{task.target || '—'}</span> : <EditableField value={task.target} onSave={(v) => onUpdate('target', v)} placeholder="—" className="text-xs" />}
+        {hasDep ? (
+          <div className="flex flex-col gap-1 min-w-[100px]">
+            <span className="text-[10px] text-gray-500 leading-tight truncate max-w-[120px]" title={task.keyDependency}>{task.keyDependency}</span>
+            {locked ? (
+              <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border ${DEP_STATUS_COLOURS[task.dependencyStatus] ?? DEP_STATUS_COLOURS['Not Started']}`}>
+                {task.dependencyStatus}
+              </span>
+            ) : (
+              <SelectDropdown<Status>
+                value={task.dependencyStatus}
+                options={STATUS_OPTIONS}
+                onChange={(v) => onUpdate('dependencyStatus', v)}
+              />
+            )}
+          </div>
+        ) : (
+          <span className="text-[10px] text-gray-300">—</span>
+        )}
       </td>
       <td className="px-2 py-1.5">
         {locked ? (

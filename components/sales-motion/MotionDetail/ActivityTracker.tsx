@@ -73,21 +73,19 @@ export function ActivityTracker({ motion, locked = false }: { motion: Motion; lo
       <div className="border border-gray-200 rounded-lg overflow-x-auto">
         <table className="w-full text-left">
           <colgroup>
-            <col style={{ width: '40px' }} /><col style={{ width: '25%' }} /><col style={{ width: '10%' }} />
-            <col style={{ width: '110px' }} /><col style={{ width: '85px' }} /><col style={{ width: '120px' }} />
-            <col style={{ width: '120px' }} /><col style={{ width: '8%' }} /><col style={{ width: '110px' }} />
+            <col style={{ width: '40px' }} /><col style={{ width: '28%' }} /><col style={{ width: '10%' }} />
+            <col style={{ width: '110px' }} /><col style={{ width: '120px' }} />
+            <col style={{ width: '80px' }} /><col style={{ width: '110px' }} />
             <col /><col style={{ width: '36px' }} />
           </colgroup>
           <thead>
             <tr className="bg-gray-100 text-[10px] text-gray-500 uppercase tracking-wider border-b border-gray-200">
               <th className="px-2 py-2"></th>
               <th className="px-2 py-2">Category / Activity</th>
-              <th className="px-2 py-2">Assigned To</th>
+              <th className="px-2 py-2">Owner</th>
               <th className="px-2 py-2">Status</th>
-              <th className="px-2 py-2">Priority</th>
               <th className="px-2 py-2">Due Date</th>
-              <th className="px-2 py-2">Completed</th>
-              <th className="px-2 py-2">Target</th>
+              <th className="px-2 py-2">Deps</th>
               <th className="px-2 py-2">RAG</th>
               <th className="px-2 py-2">Notes</th>
               <th className="px-2 py-2"></th>
