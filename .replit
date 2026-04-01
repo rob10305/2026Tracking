@@ -42,3 +42,8 @@ externalPort = 3000
 deploymentTarget = "autoscale"
 run = ["bash", "-c", "npx next start -p 5000"]
 build = ["bash", "-c", "npx prisma generate && npx prisma db push --accept-data-loss && npx next build"]
+
+[userenv]
+
+[userenv.development]
+PRODUCTION_URL = "https://forecast-2.replit.app"

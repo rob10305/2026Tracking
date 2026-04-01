@@ -7,7 +7,7 @@ import { AggregateMotionCard } from './AggregateMotionCard';
 import { StatusLegend } from './StatusLegend';
 import { exportJSON, importJSON } from '@/lib/sales-motion/utils/exportImport';
 import { useToast } from '@/components/sales-motion/shared/Toast';
-import { Download, Upload, RotateCcw, Plus, Users, FileDown, Copy, GitBranch, Link2 } from 'lucide-react';
+import { Download, Upload, RotateCcw, Plus, Users, FileDown, Copy, GitBranch, Link2, CloudUpload } from 'lucide-react';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { isChildMotion } from '@/lib/sales-motion/utils/inheritance';
 import { MonthMultiSelect } from '@/components/sales-motion/shared/MonthMultiSelect';
@@ -26,6 +26,7 @@ export function Dashboard() {
   const [newMotionColor, setNewMotionColor] = useState(MOTION_COLORS[5]);
   const [selectedCloneKey, setSelectedCloneKey] = useState('');
   const [showChildMotions, setShowChildMotions] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     setShowChildMotions(false);
@@ -34,6 +35,24 @@ export function Dashboard() {
   const handleExport = () => {
     exportJSON(fullState);
     toast('Data exported successfully');
+  };
+
+  const handleSyncToProduction = async () => {
+    if (!confirm('Push all data to production (forecast-2.replit.app)?\n\nThis will overwrite the production database.')) return;
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/admin/sync-to-production', { method: 'POST' });
+      const json = await res.json();
+      if (json.ok) {
+        toast('Synced to production successfully');
+      } else {
+        toast(json.error ?? 'Sync failed', 'error');
+      }
+    } catch {
+      toast('Network error during sync', 'error');
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,6 +184,14 @@ export function Dashboard() {
             <Upload size={14} /> Import
           </button>
           <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+          <button
+            onClick={handleSyncToProduction}
+            disabled={syncing}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 rounded-lg hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <CloudUpload size={14} />
+            {syncing ? 'Syncing…' : '→ Production'}
+          </button>
           <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50">
             <RotateCcw size={14} /> Reset
           </button>
