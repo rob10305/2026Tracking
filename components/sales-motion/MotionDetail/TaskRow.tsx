@@ -72,12 +72,12 @@ export function TaskRow({ task, effectiveTask, index, isChildMotion, locked, onU
               <span className="text-xs text-gray-600">{task.keyDependency || '—'}</span>
             ) : (
               <select
-                value={(task.keyDependency as DependencyArea) || ''}
+                value={DEPENDENCY_OPTIONS.includes(task.keyDependency as DependencyArea) ? task.keyDependency : ''}
                 onChange={(e) => onUpdate('keyDependency', e.target.value)}
                 className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white cursor-pointer outline-none focus:border-blue-400 w-[160px] text-gray-700"
               >
                 {DEPENDENCY_OPTIONS.map((d) => (
-                  <option key={d} value={d} disabled={d === ''}>
+                  <option key={d} value={d}>
                     {DEP_LABELS[d]}
                   </option>
                 ))}
