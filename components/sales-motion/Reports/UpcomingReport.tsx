@@ -167,18 +167,12 @@ export function UpcomingReport() {
   const allItems = useMemo(() => {
     const items: UpcomingItem[] = [];
 
-    // User motions
-    Object.entries(fullState.users).forEach(([userId, appState]) => {
-      const user = USERS.find((u) => u.id === userId);
-      const userName = user?.displayName ?? userId;
-
-      appState.motions.forEach((motion) => {
-        motion.categories.forEach((cat) => {
-          cat.tasks.forEach((task) => {
-            if (!task.dueDate || task.status === 'Complete') return;
-            const d = new Date(task.dueDate + 'T00:00:00');
-            if (isNaN(d.getTime())) return;
-
+    function scanMotion(motion: typeof parentMotions[0], userId: string, userName: string, isParent: boolean) {
+      motion.categories.forEach((cat) => {
+        // Category-level due date
+        if (cat.dueDate && cat.status !== 'Complete') {
+          const d = new Date(cat.dueDate + 'T00:00:00');
+          if (!isNaN(d.getTime())) {
             items.push({
               motionId: motion.id,
               motionName: motion.name,
@@ -186,23 +180,19 @@ export function UpcomingReport() {
               userId,
               userName,
               categoryName: cat.name,
-              activityText: task.activityText,
-              assignedTo: task.assignedTo,
-              status: task.status,
-              priority: task.priority,
-              dueDate: task.dueDate,
+              activityText: `[Category] ${cat.name}`,
+              assignedTo: cat.assignedTo || '',
+              status: cat.status,
+              priority: cat.priority || 'Medium',
+              dueDate: cat.dueDate,
               dueDateObj: d,
-              dependency: task.keyDependency || '',
-              isParent: false,
+              dependency: '',
+              isParent,
             });
-          });
-        });
-      });
-    });
+          }
+        }
 
-    // Parent motions
-    parentMotions.forEach((motion) => {
-      motion.categories.forEach((cat) => {
+        // Task-level due dates
         cat.tasks.forEach((task) => {
           if (!task.dueDate || task.status === 'Complete') return;
           const d = new Date(task.dueDate + 'T00:00:00');
@@ -212,8 +202,8 @@ export function UpcomingReport() {
             motionId: motion.id,
             motionName: motion.name,
             motionColor: motion.color,
-            userId: '',
-            userName: '(Parent)',
+            userId,
+            userName,
             categoryName: cat.name,
             activityText: task.activityText,
             assignedTo: task.assignedTo,
@@ -222,11 +212,21 @@ export function UpcomingReport() {
             dueDate: task.dueDate,
             dueDateObj: d,
             dependency: task.keyDependency || '',
-            isParent: true,
+            isParent,
           });
         });
       });
+    }
+
+    // User motions
+    Object.entries(fullState.users).forEach(([userId, appState]) => {
+      const user = USERS.find((u) => u.id === userId);
+      const userName = user?.displayName ?? userId;
+      appState.motions.forEach((motion) => scanMotion(motion, userId, userName, false));
     });
+
+    // Parent motions
+    parentMotions.forEach((motion) => scanMotion(motion, '', '(Parent)', true));
 
     // Sort by due date ascending
     items.sort((a, b) => a.dueDateObj.getTime() - b.dueDateObj.getTime());
