@@ -243,9 +243,9 @@ export function Dashboard() {
   // ══════════════════════════════════════════════════════════════════════════
   // INDIVIDUAL REP VIEW
   // ══════════════════════════════════════════════════════════════════════════
-  const myMotions = state.motions;
+  const myMotions = state?.motions ?? [];
   const alreadyClonedParentIds = new Set(myMotions.map((m) => m.parentMotionId).filter(Boolean));
-  const availableParents = parentMotions.filter((p) => !alreadyClonedParentIds.has(p.id));
+  const availableParents = (parentMotions ?? []).filter((p) => !alreadyClonedParentIds.has(p.id));
 
   const addSection = (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
