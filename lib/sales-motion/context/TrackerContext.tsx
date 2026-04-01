@@ -11,7 +11,7 @@ type Action =
   | { type: 'SET_VIEW_ALL' }
   | { type: 'ADD_SHARED_MOTION'; name: string; color: string }
   | { type: 'TOGGLE_REPORTING_MONTH'; month: string }
-  | { type: 'UPDATE_MOTION_FIELD'; motionId: string; field: keyof Pick<Motion, 'owner' | 'focusNote' | 'ragStatus' | 'contributionGoal' | 'actual' | 'leads' | 'wins'>; value: string }
+  | { type: 'UPDATE_MOTION_FIELD'; motionId: string; field: keyof Pick<Motion, 'owner' | 'focusNote' | 'ragStatus' | 'sellers' | 'contributionGoal' | 'actual' | 'leads' | 'wins'>; value: string }
   | { type: 'ADD_TASK'; motionId: string; categoryId: string }
   | { type: 'UPDATE_TASK'; motionId: string; categoryId: string; taskId: string; field: keyof Task; value: string }
   | { type: 'DELETE_TASK'; motionId: string; categoryId: string; taskId: string }
@@ -22,8 +22,8 @@ type Action =
   | { type: 'ADD_KPI_ROW'; motionId: string }
   | { type: 'UPDATE_KPI_ROW'; motionId: string; kpiId: string; field: string; value: string }
   | { type: 'DELETE_KPI_ROW'; motionId: string; kpiId: string }
-  | { type: 'ADD_MOTION'; name: string; color: string }
-  | { type: 'CLONE_MOTION'; source: Motion; sourceUserId: string }
+  | { type: 'ADD_MOTION'; name: string; color: string; seller?: string }
+  | { type: 'CLONE_MOTION'; source: Motion; sourceUserId: string; cloningSeller?: string }
   | { type: 'RESET_TASK_OVERRIDE'; motionId: string; categoryId: string; taskId: string }
   | { type: 'TOGGLE_MOTION_LOCK'; motionId: string }
   | { type: 'DELETE_MOTION'; motionId: string }
@@ -63,17 +63,18 @@ function mapCategory(motion: Motion, categoryId: string, fn: (cat: Category) => 
   return { ...motion, categories: motion.categories.map((c) => (c.id === categoryId ? fn(c) : c)) };
 }
 
-function createNewMotion(name: string, color: string, reportingMonths: string[]): Motion {
+function createNewMotion(name: string, color: string, reportingMonths: string[], seller = ''): Motion {
   return {
     id: crypto.randomUUID(),
     name,
     type: 'Custom Sales Motion',
     description: '',
     color,
-    owner: '',
+    owner: seller,
     reportingMonth: reportingMonths[0] || '',
     focusNote: '',
     ragStatus: '',
+    sellers: seller,
     contributionGoal: '',
     actual: '',
     leads: '',
@@ -126,14 +127,15 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'DELETE_KPI_ROW':
       return mapMotion(state, action.motionId, (m) => ({ ...m, kpiRows: m.kpiRows.filter((k) => k.id !== action.kpiId) }));
     case 'ADD_MOTION':
-      return { ...state, motions: [...state.motions, createNewMotion(action.name, action.color, state.reportingMonths)] };
+      return { ...state, motions: [...state.motions, createNewMotion(action.name, action.color, state.reportingMonths, action.seller ?? '')] };
     case 'CLONE_MOTION': {
       const src = action.source;
       const cloned: Motion = {
         ...src,
         id: crypto.randomUUID(),
-        owner: '',
+        owner: action.cloningSeller ?? '',
         ragStatus: '' as import('@/lib/sales-motion/types').RAG,
+        sellers: action.cloningSeller ?? '',
         contributionGoal: '',
         actual: '',
         leads: '',

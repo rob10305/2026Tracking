@@ -53,6 +53,7 @@ export interface Motion {
   reportingMonth: string;
   focusNote: string;
   ragStatus: RAG;
+  sellers: string;
   contributionGoal: string;
   actual: string;
   leads: string;

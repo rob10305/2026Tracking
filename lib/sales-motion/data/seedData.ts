@@ -97,6 +97,7 @@ function makeMotion(
     reportingMonth: getCurrentMonth(),
     focusNote: '',
     ragStatus: '' as RAG,
+    sellers: '',
     contributionGoal: '',
     leads: '',
     wins: '',

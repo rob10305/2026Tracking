@@ -115,9 +115,11 @@ export function Dashboard() {
     }
   };
 
+  const activeDisplayName = USERS.find((u) => u.id === activeUser)?.displayName ?? '';
+
   const handleAddMotion = () => {
     if (!newMotionName.trim()) return;
-    dispatch({ type: 'ADD_MOTION', name: newMotionName.trim(), color: newMotionColor });
+    dispatch({ type: 'ADD_MOTION', name: newMotionName.trim(), color: newMotionColor, seller: activeDisplayName });
     dispatch({ type: 'ADD_SHARED_MOTION', name: newMotionName.trim(), color: newMotionColor });
     toast(`Motion "${newMotionName.trim()}" added`);
     setNewMotionName('');
@@ -125,7 +127,7 @@ export function Dashboard() {
   };
 
   const handleAddSharedMotion = (name: string, color: string) => {
-    dispatch({ type: 'ADD_MOTION', name, color });
+    dispatch({ type: 'ADD_MOTION', name, color, seller: activeDisplayName });
     toast(`Motion "${name}" added from library`);
   };
 
@@ -133,7 +135,7 @@ export function Dashboard() {
     const entry = cloneableMotions.find((m) => m.key === selectedCloneKey);
     if (!entry) return;
     const sourceUserId = entry.key.split('::')[0];
-    dispatch({ type: 'CLONE_MOTION', source: entry.motion, sourceUserId });
+    dispatch({ type: 'CLONE_MOTION', source: entry.motion, sourceUserId, cloningSeller: activeDisplayName });
     toast(`"${entry.label}" cloned from ${entry.ownerName}`);
     setSelectedCloneKey('');
   };

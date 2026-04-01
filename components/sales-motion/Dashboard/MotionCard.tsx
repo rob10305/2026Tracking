@@ -103,8 +103,11 @@ export function MotionCard({ motion }: { motion: Motion }) {
           <StatBox
             icon={<Users size={11} />}
             label="Sellers"
-            value="1"
+            value={motion.sellers || ''}
             accent="border-gray-200 bg-gray-50 text-gray-700"
+            editable
+            onSave={(v) => dispatch({ type: 'UPDATE_MOTION_FIELD', motionId: motion.id, field: 'sellers', value: v })}
+            placeholder="Name"
           />
           <StatBox
             icon={<TrendingUp size={11} />}
