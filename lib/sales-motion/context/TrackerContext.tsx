@@ -10,6 +10,7 @@ type Action =
   | { type: 'SWITCH_USER'; userId: UserId }
   | { type: 'SET_VIEW_ALL' }
   | { type: 'ADD_SHARED_MOTION'; name: string; color: string }
+  | { type: 'UPDATE_SHARED_MOTION'; name: string; field: 'revenueTarget' | 'leadsTarget' | 'winsTarget'; value: string }
   | { type: 'TOGGLE_REPORTING_MONTH'; month: string }
   | { type: 'UPDATE_MOTION_FIELD'; motionId: string; field: keyof Pick<Motion, 'owner' | 'focusNote' | 'ragStatus' | 'sellers' | 'contributionGoal' | 'actual' | 'leads' | 'wins'>; value: string }
   | { type: 'ADD_TASK'; motionId: string; categoryId: string }
@@ -175,6 +176,14 @@ function multiUserReducer(full: MultiUserState, action: Action): MultiUserState 
   if (action.type === 'ADD_SHARED_MOTION') {
     const entry: SharedMotionEntry = { name: action.name, color: action.color, createdBy: full.activeUser };
     return { ...full, sharedMotionLibrary: [...full.sharedMotionLibrary, entry] };
+  }
+  if (action.type === 'UPDATE_SHARED_MOTION') {
+    return {
+      ...full,
+      sharedMotionLibrary: full.sharedMotionLibrary.map((s) =>
+        s.name === action.name ? { ...s, [action.field]: action.value } : s,
+      ),
+    };
   }
   const updatedUser = appReducer(full.users[full.activeUser], action);
   return { ...full, users: { ...full.users, [full.activeUser]: updatedUser } };

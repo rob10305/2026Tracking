@@ -103,7 +103,8 @@ export function Dashboard() {
       const entry = parentMap.get(name)!;
       const repNames = USERS.filter((u) => entry.reps.has(u.id)).map((u) => u.displayName);
       const motionId = entry.motionIdByUser.get(fullState.activeUser) ?? [...entry.motionIdByUser.values()][0] ?? '';
-      return { name, color: entry.color, revenueTotal: entry.revenueTotal, leadsTotal: entry.leadsTotal, winsTotal: entry.winsTotal, repCount: entry.reps.size, repNames, motionId };
+      const shared = fullState.sharedMotionLibrary.find((s) => s.name === name);
+      return { name, color: entry.color, revenueTotal: entry.revenueTotal, leadsTotal: entry.leadsTotal, winsTotal: entry.winsTotal, repCount: entry.reps.size, repNames, motionId, revenueTarget: shared?.revenueTarget, leadsTarget: shared?.leadsTarget, winsTarget: shared?.winsTarget };
     });
     return { aggregateMotions, childAggregates: childList };
   }, [viewAll, fullState]);
@@ -201,7 +202,13 @@ export function Dashboard() {
         {viewAll ? (
           <>
             {aggregateMotions.map((m) => (
-              <AggregateMotionCard key={m.name} {...m} />
+              <AggregateMotionCard
+                key={m.name}
+                {...m}
+                onUpdateTarget={(field, value) =>
+                  dispatch({ type: 'UPDATE_SHARED_MOTION', name: m.name, field, value })
+                }
+              />
             ))}
             {childAggregates.length > 0 && (
               <div className="mt-4">

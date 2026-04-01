@@ -89,6 +89,9 @@ export interface SharedMotionEntry {
   name: string;
   color: string;
   createdBy: UserId;
+  revenueTarget?: string;
+  leadsTarget?: string;
+  winsTarget?: string;
 }
 
 export interface MultiUserState {
