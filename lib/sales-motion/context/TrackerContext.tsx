@@ -256,6 +256,7 @@ const TrackerContext = createContext<TrackerContextValue | undefined>(undefined)
 export function TrackerProvider({ children }: { children: React.ReactNode }) {
   const [fullState, dispatch] = useReducer(multiUserReducer, null, createFreshMultiUserState);
   const isLoaded = useRef(false);
+  const hasUserChanges = useRef(false);
 
   useEffect(() => {
     fetch('/api/sales-motion/state')
@@ -270,7 +271,8 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isLoaded.current) return;
+    // Don't save until DB data has loaded, and only save after a user-driven change
+    if (!isLoaded.current || !hasUserChanges.current) return;
     const timer = setTimeout(() => {
       fetch('/api/sales-motion/state', {
         method: 'PUT',
@@ -281,10 +283,18 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer);
   }, [fullState]);
 
+  // Wrap dispatch to track user-driven changes (skip SET_FULL_STATE which is the initial load)
+  const trackedDispatch: typeof dispatch = React.useCallback((action) => {
+    if (typeof action === 'object' && action.type !== 'SET_FULL_STATE') {
+      hasUserChanges.current = true;
+    }
+    dispatch(action);
+  }, []);
+
   const value: TrackerContextValue = {
     state: fullState.users[fullState.activeUser],
     fullState,
-    dispatch,
+    dispatch: trackedDispatch,
     activeUser: fullState.activeUser,
     viewAll: fullState.viewAll,
     parentMotions: fullState.parentMotions ?? [],
