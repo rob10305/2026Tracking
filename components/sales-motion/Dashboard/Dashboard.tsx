@@ -15,7 +15,7 @@ import { parseCurrency } from '@/lib/sales-motion/utils/currency';
 const MOTION_COLORS = ['#1A56DB', '#137333', '#6A0DAD', '#C0392B', '#37474F', '#E67E22', '#2980B9', '#8E44AD', '#16A085', '#D35400'];
 
 export function Dashboard() {
-  const { state, fullState, dispatch, parentMotions, activeUser, viewAll } = useTracker();
+  const { state, fullState, dispatch, parentMotions, activeUser, viewAll, isLoading } = useTracker();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -107,6 +107,18 @@ export function Dashboard() {
     setShowCreateNew(false);
     toast(`Campaign "${newMotionName.trim()}" created`);
   };
+
+  // ── Loading gate ────────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+          <p className="mt-3 text-sm text-gray-500">Loading tracker data…</p>
+        </div>
+      </div>
+    );
+  }
 
   // ── Shared header bar ──────────────────────────────────────────────────────
   const headerBar = (

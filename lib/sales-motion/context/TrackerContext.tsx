@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useRef, useState } from 'react';
 import type { AppState, Motion, Task, Category, KPIRow, MultiUserState, UserId } from '@/lib/sales-motion/types';
 import { MONTHS, USERS } from '@/lib/sales-motion/types';
 import { createFreshMultiUserState } from '@/lib/sales-motion/utils/storage';
@@ -249,18 +249,22 @@ interface TrackerContextValue {
   activeUser: UserId;
   viewAll: boolean;
   parentMotions: Motion[];
+  isLoading: boolean;
 }
 
 const TrackerContext = createContext<TrackerContextValue | undefined>(undefined);
 
 export function TrackerProvider({ children }: { children: React.ReactNode }) {
   const [fullState, dispatch] = useReducer(multiUserReducer, null, createFreshMultiUserState);
+  const [isLoading, setIsLoading] = useState(true);
   const isLoaded = useRef(false);
 
   useEffect(() => {
+    let cancelled = false;
     fetch('/api/sales-motion/state')
       .then((r) => r.json())
       .then((data) => {
+        if (cancelled) return;
         if (data && data.version === 2) {
           dispatch({ type: 'SET_FULL_STATE', state: data as MultiUserState });
         } else {
@@ -272,8 +276,14 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
           }).catch(console.error);
         }
         isLoaded.current = true;
+        setIsLoading(false);
       })
-      .catch(() => { isLoaded.current = true; });
+      .catch(() => {
+        if (cancelled) return;
+        isLoaded.current = true;
+        setIsLoading(false);
+      });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -295,6 +305,7 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
     activeUser: fullState.activeUser,
     viewAll: fullState.viewAll,
     parentMotions: fullState.parentMotions ?? [],
+    isLoading,
   };
 
   return <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>;
