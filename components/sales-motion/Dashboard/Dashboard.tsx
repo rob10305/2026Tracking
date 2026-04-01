@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
 import { MotionCard } from './MotionCard';
 import { AggregateMotionCard } from './AggregateMotionCard';
@@ -25,6 +25,10 @@ export function Dashboard() {
   const [newMotionColor, setNewMotionColor] = useState(MOTION_COLORS[5]);
   const [selectedCloneKey, setSelectedCloneKey] = useState('');
   const [showChildMotions, setShowChildMotions] = useState(false);
+
+  useEffect(() => {
+    setShowChildMotions(false);
+  }, [activeUser, viewAll]);
 
   const handleExport = () => {
     exportJSON(fullState);

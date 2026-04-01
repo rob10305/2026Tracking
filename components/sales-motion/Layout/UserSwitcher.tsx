@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
 import { USERS } from '@/lib/sales-motion/types';
 import type { UserId } from '@/lib/sales-motion/types';
@@ -31,13 +32,24 @@ const TEAM_COLOR_ACTIVE: Record<UserId, string> = {
 
 export function SMUserSwitcher() {
   const { activeUser, viewAll, dispatch } = useTracker();
+  const router = useRouter();
+
+  const handleSwitchUser = (userId: UserId) => {
+    dispatch({ type: 'SWITCH_USER', userId });
+    router.push('/sales-motion');
+  };
+
+  const handleViewAll = () => {
+    dispatch({ type: 'SET_VIEW_ALL' });
+    router.push('/sales-motion');
+  };
 
   return (
     <div className="flex items-center gap-2 px-6 py-2 bg-white border-b border-gray-200 flex-wrap">
       <span className="text-xs text-gray-500 font-medium mr-1">Sales Rep:</span>
 
       <button
-        onClick={() => dispatch({ type: 'SET_VIEW_ALL' })}
+        onClick={handleViewAll}
         className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors border ${
           viewAll
             ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
@@ -55,7 +67,7 @@ export function SMUserSwitcher() {
         return (
           <button
             key={u.id}
-            onClick={() => dispatch({ type: 'SWITCH_USER', userId: u.id })}
+            onClick={() => handleSwitchUser(u.id)}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
               isActive ? TEAM_COLOR_ACTIVE[u.id] : TEAM_COLOR[u.id] + ' hover:opacity-80'
             }`}
