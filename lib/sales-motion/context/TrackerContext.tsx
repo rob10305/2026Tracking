@@ -256,7 +256,6 @@ const TrackerContext = createContext<TrackerContextValue | undefined>(undefined)
 export function TrackerProvider({ children }: { children: React.ReactNode }) {
   const [fullState, dispatch] = useReducer(multiUserReducer, null, createFreshMultiUserState);
   const isLoaded = useRef(false);
-  const hasUserChanges = useRef(false);
 
   useEffect(() => {
     fetch('/api/sales-motion/state')
@@ -264,6 +263,13 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (data && data.version === 2) {
           dispatch({ type: 'SET_FULL_STATE', state: data as MultiUserState });
+        } else {
+          // No saved state in DB yet — persist the initial seed state so it's there next time
+          fetch('/api/sales-motion/state', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fullState),
+          }).catch(console.error);
         }
         isLoaded.current = true;
       })
@@ -271,8 +277,7 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Don't save until DB data has loaded, and only save after a user-driven change
-    if (!isLoaded.current || !hasUserChanges.current) return;
+    if (!isLoaded.current) return;
     const timer = setTimeout(() => {
       fetch('/api/sales-motion/state', {
         method: 'PUT',
@@ -283,18 +288,10 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer);
   }, [fullState]);
 
-  // Wrap dispatch to track user-driven changes (skip SET_FULL_STATE which is the initial load)
-  const trackedDispatch: typeof dispatch = React.useCallback((action) => {
-    if (typeof action === 'object' && action.type !== 'SET_FULL_STATE') {
-      hasUserChanges.current = true;
-    }
-    dispatch(action);
-  }, []);
-
   const value: TrackerContextValue = {
     state: fullState.users[fullState.activeUser],
     fullState,
-    dispatch: trackedDispatch,
+    dispatch,
     activeUser: fullState.activeUser,
     viewAll: fullState.viewAll,
     parentMotions: fullState.parentMotions ?? [],
