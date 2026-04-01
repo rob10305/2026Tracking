@@ -1,17 +1,20 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, useRef } from 'react';
-import type { AppState, Motion, Task, Category, KPIRow, MultiUserState, UserId, SharedMotionEntry } from '@/lib/sales-motion/types';
+import type { AppState, Motion, Task, Category, KPIRow, MultiUserState, UserId } from '@/lib/sales-motion/types';
 import { MONTHS, USERS } from '@/lib/sales-motion/types';
 import { createFreshMultiUserState } from '@/lib/sales-motion/utils/storage';
-import { createSeedData } from '@/lib/sales-motion/data/seedData';
 
 type Action =
   | { type: 'SWITCH_USER'; userId: UserId }
   | { type: 'SET_VIEW_ALL' }
-  | { type: 'ADD_SHARED_MOTION'; name: string; color: string }
-  | { type: 'UPDATE_SHARED_MOTION'; name: string; field: 'revenueTarget' | 'leadsTarget' | 'winsTarget'; value: string }
   | { type: 'TOGGLE_REPORTING_MONTH'; month: string }
+  // ── Parent motion actions (All view only) ──────────────────────────────────
+  | { type: 'ADD_PARENT_MOTION'; name: string; color: string }
+  | { type: 'DELETE_PARENT_MOTION'; motionId: string }
+  | { type: 'TOGGLE_PARENT_MOTION_LOCK'; motionId: string }
+  | { type: 'UPDATE_PARENT_MOTION_FIELD'; motionId: string; field: keyof Pick<Motion, 'name' | 'type' | 'description' | 'owner' | 'focusNote' | 'ragStatus' | 'sellers' | 'contributionGoal' | 'actual' | 'leads' | 'wins' | 'expectedOutcomeType' | 'expectedOutcomeValue' | 'pipelineImpactCustomers' | 'pipelineImpactValue'>; value: string }
+  // ── Per-user motion actions ────────────────────────────────────────────────
   | { type: 'UPDATE_MOTION_FIELD'; motionId: string; field: keyof Pick<Motion, 'owner' | 'focusNote' | 'ragStatus' | 'sellers' | 'contributionGoal' | 'actual' | 'leads' | 'wins' | 'expectedOutcomeType' | 'expectedOutcomeValue' | 'pipelineImpactCustomers' | 'pipelineImpactValue'>; value: string }
   | { type: 'ADD_TASK'; motionId: string; categoryId: string }
   | { type: 'UPDATE_TASK'; motionId: string; categoryId: string; taskId: string; field: keyof Task; value: string }
@@ -60,6 +63,10 @@ function createDefaultKPIRow(): KPIRow {
 
 function mapMotion(state: AppState, motionId: string, fn: (motion: Motion) => Motion): AppState {
   return { ...state, motions: state.motions.map((m) => (m.id === motionId ? fn(m) : m)) };
+}
+
+function mapParentMotion(full: MultiUserState, motionId: string, fn: (m: Motion) => Motion): MultiUserState {
+  return { ...full, parentMotions: (full.parentMotions ?? []).map((m) => m.id === motionId ? fn(m) : m) };
 }
 
 function mapCategory(motion: Motion, categoryId: string, fn: (cat: Category) => Category): Motion {
@@ -170,12 +177,52 @@ function appReducer(state: AppState, action: Action): AppState {
   }
 }
 
+function ensureParentMotions(full: MultiUserState): MultiUserState {
+  if (full.parentMotions) return full;
+  // Migration: extract unique top-level motions from all users → parentMotions
+  const seen = new Map<string, Motion>();
+  for (const user of USERS) {
+    for (const m of (full.users[user.id]?.motions ?? [])) {
+      if (!m.parentMotionId && !seen.has(m.name)) {
+        seen.set(m.name, { ...m });
+      }
+    }
+  }
+  return {
+    ...full,
+    parentMotions: Array.from(seen.values()),
+    users: Object.fromEntries(
+      USERS.map((u) => [u.id, {
+        ...full.users[u.id],
+        motions: (full.users[u.id]?.motions ?? []).filter((m) => !!m.parentMotionId),
+      }]),
+    ) as Record<UserId, AppState>,
+  };
+}
+
 function multiUserReducer(full: MultiUserState, action: Action): MultiUserState {
   if (action.type === 'SWITCH_USER') return { ...full, activeUser: action.userId, viewAll: false };
   if (action.type === 'SET_VIEW_ALL') return { ...full, viewAll: true };
-  if (action.type === 'IMPORT_STATE') return action.state;
-  if (action.type === 'SET_FULL_STATE') return action.state;
+  if (action.type === 'IMPORT_STATE') return ensureParentMotions(action.state);
+  if (action.type === 'SET_FULL_STATE') return ensureParentMotions(action.state);
   if (action.type === 'RESET_STATE') return createFreshMultiUserState();
+
+  // ── Parent motion actions ─────────────────────────────────────────────────
+  if (action.type === 'ADD_PARENT_MOTION') {
+    const newMotion = createNewMotion(action.name, action.color, []);
+    return { ...full, parentMotions: [...(full.parentMotions ?? []), newMotion] };
+  }
+  if (action.type === 'DELETE_PARENT_MOTION') {
+    return { ...full, parentMotions: (full.parentMotions ?? []).filter((m) => m.id !== action.motionId) };
+  }
+  if (action.type === 'TOGGLE_PARENT_MOTION_LOCK') {
+    return mapParentMotion(full, action.motionId, (m) => ({ ...m, locked: !m.locked }));
+  }
+  if (action.type === 'UPDATE_PARENT_MOTION_FIELD') {
+    return mapParentMotion(full, action.motionId, (m) => ({ ...m, [action.field]: action.value }));
+  }
+
+  // ── User-specific actions ─────────────────────────────────────────────────
   if (action.type === 'UPDATE_USER_MOTION_FIELD') {
     const targetState = full.users[action.userId];
     const updatedMotions = targetState.motions.map((m) =>
@@ -183,18 +230,7 @@ function multiUserReducer(full: MultiUserState, action: Action): MultiUserState 
     );
     return { ...full, users: { ...full.users, [action.userId]: { ...targetState, motions: updatedMotions } } };
   }
-  if (action.type === 'ADD_SHARED_MOTION') {
-    const entry: SharedMotionEntry = { name: action.name, color: action.color, createdBy: full.activeUser };
-    return { ...full, sharedMotionLibrary: [...full.sharedMotionLibrary, entry] };
-  }
-  if (action.type === 'UPDATE_SHARED_MOTION') {
-    return {
-      ...full,
-      sharedMotionLibrary: full.sharedMotionLibrary.map((s) =>
-        s.name === action.name ? { ...s, [action.field]: action.value } : s,
-      ),
-    };
-  }
+
   const updatedUser = appReducer(full.users[full.activeUser], action);
   return { ...full, users: { ...full.users, [full.activeUser]: updatedUser } };
 }
@@ -205,7 +241,7 @@ interface TrackerContextValue {
   dispatch: React.Dispatch<Action>;
   activeUser: UserId;
   viewAll: boolean;
-  sharedMotionLibrary: SharedMotionEntry[];
+  parentMotions: Motion[];
 }
 
 const TrackerContext = createContext<TrackerContextValue | undefined>(undefined);
@@ -244,7 +280,7 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
     dispatch,
     activeUser: fullState.activeUser,
     viewAll: fullState.viewAll,
-    sharedMotionLibrary: fullState.sharedMotionLibrary,
+    parentMotions: fullState.parentMotions ?? [],
   };
 
   return <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>;

@@ -108,7 +108,8 @@ export interface MultiUserState {
   activeUser: UserId;
   viewAll: boolean;
   users: Record<UserId, AppState>;
-  sharedMotionLibrary: SharedMotionEntry[];
+  parentMotions: Motion[];
+  sharedMotionLibrary?: SharedMotionEntry[];
 }
 
 export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

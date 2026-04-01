@@ -76,7 +76,7 @@ function downloadGroupCSV(dep: string, items: DependencyItem[]) {
 }
 
 export function DependencyReport() {
-  const { fullState, sharedMotionLibrary } = useTracker();
+  const { fullState, parentMotions } = useTracker();
 
   const grouped = useMemo(() => {
     const validDeps = new Set<string>(
@@ -90,8 +90,8 @@ export function DependencyReport() {
 
     Object.entries(fullState.users).forEach(([userId, appState]) => {
       appState.motions.forEach((motion) => {
-        const shared = sharedMotionLibrary.find((s) => s.name === motion.name);
-        const revenueTarget = shared?.revenueTarget ?? '';
+        const parent = parentMotions.find((p) => p.id === motion.parentMotionId || p.name === motion.name);
+        const revenueTarget = parent?.contributionGoal ?? '';
 
         motion.categories.forEach((cat) => {
           cat.tasks.forEach((task) => {
@@ -115,7 +115,7 @@ export function DependencyReport() {
     });
 
     return map;
-  }, [fullState, sharedMotionLibrary]);
+  }, [fullState, parentMotions]);
 
   const totalItems = Object.values(grouped).reduce((s, arr) => s + arr.length, 0);
 

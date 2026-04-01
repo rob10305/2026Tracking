@@ -53,15 +53,17 @@ function loadV1State(): AppState | null {
 
 export function createFreshMultiUserState(): MultiUserState {
   const users = {} as Record<UserId, AppState>;
+  const emptyUserState: AppState = { reportingMonths: [], motions: [] };
   for (const u of USERS) {
-    users[u.id] = createSeedData();
+    users[u.id] = { ...emptyUserState };
   }
+  const seed = createSeedData();
   return {
     version: 2,
     activeUser: 'jaime',
     viewAll: true,
     users,
-    sharedMotionLibrary: [],
+    parentMotions: seed.motions,
   };
 }
 
@@ -79,12 +81,6 @@ export function loadMultiUserState(): MultiUserState | null {
     if (v1) {
       const fresh = createFreshMultiUserState();
       fresh.users.jaime = v1;
-      const defaultNames = new Set(createSeedData().motions.map((m) => m.name));
-      for (const motion of v1.motions) {
-        if (!defaultNames.has(motion.name)) {
-          fresh.sharedMotionLibrary.push({ name: motion.name, color: motion.color, createdBy: 'jaime' });
-        }
-      }
       localStorage.removeItem(STORAGE_KEY_V1);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
       return fresh;
