@@ -97,6 +97,12 @@ model ContributorActual {
   @@unique([contributor_id, metric_id, month])
 }
 
+model SalesMotionTrackerState {
+  id        Int      @id @default(1)
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
 model LaunchRequirement {
   id           String @id @default(cuid())
   product_id   String

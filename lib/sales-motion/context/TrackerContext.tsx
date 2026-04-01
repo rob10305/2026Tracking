@@ -1,9 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useRef } from 'react';
 import type { AppState, Motion, Task, Category, KPIRow, MultiUserState, UserId, SharedMotionEntry } from '@/lib/sales-motion/types';
 import { MONTHS, USERS } from '@/lib/sales-motion/types';
-import { loadMultiUserState, saveMultiUserState, createFreshMultiUserState } from '@/lib/sales-motion/utils/storage';
+import { createFreshMultiUserState } from '@/lib/sales-motion/utils/storage';
 import { createSeedData } from '@/lib/sales-motion/data/seedData';
 
 type Action =
@@ -30,7 +30,8 @@ type Action =
   | { type: 'DELETE_MOTION'; motionId: string }
   | { type: 'UPDATE_USER_MOTION_FIELD'; userId: UserId; motionId: string; field: 'sellers'; value: string }
   | { type: 'IMPORT_STATE'; state: MultiUserState }
-  | { type: 'RESET_STATE' };
+  | { type: 'RESET_STATE' }
+  | { type: 'SET_FULL_STATE'; state: MultiUserState };
 
 function createDefaultTask(): Task {
   return {
@@ -173,6 +174,7 @@ function multiUserReducer(full: MultiUserState, action: Action): MultiUserState 
   if (action.type === 'SWITCH_USER') return { ...full, activeUser: action.userId, viewAll: false };
   if (action.type === 'SET_VIEW_ALL') return { ...full, viewAll: true };
   if (action.type === 'IMPORT_STATE') return action.state;
+  if (action.type === 'SET_FULL_STATE') return action.state;
   if (action.type === 'RESET_STATE') return createFreshMultiUserState();
   if (action.type === 'UPDATE_USER_MOTION_FIELD') {
     const targetState = full.users[action.userId];
@@ -209,13 +211,31 @@ interface TrackerContextValue {
 const TrackerContext = createContext<TrackerContextValue | undefined>(undefined);
 
 export function TrackerProvider({ children }: { children: React.ReactNode }) {
-  const [fullState, dispatch] = useReducer(multiUserReducer, null, () => {
-    if (typeof window === 'undefined') return createFreshMultiUserState();
-    return loadMultiUserState() ?? createFreshMultiUserState();
-  });
+  const [fullState, dispatch] = useReducer(multiUserReducer, null, createFreshMultiUserState);
+  const isLoaded = useRef(false);
 
   useEffect(() => {
-    saveMultiUserState(fullState);
+    fetch('/api/sales-motion/state')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.version === 2) {
+          dispatch({ type: 'SET_FULL_STATE', state: data as MultiUserState });
+        }
+        isLoaded.current = true;
+      })
+      .catch(() => { isLoaded.current = true; });
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded.current) return;
+    const timer = setTimeout(() => {
+      fetch('/api/sales-motion/state', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fullState),
+      }).catch(console.error);
+    }, 1500);
+    return () => clearTimeout(timer);
   }, [fullState]);
 
   const value: TrackerContextValue = {
