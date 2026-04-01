@@ -294,7 +294,7 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
   // ── Initial load from DB ──────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/sales-motion/state')
+    fetch('/api/sales-motion/state', { cache: 'no-store' })
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
