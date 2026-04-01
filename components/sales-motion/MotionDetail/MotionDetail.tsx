@@ -1,21 +1,17 @@
 'use client';
 
-import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
 import { ActivityTracker } from './ActivityTracker';
-import { KPITab } from './KPITab';
 import { ProgressBar } from '@/components/sales-motion/shared/ProgressBar';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
-import { ArrowLeft, ListTodo, BarChart3, Link2, GitBranch, Lock, LockOpen } from 'lucide-react';
+import { ArrowLeft, Link2, GitBranch, Lock, LockOpen } from 'lucide-react';
 import { getParentMotion, isChildMotion, countChildren } from '@/lib/sales-motion/utils/inheritance';
 
 export function MotionDetail() {
   const { id } = useParams<{ id: string }>();
   const { state, dispatch, fullState } = useTracker();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'activities' | 'kpis'>('activities');
-
   const motion = state.motions.find((m) => m.id === id);
 
   const parentMotion = motion ? getParentMotion(motion, fullState) : null;
@@ -131,23 +127,8 @@ export function MotionDetail() {
         )}
       </div>
 
-      <div className="px-6 py-2 border-b border-gray-200 bg-white flex gap-1">
-        <button
-          onClick={() => setActiveTab('activities')}
-          className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-t-lg border-b-2 transition-colors ${activeTab === 'activities' ? 'border-blue-600 text-blue-600 font-medium' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >
-          <ListTodo size={16} /> Activity Tracker
-        </button>
-        <button
-          onClick={() => setActiveTab('kpis')}
-          className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-t-lg border-b-2 transition-colors ${activeTab === 'kpis' ? 'border-blue-600 text-blue-600 font-medium' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >
-          <BarChart3 size={16} /> KPI Targets (Monthly)
-        </button>
-      </div>
-
       <div className="p-6">
-        {activeTab === 'activities' ? <ActivityTracker motion={motion} locked={!!motion.locked} /> : <KPITab motion={motion} />}
+        <ActivityTracker motion={motion} locked={!!motion.locked} />
       </div>
     </div>
   );
