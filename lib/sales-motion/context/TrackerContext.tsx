@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useRef, useState, useCallback } from 'react';
 import type { AppState, Motion, Task, Category, KPIRow, MultiUserState, UserId } from '@/lib/sales-motion/types';
 import { MONTHS, USERS } from '@/lib/sales-motion/types';
 import { createFreshMultiUserState } from '@/lib/sales-motion/utils/storage';
@@ -254,11 +254,44 @@ interface TrackerContextValue {
 
 const TrackerContext = createContext<TrackerContextValue | undefined>(undefined);
 
+// Actions that should trigger an immediate save (no debounce)
+const IMMEDIATE_SAVE_ACTIONS = new Set([
+  'ADD_PARENT_MOTION', 'DELETE_PARENT_MOTION',
+  'ADD_MOTION', 'DELETE_MOTION', 'CLONE_MOTION',
+  'IMPORT_STATE', 'RESET_STATE',
+]);
+
+function saveToDb(state: MultiUserState): Promise<void> {
+  return fetch('/api/sales-motion/state', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state),
+  })
+    .then((r) => {
+      if (!r.ok) console.error('[TrackerContext] save failed:', r.status);
+      else console.log('[TrackerContext] saved to DB, parentMotions:', state.parentMotions?.length ?? 0);
+    })
+    .catch((err) => console.error('[TrackerContext] save error:', err));
+}
+
 export function TrackerProvider({ children }: { children: React.ReactNode }) {
-  const [fullState, dispatch] = useReducer(multiUserReducer, null, createFreshMultiUserState);
+  const [fullState, rawDispatch] = useReducer(multiUserReducer, null, createFreshMultiUserState);
   const [isLoading, setIsLoading] = useState(true);
   const isLoaded = useRef(false);
+  const needsImmediateSave = useRef(false);
+  const latestState = useRef(fullState);
+  latestState.current = fullState;
 
+  // Wrapped dispatch that flags critical mutations for immediate save
+  const dispatch = useCallback((action: Action) => {
+    if (IMMEDIATE_SAVE_ACTIONS.has(action.type)) {
+      needsImmediateSave.current = true;
+    }
+    console.log('[TrackerContext] dispatch:', action.type);
+    rawDispatch(action);
+  }, []);
+
+  // ── Initial load from DB ──────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     fetch('/api/sales-motion/state')
@@ -266,37 +299,51 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (cancelled) return;
         if (data && data.version === 2) {
-          dispatch({ type: 'SET_FULL_STATE', state: data as MultiUserState });
+          console.log('[TrackerContext] loaded from DB, parentMotions:', data.parentMotions?.length ?? 0);
+          rawDispatch({ type: 'SET_FULL_STATE', state: data as MultiUserState });
         } else {
-          // No saved state in DB yet — persist the initial seed state so it's there next time
-          fetch('/api/sales-motion/state', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(fullState),
-          }).catch(console.error);
+          console.log('[TrackerContext] no DB data, seeding initial state');
+          saveToDb(latestState.current);
         }
         isLoaded.current = true;
         setIsLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
+        console.error('[TrackerContext] load error:', err);
         isLoaded.current = true;
         setIsLoading(false);
       });
     return () => { cancelled = true; };
   }, []);
 
+  // ── Auto-save on state changes ────────────────────────────────────────────
   useEffect(() => {
     if (!isLoaded.current) return;
-    const timer = setTimeout(() => {
-      fetch('/api/sales-motion/state', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fullState),
-      }).catch(console.error);
-    }, 1500);
+
+    // Critical mutations: save immediately
+    if (needsImmediateSave.current) {
+      needsImmediateSave.current = false;
+      saveToDb(fullState);
+      return;
+    }
+
+    // Regular mutations: debounce 1500ms
+    const timer = setTimeout(() => saveToDb(fullState), 1500);
     return () => clearTimeout(timer);
   }, [fullState]);
+
+  // ── Save on tab close / navigation away ───────────────────────────────────
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!isLoaded.current) return;
+      // sendBeacon is fire-and-forget, works even during unload
+      const blob = new Blob([JSON.stringify(latestState.current)], { type: 'application/json' });
+      navigator.sendBeacon('/api/sales-motion/state', blob);
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   const value: TrackerContextValue = {
     state: fullState.users[fullState.activeUser],
