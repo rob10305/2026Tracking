@@ -45,6 +45,9 @@ export interface KPIRow {
   monthly: Record<string, string>;
 }
 
+export type OutcomeType = 'MQL' | 'SQL' | 'Prospect' | 'Contacts' | 'NA' | '';
+export const OUTCOME_TYPE_OPTIONS: OutcomeType[] = ['', 'MQL', 'SQL', 'Prospect', 'Contacts', 'NA'];
+
 export interface Motion {
   id: string;
   name: string;
@@ -65,6 +68,10 @@ export interface Motion {
   parentMotionId?: string;
   parentUserId?: string;
   locked?: boolean;
+  expectedOutcomeType?: OutcomeType;
+  expectedOutcomeValue?: string;
+  pipelineImpactCustomers?: string;
+  pipelineImpactValue?: string;
 }
 
 export interface AppState {

@@ -12,7 +12,7 @@ type Action =
   | { type: 'ADD_SHARED_MOTION'; name: string; color: string }
   | { type: 'UPDATE_SHARED_MOTION'; name: string; field: 'revenueTarget' | 'leadsTarget' | 'winsTarget'; value: string }
   | { type: 'TOGGLE_REPORTING_MONTH'; month: string }
-  | { type: 'UPDATE_MOTION_FIELD'; motionId: string; field: keyof Pick<Motion, 'owner' | 'focusNote' | 'ragStatus' | 'sellers' | 'contributionGoal' | 'actual' | 'leads' | 'wins'>; value: string }
+  | { type: 'UPDATE_MOTION_FIELD'; motionId: string; field: keyof Pick<Motion, 'owner' | 'focusNote' | 'ragStatus' | 'sellers' | 'contributionGoal' | 'actual' | 'leads' | 'wins' | 'expectedOutcomeType' | 'expectedOutcomeValue' | 'pipelineImpactCustomers' | 'pipelineImpactValue'>; value: string }
   | { type: 'ADD_TASK'; motionId: string; categoryId: string }
   | { type: 'UPDATE_TASK'; motionId: string; categoryId: string; taskId: string; field: keyof Task; value: string }
   | { type: 'DELETE_TASK'; motionId: string; categoryId: string; taskId: string }

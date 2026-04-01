@@ -5,8 +5,10 @@ import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
 import { ActivityTracker } from './ActivityTracker';
 import { ProgressBar } from '@/components/sales-motion/shared/ProgressBar';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
-import { ArrowLeft, Link2, GitBranch, Lock, LockOpen } from 'lucide-react';
+import { ArrowLeft, Link2, GitBranch, Lock, LockOpen, Target, Users, DollarSign } from 'lucide-react';
 import { getParentMotion, isChildMotion, countChildren } from '@/lib/sales-motion/utils/inheritance';
+import { OUTCOME_TYPE_OPTIONS } from '@/lib/sales-motion/types';
+import type { OutcomeType } from '@/lib/sales-motion/types';
 
 export function MotionDetail() {
   const { id } = useParams<{ id: string }>();
@@ -82,6 +84,68 @@ export function MotionDetail() {
                 placeholder="Set owner"
                 className="text-xs"
               />
+            </div>
+
+            {/* Expected Outcome + Pipeline Impact */}
+            <div className="flex items-center gap-4 mt-3 ml-6 flex-wrap">
+
+              {/* Expected Outcome */}
+              <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
+                <Target size={13} className="text-purple-500 shrink-0" />
+                <span className="text-xs text-gray-500 whitespace-nowrap">Expected Outcome:</span>
+                <select
+                  value={motion.expectedOutcomeType ?? ''}
+                  disabled={!!motion.locked}
+                  onChange={(e) => dispatch({ type: 'UPDATE_MOTION_FIELD', motionId: motion.id, field: 'expectedOutcomeType', value: e.target.value as OutcomeType })}
+                  className="text-xs font-medium text-gray-800 bg-transparent border-none outline-none cursor-pointer pr-1"
+                >
+                  {OUTCOME_TYPE_OPTIONS.map((o) => (
+                    <option key={o} value={o}>{o === '' ? 'Select…' : o}</option>
+                  ))}
+                </select>
+                <span className="text-gray-300 mx-0.5">|</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={motion.expectedOutcomeValue ?? ''}
+                  disabled={!!motion.locked}
+                  onChange={(e) => dispatch({ type: 'UPDATE_MOTION_FIELD', motionId: motion.id, field: 'expectedOutcomeValue', value: e.target.value })}
+                  placeholder="Value"
+                  className="text-xs font-medium text-gray-800 bg-transparent border-none outline-none w-16 placeholder-gray-400"
+                />
+              </div>
+
+              {/* Pipeline Impact — Customers */}
+              <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
+                <Users size={13} className="text-blue-500 shrink-0" />
+                <span className="text-xs text-gray-500 whitespace-nowrap">Pipeline Customers:</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={motion.pipelineImpactCustomers ?? ''}
+                  disabled={!!motion.locked}
+                  onChange={(e) => dispatch({ type: 'UPDATE_MOTION_FIELD', motionId: motion.id, field: 'pipelineImpactCustomers', value: e.target.value })}
+                  placeholder="0"
+                  className="text-xs font-medium text-gray-800 bg-transparent border-none outline-none w-16 placeholder-gray-400"
+                />
+              </div>
+
+              {/* Pipeline Impact — $ */}
+              <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
+                <DollarSign size={13} className="text-green-500 shrink-0" />
+                <span className="text-xs text-gray-500 whitespace-nowrap">Pipeline Impact:</span>
+                <span className="text-xs text-gray-400">$</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={motion.pipelineImpactValue ?? ''}
+                  disabled={!!motion.locked}
+                  onChange={(e) => dispatch({ type: 'UPDATE_MOTION_FIELD', motionId: motion.id, field: 'pipelineImpactValue', value: e.target.value })}
+                  placeholder="0"
+                  className="text-xs font-medium text-gray-800 bg-transparent border-none outline-none w-24 placeholder-gray-400"
+                />
+              </div>
+
             </div>
           </div>
 
