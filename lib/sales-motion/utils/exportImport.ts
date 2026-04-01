@@ -78,6 +78,12 @@ function taskRows(m: Motion, userName?: string) {
       if (userName !== undefined) row['Rep'] = userName;
       row['Campaign'] = m.name;
       row['Category'] = cat.name;
+      row['Category Owner'] = cat.assignedTo;
+      row['Category Status'] = cat.status;
+      row['Category Priority'] = cat.priority;
+      row['Category Due Date'] = cat.dueDate;
+      row['Category RAG'] = cat.rag;
+      row['Category Notes'] = cat.notes;
       row['Activity'] = t.activityText;
       row['Assigned To'] = t.assignedTo;
       row['Status'] = t.status;
