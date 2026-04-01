@@ -12,12 +12,14 @@ import type { OutcomeType } from '@/lib/sales-motion/types';
 
 export function MotionDetail() {
   const { id } = useParams<{ id: string }>();
-  const { state, dispatch, fullState } = useTracker();
+  const { state, dispatch, fullState, parentMotions } = useTracker();
   const router = useRouter();
-  const motion = state.motions.find((m) => m.id === id);
+  const motion = state.motions.find((m) => m.id === id)
+    ?? parentMotions.find((m) => m.id === id);
+  const isParent = parentMotions.some((m) => m.id === id);
 
-  const parentMotion = motion ? getParentMotion(motion, fullState) : null;
-  const childMotion = motion ? isChildMotion(motion) : false;
+  const parentMotion = motion && !isParent ? getParentMotion(motion, fullState) : null;
+  const childMotion = motion && !isParent ? isChildMotion(motion) : false;
   const childCount = motion ? countChildren(motion, fullState) : 0;
 
   if (!motion) {

@@ -231,6 +231,13 @@ function multiUserReducer(full: MultiUserState, action: Action): MultiUserState 
     return { ...full, users: { ...full.users, [action.userId]: { ...targetState, motions: updatedMotions } } };
   }
 
+  // ── Route task/category/kpi actions to parentMotions when the motionId belongs to a parent ──
+  if ('motionId' in action && (full.parentMotions ?? []).some((m) => m.id === action.motionId)) {
+    const fakeUserState: AppState = { motions: full.parentMotions ?? [], reportingMonths: [] };
+    const updated = appReducer(fakeUserState, action);
+    return { ...full, parentMotions: updated.motions };
+  }
+
   const updatedUser = appReducer(full.users[full.activeUser], action);
   return { ...full, users: { ...full.users, [full.activeUser]: updatedUser } };
 }

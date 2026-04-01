@@ -85,9 +85,10 @@ export function ParentMotionCard({ motion, childrenByUser }: Props) {
           <button
             onClick={() => {
               if (motion.locked) return;
-              if (confirm(`Delete parent campaign "${motion.name}"?\n\nReps' child campaigns linked to this will still exist but lose their parent link.`)) {
-                dispatch({ type: 'DELETE_PARENT_MOTION', motionId: motion.id });
-              }
+              const pw = prompt(`Delete parent campaign "${motion.name}"?\n\nReps' child campaigns linked to this will still exist but lose their parent link.\n\nEnter admin password to confirm:`);
+              if (pw === null) return;
+              if (pw !== 'itmethods') { alert('Incorrect password.'); return; }
+              dispatch({ type: 'DELETE_PARENT_MOTION', motionId: motion.id });
             }}
             disabled={!!motion.locked}
             className={`p-1.5 rounded-lg transition-colors ${motion.locked ? 'text-gray-200 cursor-not-allowed' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}
