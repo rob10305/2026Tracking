@@ -36,6 +36,8 @@ export interface Category {
   notes: string;
   tasks: Task[];
   parentCategoryId?: string;
+  expectedOutcomeType?: OutcomeType;
+  expectedOutcomeValue?: string;
 }
 
 export interface KPIRow {
@@ -45,8 +47,8 @@ export interface KPIRow {
   monthly: Record<string, string>;
 }
 
-export type OutcomeType = 'MQL' | 'SQL' | 'Prospect' | 'Contacts' | 'NA' | '';
-export const OUTCOME_TYPE_OPTIONS: OutcomeType[] = ['', 'MQL', 'SQL', 'Prospect', 'Contacts', 'NA'];
+export type OutcomeType = 'MQL' | 'SQL' | 'Lead' | 'Contact' | 'Prospect' | 'Contacts' | 'NA' | '';
+export const OUTCOME_TYPE_OPTIONS: OutcomeType[] = ['', 'MQL', 'SQL', 'Lead', 'Contact', 'Prospect', 'Contacts', 'NA'];
 
 export interface Motion {
   id: string;

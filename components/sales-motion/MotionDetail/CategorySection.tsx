@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import type { Category, Task, Motion } from '@/lib/sales-motion/types';
+import type { Category, Task, Motion, OutcomeType } from '@/lib/sales-motion/types';
+import { OUTCOME_TYPE_OPTIONS } from '@/lib/sales-motion/types';
 import { TaskRow } from './TaskRow';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { StatusSelect } from '@/components/sales-motion/shared/StatusSelect';
@@ -61,10 +62,36 @@ export function CategorySection({
           </button>
         </td>
         <td className="px-2 py-2 font-semibold text-sm text-gray-800">
-          {locked
-            ? <span className="font-semibold text-sm text-gray-800">{category.name}</span>
-            : <EditableField value={category.name} onSave={(name) => onUpdateCategoryName(category.id, name)} className="font-semibold text-sm text-gray-800" />}
-          <span className="text-[10px] text-gray-400 font-normal ml-1">({category.tasks.length})</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1">
+              {locked
+                ? <span className="font-semibold text-sm text-gray-800">{category.name}</span>
+                : <EditableField value={category.name} onSave={(name) => onUpdateCategoryName(category.id, name)} className="font-semibold text-sm text-gray-800" />}
+              <span className="text-[10px] text-gray-400 font-normal">({category.tasks.length})</span>
+            </div>
+            <div className="flex items-center gap-1 bg-purple-50 border border-purple-200 rounded-full px-2 py-0.5">
+              <span className="text-[10px] text-purple-600 font-medium whitespace-nowrap">Priority Outcome:</span>
+              <select
+                value={category.expectedOutcomeType ?? ''}
+                disabled={locked}
+                onChange={(e) => onUpdateCategoryField(category.id, 'expectedOutcomeType', e.target.value)}
+                className="text-[10px] font-semibold text-purple-700 bg-transparent border-none outline-none cursor-pointer"
+              >
+                {OUTCOME_TYPE_OPTIONS.map((o) => (
+                  <option key={o} value={o}>{o === '' ? '—' : o}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min={0}
+                value={category.expectedOutcomeValue ?? ''}
+                disabled={locked}
+                onChange={(e) => onUpdateCategoryField(category.id, 'expectedOutcomeValue', e.target.value)}
+                placeholder="0"
+                className="text-[10px] font-semibold text-purple-700 bg-transparent border-none outline-none w-10 placeholder-purple-300"
+              />
+            </div>
+          </div>
         </td>
         <td className="px-2 py-2">
           {locked
