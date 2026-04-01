@@ -12,7 +12,7 @@ export default function HomePage() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center min-h-[calc(100vh-60px)] bg-gradient-to-br from-gray-50 to-gray-100">
       <h1 className="text-3xl font-bold text-gray-900 mb-2">FY2026 Goals</h1>
-      <p className="text-gray-500 mb-16 text-lg">What we&apos;re building toward this year</p>
+      <p className="text-gray-500 mb-16 text-lg">2026 Individual Goals Tracker</p>
 
       <div className="flex items-center gap-20">
         {GOALS.map((goal, i) => (
@@ -29,22 +29,16 @@ export default function HomePage() {
 
       <div className="mt-20 flex gap-4">
         <Link
-          href="/forecast"
+          href="/sales-motion"
           className="px-6 py-3 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
         >
-          Forecast Modelling
-        </Link>
-        <Link
-          href="/cfo"
-          className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-        >
-          CFO Dashboard
-        </Link>
-        <Link
-          href="/sales-motion"
-          className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-        >
           Sales Motions
+        </Link>
+        <Link
+          href="/contribution"
+          className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+        >
+          Goals
         </Link>
       </div>
     </div>
