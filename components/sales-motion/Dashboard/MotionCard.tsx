@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import type { Motion } from '@/lib/sales-motion/types';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
-import { ChevronRight, Users, TrendingUp, Target, Trophy, Trash2, Link2, GitBranch, Lock, LockOpen } from 'lucide-react';
+import { ChevronRight, Users, TrendingUp, Target, Trophy, Trash2, Link2, GitBranch, Lock, LockOpen, Copy } from 'lucide-react';
 import { formatCurrency, parseCurrency } from '@/lib/sales-motion/utils/currency';
 import { isChildMotion, countChildren } from '@/lib/sales-motion/utils/inheritance';
 
@@ -47,7 +47,7 @@ function StatBox({
 
 export function MotionCard({ motion }: { motion: Motion }) {
   const router = useRouter();
-  const { dispatch, fullState } = useTracker();
+  const { dispatch, fullState, activeUser } = useTracker();
 
   const revenue = parseCurrency(motion.contributionGoal);
   const revenueDisplay = revenue > 0 ? formatCurrency(revenue) : motion.contributionGoal || '';
@@ -139,6 +139,13 @@ export function MotionCard({ motion }: { motion: Motion }) {
         </div>
 
         <div className="flex items-center gap-1 shrink-0 ml-auto" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => dispatch({ type: 'CLONE_MOTION', source: motion, sourceUserId: activeUser })}
+            title="Clone campaign (creates a child variant)"
+            className="p-1.5 rounded-lg transition-colors text-gray-300 hover:text-indigo-500 hover:bg-indigo-50"
+          >
+            <Copy size={15} />
+          </button>
           <button
             onClick={() => {
               if (motion.locked) {
