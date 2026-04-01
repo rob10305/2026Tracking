@@ -1,12 +1,21 @@
 'use client';
 
-import type { Task, RAG } from '@/lib/sales-motion/types';
-import { RAG_OPTIONS, DEPENDENCY_OPTIONS } from '@/lib/sales-motion/types';
+import type { Task } from '@/lib/sales-motion/types';
+import { DEPENDENCY_OPTIONS } from '@/lib/sales-motion/types';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { StatusSelect } from '@/components/sales-motion/shared/StatusSelect';
-import { SelectDropdown } from '@/components/sales-motion/shared/SelectDropdown';
 import { Trash2, Link2, Pencil, RotateCcw, Lock, CheckSquare, Square } from 'lucide-react';
 import type { DependencyArea } from '@/lib/sales-motion/types';
+
+const DEP_LABELS: Record<string, string> = {
+  '': 'Select Dependency',
+  'None': 'None',
+  'Marketing': 'Marketing',
+  'Sales': 'Sales',
+  'Ops': 'Ops',
+  'Pre Sales': 'Pre Sales',
+  'Product/Engineering': 'Product/Engineering',
+};
 
 interface TaskRowProps {
   task: Task;
@@ -18,13 +27,6 @@ interface TaskRowProps {
   onDelete: () => void;
   onResetOverride: () => void;
 }
-
-const RAG_LABEL: Record<RAG, React.ReactNode> = {
-  '🟢 On Track': <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> On Track</span>,
-  '🟡 At Risk':  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> At Risk</span>,
-  '🔴 Off Track':<span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> Off Track</span>,
-  '':            <span className="text-gray-400">— RAG</span>,
-};
 
 export function TaskRow({ task, effectiveTask, index, isChildMotion, locked, onUpdate, onDelete, onResetOverride }: TaskRowProps) {
   const isInherited = isChildMotion && !!task.parentTaskId && task.isOverridden === false;
@@ -97,34 +99,22 @@ export function TaskRow({ task, effectiveTask, index, isChildMotion, locked, onU
             )}
           </div>
 
-          {/* RAG */}
-          <div className="shrink-0">
-            {locked ? (
-              <span className="text-xs text-gray-600">{task.rag || '—'}</span>
-            ) : (
-              <select
-                value={task.rag}
-                onChange={(e) => onUpdate('rag', e.target.value as RAG)}
-                className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white cursor-pointer outline-none focus:border-blue-400 w-[110px]"
-              >
-                {RAG_OPTIONS.map((r) => (
-                  <option key={r} value={r}>{r || '— RAG'}</option>
-                ))}
-              </select>
-            )}
-          </div>
-
           {/* Dependency area */}
           <div className="shrink-0">
             {locked ? (
               <span className="text-xs text-gray-600">{task.keyDependency || '—'}</span>
             ) : (
-              <SelectDropdown<DependencyArea>
+              <select
                 value={(task.keyDependency as DependencyArea) || ''}
-                options={DEPENDENCY_OPTIONS}
-                onChange={(v) => onUpdate('keyDependency', v)}
-                className="w-[140px]"
-              />
+                onChange={(e) => onUpdate('keyDependency', e.target.value)}
+                className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white cursor-pointer outline-none focus:border-blue-400 w-[160px] text-gray-700"
+              >
+                {DEPENDENCY_OPTIONS.map((d) => (
+                  <option key={d} value={d} disabled={d === ''}>
+                    {DEP_LABELS[d]}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
 
