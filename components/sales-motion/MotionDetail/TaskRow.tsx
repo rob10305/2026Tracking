@@ -66,15 +66,23 @@ export function TaskRow({ task, effectiveTask, index, isChildMotion, locked, onU
               : <EditableField value={task.activityText} onSave={(v) => onUpdate('activityText', v)} className="text-xs" />}
           </div>
 
-          {/* Due Date */}
+          {/* Dependency area */}
           <div className="shrink-0">
-            <input
-              type="date"
-              value={task.dueDate}
-              disabled={locked}
-              onChange={(e) => onUpdate('dueDate', e.target.value)}
-              className={`border border-gray-300 rounded px-1.5 py-0.5 text-xs w-[120px] ${locked ? 'bg-gray-50 cursor-not-allowed text-gray-500' : ''}`}
-            />
+            {locked ? (
+              <span className="text-xs text-gray-600">{task.keyDependency || '—'}</span>
+            ) : (
+              <select
+                value={(task.keyDependency as DependencyArea) || ''}
+                onChange={(e) => onUpdate('keyDependency', e.target.value)}
+                className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white cursor-pointer outline-none focus:border-blue-400 w-[160px] text-gray-700"
+              >
+                {DEPENDENCY_OPTIONS.map((d) => (
+                  <option key={d} value={d} disabled={d === ''}>
+                    {DEP_LABELS[d]}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Status */}
@@ -99,23 +107,15 @@ export function TaskRow({ task, effectiveTask, index, isChildMotion, locked, onU
             )}
           </div>
 
-          {/* Dependency area */}
+          {/* Due Date */}
           <div className="shrink-0">
-            {locked ? (
-              <span className="text-xs text-gray-600">{task.keyDependency || '—'}</span>
-            ) : (
-              <select
-                value={(task.keyDependency as DependencyArea) || ''}
-                onChange={(e) => onUpdate('keyDependency', e.target.value)}
-                className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white cursor-pointer outline-none focus:border-blue-400 w-[160px] text-gray-700"
-              >
-                {DEPENDENCY_OPTIONS.map((d) => (
-                  <option key={d} value={d} disabled={d === ''}>
-                    {DEP_LABELS[d]}
-                  </option>
-                ))}
-              </select>
-            )}
+            <input
+              type="date"
+              value={task.dueDate}
+              disabled={locked}
+              onChange={(e) => onUpdate('dueDate', e.target.value)}
+              className={`border border-gray-300 rounded px-1.5 py-0.5 text-xs w-[120px] ${locked ? 'bg-gray-50 cursor-not-allowed text-gray-500' : ''}`}
+            />
           </div>
 
           {/* Notes */}
