@@ -34,7 +34,10 @@ export function ParentMotionCard({ motion, childrenByUser }: Props) {
   const winsTotal = childrenByUser.reduce((s, c) => s + (parseInt(c.motion.wins) || 0), 0);
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border relative overflow-hidden ${motion.locked ? 'border-amber-200 bg-amber-50/20' : 'border-gray-200'}`}>
+    <div
+      onClick={() => router.push(`/sales-motion/motion/${motion.id}`)}
+      className={`bg-white rounded-xl shadow-sm border relative overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${motion.locked ? 'border-amber-200 bg-amber-50/20' : 'border-gray-200'}`}
+    >
       <div className="absolute top-0 left-0 w-1.5 h-full rounded-l-xl" style={{ backgroundColor: motion.locked ? '#f59e0b' : motion.color }} />
 
       {motion.locked && (
@@ -45,7 +48,7 @@ export function ParentMotionCard({ motion, childrenByUser }: Props) {
 
       <div className="ml-4 mr-3 py-3 flex items-center gap-4 flex-wrap">
         {/* Name + meta */}
-        <div className="min-w-[200px] shrink-0">
+        <div className="min-w-[200px] shrink-0" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-2">
             <EditableField
               value={motion.name}
@@ -76,14 +79,15 @@ export function ParentMotionCard({ motion, childrenByUser }: Props) {
         {/* Actions */}
         <div className="flex items-center gap-1 shrink-0 ml-auto">
           <button
-            onClick={() => dispatch({ type: 'TOGGLE_PARENT_MOTION_LOCK', motionId: motion.id })}
+            onClick={(e) => { e.stopPropagation(); dispatch({ type: 'TOGGLE_PARENT_MOTION_LOCK', motionId: motion.id }); }}
             title={motion.locked ? 'Unlock' : 'Lock'}
             className={`p-1.5 rounded-lg transition-colors ${motion.locked ? 'text-amber-500 hover:text-amber-600 bg-amber-50' : 'text-gray-300 hover:text-amber-500 hover:bg-amber-50'}`}
           >
             {motion.locked ? <Lock size={15} /> : <LockOpen size={15} />}
           </button>
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               if (motion.locked) return;
               const pw = prompt(`Delete parent campaign "${motion.name}"?\n\nReps' child campaigns linked to this will still exist but lose their parent link.\n\nEnter admin password to confirm:`);
               if (pw === null) return;
@@ -96,7 +100,7 @@ export function ParentMotionCard({ motion, childrenByUser }: Props) {
             <Trash2 size={15} />
           </button>
           <button
-            onClick={() => router.push(`/sales-motion/motion/${motion.id}`)}
+            onClick={(e) => { e.stopPropagation(); router.push(`/sales-motion/motion/${motion.id}`); }}
             className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
           >
             <ChevronRight size={18} />
