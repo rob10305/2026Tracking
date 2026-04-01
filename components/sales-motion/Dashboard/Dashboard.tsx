@@ -8,6 +8,7 @@ import { StatusLegend } from './StatusLegend';
 import { exportJSON, importJSON } from '@/lib/sales-motion/utils/exportImport';
 import { useToast } from '@/components/sales-motion/shared/Toast';
 import { Download, Upload, RotateCcw, Plus, Users, FileDown, Copy, GitBranch, Link2 } from 'lucide-react';
+import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { isChildMotion } from '@/lib/sales-motion/utils/inheritance';
 import { MonthMultiSelect } from '@/components/sales-motion/shared/MonthMultiSelect';
 import { USERS } from '@/lib/sales-motion/types';
@@ -220,6 +221,7 @@ export function Dashboard() {
                 <div className="space-y-2">
                   {childAggregates.map(({ motion, displayName, userId }) => {
                     const rev = parseCurrency(motion.contributionGoal);
+                    const repLabel = motion.sellers || displayName;
                     return (
                       <div key={motion.id} className="bg-white rounded-xl border border-indigo-100 shadow-sm overflow-hidden flex items-center gap-4 px-4 py-3">
                         <div className="w-1.5 h-10 rounded shrink-0" style={{ backgroundColor: motion.color }} />
@@ -234,7 +236,12 @@ export function Dashboard() {
                         </div>
                         <div className="flex items-center gap-4 text-xs text-gray-600">
                           <div className="text-center">
-                            <div className="font-semibold text-gray-800">{displayName}</div>
+                            <EditableField
+                              value={repLabel}
+                              onSave={(v) => dispatch({ type: 'UPDATE_USER_MOTION_FIELD', userId, motionId: motion.id, field: 'sellers', value: v })}
+                              placeholder="Rep name"
+                              className="font-semibold text-gray-800 text-xs"
+                            />
                             <div className="text-[10px] text-gray-400">Rep</div>
                           </div>
                           {rev > 0 && (

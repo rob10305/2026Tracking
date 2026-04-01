@@ -28,6 +28,7 @@ type Action =
   | { type: 'RESET_TASK_OVERRIDE'; motionId: string; categoryId: string; taskId: string }
   | { type: 'TOGGLE_MOTION_LOCK'; motionId: string }
   | { type: 'DELETE_MOTION'; motionId: string }
+  | { type: 'UPDATE_USER_MOTION_FIELD'; userId: UserId; motionId: string; field: 'sellers'; value: string }
   | { type: 'IMPORT_STATE'; state: MultiUserState }
   | { type: 'RESET_STATE' };
 
@@ -173,6 +174,13 @@ function multiUserReducer(full: MultiUserState, action: Action): MultiUserState 
   if (action.type === 'SET_VIEW_ALL') return { ...full, viewAll: true };
   if (action.type === 'IMPORT_STATE') return action.state;
   if (action.type === 'RESET_STATE') return createFreshMultiUserState();
+  if (action.type === 'UPDATE_USER_MOTION_FIELD') {
+    const targetState = full.users[action.userId];
+    const updatedMotions = targetState.motions.map((m) =>
+      m.id === action.motionId ? { ...m, [action.field]: action.value } : m,
+    );
+    return { ...full, users: { ...full.users, [action.userId]: { ...targetState, motions: updatedMotions } } };
+  }
   if (action.type === 'ADD_SHARED_MOTION') {
     const entry: SharedMotionEntry = { name: action.name, color: action.color, createdBy: full.activeUser };
     return { ...full, sharedMotionLibrary: [...full.sharedMotionLibrary, entry] };
