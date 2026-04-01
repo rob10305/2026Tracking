@@ -1,6 +1,8 @@
 export type Status = 'Not Started' | 'In Progress' | 'Complete' | 'Blocked' | 'At Risk';
 export type Priority = 'High' | 'Medium' | 'Low';
 export type RAG = '🟢 On Track' | '🟡 At Risk' | '🔴 Off Track' | '';
+export type DependencyArea = 'Marketing' | 'Sales' | 'Ops' | 'Pre Sales' | 'Product/Engineering' | '';
+export const DEPENDENCY_OPTIONS: DependencyArea[] = ['', 'Marketing', 'Sales', 'Ops', 'Pre Sales', 'Product/Engineering'];
 
 export interface Task {
   id: string;
