@@ -1,8 +1,9 @@
 'use client';
 
-import type { Task, Status, RAG } from '@/lib/sales-motion/types';
-import { STATUS_OPTIONS, RAG_OPTIONS } from '@/lib/sales-motion/types';
+import type { Task, Status } from '@/lib/sales-motion/types';
+import { STATUS_OPTIONS } from '@/lib/sales-motion/types';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
+import { StatusSelect } from '@/components/sales-motion/shared/StatusSelect';
 import { SelectDropdown } from '@/components/sales-motion/shared/SelectDropdown';
 import { Trash2, Link2, Pencil, RotateCcw, Lock } from 'lucide-react';
 
@@ -30,7 +31,6 @@ export function TaskRow({ task, effectiveTask, index, isChildMotion, locked, onU
   const isOverridden = isChildMotion && !!task.parentTaskId && task.isOverridden === true;
   const isBlocked = effectiveTask.status === 'Blocked';
   const hasDep = task.keyDependency && task.keyDependency.trim() !== '';
-  const depOutstanding = hasDep && task.dependencyStatus !== 'Complete';
 
   const rowClass = isInherited
     ? `border-b border-gray-100 text-xs bg-indigo-50/40`
@@ -42,42 +42,58 @@ export function TaskRow({ task, effectiveTask, index, isChildMotion, locked, onU
         <div className="flex flex-col items-center gap-0.5">
           <span>{index + 1}</span>
           {isInherited && (
-            <span title="Inheriting status from parent" className="text-indigo-400">
-              <Link2 size={10} />
-            </span>
+            <span title="Inheriting status from parent" className="text-indigo-400"><Link2 size={10} /></span>
           )}
           {isOverridden && (
-            <span title="Overriding parent" className="text-amber-500">
-              <Pencil size={10} />
-            </span>
+            <span title="Overriding parent" className="text-amber-500"><Pencil size={10} /></span>
           )}
         </div>
       </td>
       <td className="px-2 py-1.5 pl-6">
-        {locked ? <span className="text-xs text-gray-700">{task.activityText || '—'}</span> : <EditableField value={task.activityText} onSave={(v) => onUpdate('activityText', v)} className="text-xs" />}
+        {locked
+          ? <span className="text-xs text-gray-700">{task.activityText || '—'}</span>
+          : <EditableField value={task.activityText} onSave={(v) => onUpdate('activityText', v)} className="text-xs" />}
       </td>
       <td className="px-2 py-1.5">
-        {locked ? <span className="text-xs text-gray-600">{task.assignedTo || '—'}</span> : <EditableField value={task.assignedTo} onSave={(v) => onUpdate('assignedTo', v)} placeholder="—" className="text-xs" />}
+        {locked
+          ? <span className="text-xs text-gray-600">{task.assignedTo || '—'}</span>
+          : <EditableField value={task.assignedTo} onSave={(v) => onUpdate('assignedTo', v)} placeholder="—" className="text-xs" />}
       </td>
       <td className="px-2 py-1.5">
-        {locked ? (
-          <span className="text-[11px] text-gray-700 font-medium px-1.5 py-0.5 bg-gray-100 rounded">{effectiveTask.status}</span>
-        ) : isInherited ? (
+        {isInherited && !locked ? (
           <div className="flex items-center gap-1">
-            <span className="text-[11px] text-indigo-600 font-medium px-1.5 py-0.5 bg-indigo-100 rounded">{effectiveTask.status}</span>
-            <button onClick={() => onUpdate('status', effectiveTask.status)} title="Take ownership" className="text-indigo-400 hover:text-indigo-600 p-0.5"><Pencil size={11} /></button>
+            <StatusSelect value={effectiveTask.status} onChange={() => {}} disabled />
+            <button
+              onClick={() => onUpdate('status', effectiveTask.status)}
+              title="Take ownership"
+              className="text-indigo-400 hover:text-indigo-600 p-0.5"
+            >
+              <Pencil size={11} />
+            </button>
           </div>
         ) : (
-          <SelectDropdown<Status> value={task.status} options={STATUS_OPTIONS} onChange={(v) => onUpdate('status', v)} />
+          <StatusSelect
+            value={task.status}
+            onChange={(v) => onUpdate('status', v)}
+            disabled={locked}
+          />
         )}
       </td>
       <td className="px-2 py-1.5">
-        <input type="date" value={task.dueDate} disabled={locked} onChange={(e) => onUpdate('dueDate', e.target.value)} className={`border border-gray-300 rounded px-1 py-0.5 text-xs ${locked ? 'bg-gray-50 cursor-not-allowed' : ''}`} />
+        <input
+          type="date"
+          value={task.dueDate}
+          disabled={locked}
+          onChange={(e) => onUpdate('dueDate', e.target.value)}
+          className={`border border-gray-300 rounded px-1 py-0.5 text-xs ${locked ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+        />
       </td>
       <td className="px-2 py-1.5">
         {hasDep ? (
           <div className="flex flex-col gap-1 min-w-[100px]">
-            <span className="text-[10px] text-gray-500 leading-tight truncate max-w-[120px]" title={task.keyDependency}>{task.keyDependency}</span>
+            <span className="text-[10px] text-gray-500 leading-tight truncate max-w-[120px]" title={task.keyDependency}>
+              {task.keyDependency}
+            </span>
             {locked ? (
               <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border ${DEP_STATUS_COLOURS[task.dependencyStatus] ?? DEP_STATUS_COLOURS['Not Started']}`}>
                 {task.dependencyStatus}
@@ -95,16 +111,9 @@ export function TaskRow({ task, effectiveTask, index, isChildMotion, locked, onU
         )}
       </td>
       <td className="px-2 py-1.5">
-        {locked ? (
-          <span className="text-[11px] text-gray-700 font-medium">{effectiveTask.rag || '—'}</span>
-        ) : isInherited ? (
-          <span className="text-[11px] text-indigo-600 font-medium">{effectiveTask.rag || '—'}</span>
-        ) : (
-          <SelectDropdown<RAG> value={task.rag} options={RAG_OPTIONS} onChange={(v) => onUpdate('rag', v)} />
-        )}
-      </td>
-      <td className="px-2 py-1.5">
-        {locked ? <span className="text-xs text-gray-600">{task.notes || '—'}</span> : <EditableField value={task.notes} onSave={(v) => onUpdate('notes', v)} placeholder="—" className="text-xs" />}
+        {locked
+          ? <span className="text-xs text-gray-600">{task.notes || '—'}</span>
+          : <EditableField value={task.notes} onSave={(v) => onUpdate('notes', v)} placeholder="—" className="text-xs" />}
       </td>
       <td className="px-2 py-1.5 text-center">
         {locked ? (
@@ -112,7 +121,9 @@ export function TaskRow({ task, effectiveTask, index, isChildMotion, locked, onU
         ) : (
           <div className="flex items-center justify-center gap-1">
             {isOverridden && (
-              <button onClick={onResetOverride} title="Reset to parent status" className="text-indigo-400 hover:text-indigo-600 p-0.5"><RotateCcw size={12} /></button>
+              <button onClick={onResetOverride} title="Reset to parent status" className="text-indigo-400 hover:text-indigo-600 p-0.5">
+                <RotateCcw size={12} />
+              </button>
             )}
             <button onClick={onDelete} className="text-gray-400 hover:text-red-500 p-0.5"><Trash2 size={13} /></button>
           </div>

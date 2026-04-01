@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import type { Category, Task, Motion, Status, RAG } from '@/lib/sales-motion/types';
-import { STATUS_OPTIONS, RAG_OPTIONS } from '@/lib/sales-motion/types';
+import type { Category, Task, Motion } from '@/lib/sales-motion/types';
 import { TaskRow } from './TaskRow';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
-import { SelectDropdown } from '@/components/sales-motion/shared/SelectDropdown';
+import { StatusSelect } from '@/components/sales-motion/shared/StatusSelect';
 import { ChevronDown, ChevronRight, Plus, Trash2, Lock, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/sales-motion/shared/Toast';
 import { resolveEffectiveTask } from '@/lib/sales-motion/utils/inheritance';
@@ -62,21 +61,38 @@ export function CategorySection({
           </button>
         </td>
         <td className="px-2 py-2 font-semibold text-sm text-gray-800">
-          {locked ? <span className="font-semibold text-sm text-gray-800">{category.name}</span> : <EditableField value={category.name} onSave={(name) => onUpdateCategoryName(category.id, name)} className="font-semibold text-sm text-gray-800" />}
+          {locked
+            ? <span className="font-semibold text-sm text-gray-800">{category.name}</span>
+            : <EditableField value={category.name} onSave={(name) => onUpdateCategoryName(category.id, name)} className="font-semibold text-sm text-gray-800" />}
           <span className="text-[10px] text-gray-400 font-normal ml-1">({category.tasks.length})</span>
         </td>
         <td className="px-2 py-2">
-          {locked ? <span className="text-xs text-gray-600">{category.assignedTo || '—'}</span> : <EditableField value={category.assignedTo} onSave={(v) => onUpdateCategoryField(category.id, 'assignedTo', v)} placeholder="—" className="text-xs" />}
+          {locked
+            ? <span className="text-xs text-gray-600">{category.assignedTo || '—'}</span>
+            : <EditableField value={category.assignedTo} onSave={(v) => onUpdateCategoryField(category.id, 'assignedTo', v)} placeholder="—" className="text-xs" />}
         </td>
         <td className="px-2 py-2">
-          {locked ? <span className="text-xs text-gray-700">{category.status}</span> : <SelectDropdown<Status> value={category.status} options={STATUS_OPTIONS} onChange={(v) => onUpdateCategoryField(category.id, 'status', v)} />}
+          <StatusSelect
+            value={category.status}
+            onChange={(v) => onUpdateCategoryField(category.id, 'status', v)}
+            disabled={locked}
+          />
         </td>
         <td className="px-2 py-2">
-          <input type="date" value={category.dueDate} disabled={locked} onChange={(e) => onUpdateCategoryField(category.id, 'dueDate', e.target.value)} className={`border border-gray-300 rounded px-1 py-0.5 text-xs ${locked ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} />
+          <input
+            type="date"
+            value={category.dueDate}
+            disabled={locked}
+            onChange={(e) => onUpdateCategoryField(category.id, 'dueDate', e.target.value)}
+            className={`border border-gray-300 rounded px-1 py-0.5 text-xs ${locked ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
+          />
         </td>
         <td className="px-2 py-2 text-center">
           {outstandingDeps > 0 ? (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200" title={`${outstandingDeps} outstanding dependenc${outstandingDeps === 1 ? 'y' : 'ies'}`}>
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200"
+              title={`${outstandingDeps} outstanding dependenc${outstandingDeps === 1 ? 'y' : 'ies'}`}
+            >
               <AlertCircle size={10} /> {outstandingDeps}
             </span>
           ) : (
@@ -84,13 +100,14 @@ export function CategorySection({
           )}
         </td>
         <td className="px-2 py-2">
-          {locked ? <span className="text-xs text-gray-700">{category.rag || '—'}</span> : <SelectDropdown<RAG> value={category.rag} options={RAG_OPTIONS} onChange={(v) => onUpdateCategoryField(category.id, 'rag', v)} />}
-        </td>
-        <td className="px-2 py-2">
-          {locked ? <span className="text-xs text-gray-600">{category.notes || '—'}</span> : <EditableField value={category.notes} onSave={(v) => onUpdateCategoryField(category.id, 'notes', v)} placeholder="—" className="text-xs" />}
+          {locked
+            ? <span className="text-xs text-gray-600">{category.notes || '—'}</span>
+            : <EditableField value={category.notes} onSave={(v) => onUpdateCategoryField(category.id, 'notes', v)} placeholder="—" className="text-xs" />}
         </td>
         <td className="px-2 py-2 w-8 text-center">
-          {locked ? <Lock size={12} className="text-amber-400 mx-auto" /> : <button onClick={handleDeleteCategory} className="text-gray-400 hover:text-red-500" title="Delete category"><Trash2 size={14} /></button>}
+          {locked
+            ? <Lock size={12} className="text-amber-400 mx-auto" />
+            : <button onClick={handleDeleteCategory} className="text-gray-400 hover:text-red-500" title="Delete category"><Trash2 size={14} /></button>}
         </td>
       </tr>
 
@@ -110,7 +127,7 @@ export function CategorySection({
 
       {showDetail && expanded && !locked && (
         <tr className="border-b border-gray-100">
-          <td colSpan={9} className="px-2 py-1">
+          <td colSpan={8} className="px-2 py-1">
             <button onClick={() => onAddTask(category.id)} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 pl-4">
               <Plus size={13} /> Add task
             </button>

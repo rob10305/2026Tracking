@@ -74,8 +74,8 @@ export function ActivityTracker({ motion, locked = false }: { motion: Motion; lo
         <table className="w-full text-left">
           <colgroup>
             <col style={{ width: '40px' }} /><col style={{ width: '28%' }} /><col style={{ width: '10%' }} />
-            <col style={{ width: '110px' }} /><col style={{ width: '120px' }} />
-            <col style={{ width: '80px' }} /><col style={{ width: '110px' }} />
+            <col style={{ width: '130px' }} /><col style={{ width: '120px' }} />
+            <col style={{ width: '80px' }} />
             <col /><col style={{ width: '36px' }} />
           </colgroup>
           <thead>
@@ -86,7 +86,6 @@ export function ActivityTracker({ motion, locked = false }: { motion: Motion; lo
               <th className="px-2 py-2">Status</th>
               <th className="px-2 py-2">Due Date</th>
               <th className="px-2 py-2">Deps</th>
-              <th className="px-2 py-2">RAG</th>
               <th className="px-2 py-2">Notes</th>
               <th className="px-2 py-2"></th>
             </tr>
