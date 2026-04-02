@@ -10,7 +10,6 @@ import {
   FileJson, FileSpreadsheet, CheckSquare, Square, GripVertical, Pencil, X, Check,
 } from 'lucide-react';
 
-const STORAGE_KEY = 'sales-motion-drafts';
 const COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 function newId() { return crypto.randomUUID(); }
@@ -52,26 +51,27 @@ function downloadBlob(blob: Blob, filename: string) {
 // ── Main Component ──────────────────────────────────────────────────────────
 
 export function MotionDevelopment() {
-  const { dispatch, parentMotions } = useTracker();
-  const [drafts, setDrafts] = useState<Motion[]>([]);
+  const { dispatch, parentMotions, draftMotions } = useTracker();
+  const [drafts, setDraftsLocal] = useState<Motion[]>(draftMotions);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expandedMotion, setExpandedMotion] = useState<string | null>(null);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Load drafts from localStorage on mount
+  // Sync from context when DB data loads
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setDrafts(JSON.parse(saved));
-    } catch { /* ignore */ }
-  }, []);
+    setDraftsLocal(draftMotions);
+  }, [draftMotions]);
 
-  // Persist drafts to localStorage
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(drafts));
-  }, [drafts]);
+  // Wrapper that updates local state AND dispatches to context (→ DB)
+  function setDrafts(updater: Motion[] | ((prev: Motion[]) => Motion[])) {
+    setDraftsLocal((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      dispatch({ type: 'SET_DRAFT_MOTIONS', motions: next });
+      return next;
+    });
+  }
 
   function showToast(msg: string) {
     setToast(msg);

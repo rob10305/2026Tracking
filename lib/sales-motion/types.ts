@@ -111,6 +111,7 @@ export interface MultiUserState {
   viewAll: boolean;
   users: Record<UserId, AppState>;
   parentMotions: Motion[];
+  draftMotions?: Motion[];
   sharedMotionLibrary?: SharedMotionEntry[];
 }
 

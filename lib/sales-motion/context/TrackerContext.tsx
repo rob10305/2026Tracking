@@ -33,6 +33,7 @@ type Action =
   | { type: 'DELETE_MOTION'; motionId: string }
   | { type: 'UPDATE_USER_MOTION_FIELD'; userId: UserId; motionId: string; field: 'sellers'; value: string }
   | { type: 'PROMOTE_DRAFT_TO_PARENT'; motion: Motion }
+  | { type: 'SET_DRAFT_MOTIONS'; motions: Motion[] }
   | { type: 'IMPORT_STATE'; state: MultiUserState }
   | { type: 'RESET_STATE' }
   | { type: 'SET_FULL_STATE'; state: MultiUserState };
@@ -220,6 +221,9 @@ function multiUserReducer(full: MultiUserState, action: Action): MultiUserState 
     const promoted: Motion = { ...action.motion, id: crypto.randomUUID(), parentMotionId: undefined, parentUserId: undefined };
     return { ...full, parentMotions: [...(full.parentMotions ?? []), promoted] };
   }
+  if (action.type === 'SET_DRAFT_MOTIONS') {
+    return { ...full, draftMotions: action.motions };
+  }
   if (action.type === 'TOGGLE_PARENT_MOTION_LOCK') {
     return mapParentMotion(full, action.motionId, (m) => ({ ...m, locked: !m.locked }));
   }
@@ -254,6 +258,7 @@ interface TrackerContextValue {
   activeUser: UserId;
   viewAll: boolean;
   parentMotions: Motion[];
+  draftMotions: Motion[];
   isLoading: boolean;
 }
 
@@ -357,6 +362,7 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
     activeUser: fullState.activeUser,
     viewAll: fullState.viewAll,
     parentMotions: fullState.parentMotions ?? [],
+    draftMotions: fullState.draftMotions ?? [],
     isLoading,
   };
 
