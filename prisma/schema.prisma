@@ -98,6 +98,16 @@ model ContributorActual {
   @@unique([contributor_id, metric_id, month])
 }
 
+model ContributorGoal {
+  id             String @id @default(cuid())
+  contributor_id String
+  metric_id      String
+  month          String
+  value          Float  @default(0)
+
+  @@unique([contributor_id, metric_id, month])
+}
+
 model SalesMotionTrackerState {
   id        Int      @id @default(1)
   data      Json

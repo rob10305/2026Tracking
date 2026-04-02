@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   CONTRIBUTORS,
@@ -105,6 +105,7 @@ type ViewMode = "summary" | "annual";
 
 export default function ContributionPage() {
   const [actuals, setActuals] = useState<Record<string, number>>({});
+  const [goalsMap, setGoalsMap] = useState<Record<string, number>>({});
   const [loaded, setLoaded] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("summary");
 
@@ -118,18 +119,27 @@ export default function ContributionPage() {
   const [selectedMonthIdx, setSelectedMonthIdx] = useState(defaultMonthIdx);
   const selectedMonth = CONTRIBUTION_MONTHS[selectedMonthIdx] as ContributionMonth;
 
+  // Helper to get a goal value: DB-loaded map first, hardcoded fallback
+  const getGoalValue = useCallback((cid: string, mid: string, month: string): number => {
+    const key = `${cid}::${mid}::${month}`;
+    if (key in goalsMap) return goalsMap[key];
+    const mi = CONTRIBUTION_MONTHS.indexOf(month as ContributionMonth);
+    return GOALS[cid as ContributorId]?.[mid as MetricId]?.[mi] ?? 0;
+  }, [goalsMap]);
+
   useEffect(() => {
-    fetch("/api/db/contribution")
-      .then((r) => r.json())
-      .then((data: Record<string, number | string>) => {
-        const nums: Record<string, number> = {};
-        for (const [k, v] of Object.entries(data)) {
-          if (typeof v === "number") nums[k] = v;
-        }
-        setActuals(nums);
-        setLoaded(true);
-      })
-      .catch(() => setLoaded(true));
+    Promise.all([
+      fetch("/api/db/contribution").then((r) => r.json()),
+      fetch("/api/db/contribution/goals").then((r) => r.json()).catch(() => ({})),
+    ]).then(([actualsData, goalsData]) => {
+      const nums: Record<string, number> = {};
+      for (const [k, v] of Object.entries(actualsData as Record<string, number | string>)) {
+        if (typeof v === "number") nums[k] = v;
+      }
+      setActuals(nums);
+      setGoalsMap(goalsData as Record<string, number>);
+      setLoaded(true);
+    }).catch(() => setLoaded(true));
   }, []);
 
   const annualTotals = useMemo(() => {
@@ -139,8 +149,7 @@ export default function ContributionPage() {
       for (const month of CONTRIBUTION_MONTHS) {
         let goalSum = 0; let actualSum = 0;
         for (const c of CONTRIBUTORS) {
-          const mi = CONTRIBUTION_MONTHS.indexOf(month);
-          goalSum += GOALS[c.id]?.[metric.id as MetricId]?.[mi] ?? 0;
+          goalSum += getGoalValue(c.id, metric.id, month);
           actualSum += actuals[actualKey(c.id, metric.id, month)] ?? 0;
         }
         result[metric.id][month] = { goal: goalSum, actual: actualSum };
@@ -150,7 +159,7 @@ export default function ContributionPage() {
       result[metric.id]["annual"] = { goal: annualGoal, actual: annualActual };
     }
     return result;
-  }, [actuals]);
+  }, [actuals, getGoalValue]);
 
   const hasAnyActuals = Object.keys(actuals).length > 0;
 
@@ -233,6 +242,7 @@ export default function ContributionPage() {
             selectedMonthIdx={selectedMonthIdx}
             actuals={actuals}
             loaded={loaded}
+            getGoalValue={getGoalValue}
           />
         )}
 
@@ -243,6 +253,7 @@ export default function ContributionPage() {
             annualTotals={annualTotals}
             hasAnyActuals={hasAnyActuals}
             loaded={loaded}
+            getGoalValue={getGoalValue}
           />
         )}
 
@@ -264,11 +275,13 @@ function SummaryView({
   selectedMonthIdx,
   actuals,
   loaded,
+  getGoalValue,
 }: {
   selectedMonth: ContributionMonth;
   selectedMonthIdx: number;
   actuals: Record<string, number>;
   loaded: boolean;
+  getGoalValue: (cid: string, mid: string, month: string) => number;
 }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -306,8 +319,7 @@ function SummaryView({
               let teamActualSum = 0;
 
               const cells = CONTRIBUTORS.map((c) => {
-                const idx = CONTRIBUTION_MONTHS.indexOf(selectedMonth);
-                const goal = GOALS[c.id as ContributorId]?.[metric.id as MetricId]?.[idx] ?? 0;
+                const goal = getGoalValue(c.id, metric.id, selectedMonth);
                 const actual = actuals[actualKey(c.id, metric.id, selectedMonth)] ?? null;
                 teamGoalSum += goal;
                 if (actual !== null) teamActualSum += actual;
@@ -376,11 +388,13 @@ function AnnualView({
   annualTotals,
   hasAnyActuals,
   loaded,
+  getGoalValue,
 }: {
   actuals: Record<string, number>;
   annualTotals: Record<string, Record<string, { goal: number; actual: number }>>;
   hasAnyActuals: boolean;
   loaded: boolean;
+  getGoalValue: (cid: string, mid: string, month: string) => number;
 }) {
   return (
     <div className="space-y-5">
@@ -407,7 +421,7 @@ function AnnualView({
               <tbody>
                 {CONTRIBUTORS.map((c) => {
                   const style = TEAM_STYLES[c.color];
-                  const annualGoal = getAnnualGoal(c.id, metric.id as MetricId);
+                  const annualGoal = CONTRIBUTION_MONTHS.reduce((s, m) => s + getGoalValue(c.id, metric.id, m), 0);
                   const annualActual = CONTRIBUTION_MONTHS.reduce((s, m) => s + (actuals[actualKey(c.id, metric.id, m)] ?? 0), 0);
                   return (
                     <tr key={c.id} className={`${style.row} border-b border-gray-100 hover:brightness-[0.97] transition-all`}>
@@ -416,7 +430,7 @@ function AnnualView({
                         <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${style.badge}`}>{c.team}</span>
                       </td>
                       {CONTRIBUTION_MONTHS.map((month, mi) => {
-                        const goal = GOALS[c.id]?.[metric.id as MetricId]?.[mi] ?? 0;
+                        const goal = getGoalValue(c.id, metric.id, month);
                         const actual = actuals[actualKey(c.id, metric.id, month)] ?? null;
                         return (
                           <td key={month} className="px-3 py-2.5 text-center w-24">
