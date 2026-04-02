@@ -246,7 +246,12 @@ export default function ContributionPage() {
           />
         )}
 
-        <p className="text-xs text-gray-400 mt-6 text-center">
+        <div className="mt-6 bg-white rounded-xl border border-gray-200 px-5 py-4">
+          <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3">Edit Goals</h3>
+          <EditLinks />
+        </div>
+
+        <p className="text-xs text-gray-400 mt-4 text-center">
           Goal values shown. When actuals are entered via the edit links, attainment % appears below each value.
         </p>
       </div>
