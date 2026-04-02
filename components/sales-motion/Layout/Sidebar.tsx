@@ -66,7 +66,7 @@ export function SMSidebar() {
           Upcoming
         </Link>
 
-        <Link href="/contribution" className={linkClass('/contribution')}>
+        <Link href="/sales-motion/goals" className={linkClass('/sales-motion/goals')}>
           <Target size={16} />
           Goals
         </Link>

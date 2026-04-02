@@ -197,7 +197,7 @@ export default function ContributionPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex-1 overflow-y-auto bg-gray-50 min-h-0">
       <div className="px-6 py-8 max-w-[1600px] mx-auto">
 
         <div className="flex items-start justify-between mb-6">

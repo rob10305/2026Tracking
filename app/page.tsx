@@ -35,7 +35,7 @@ export default function HomePage() {
           Sales Motions
         </Link>
         <Link
-          href="/contribution"
+          href="/sales-motion/goals"
           className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
         >
           Goals
