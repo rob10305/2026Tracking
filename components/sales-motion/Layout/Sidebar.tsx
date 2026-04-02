@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
-import { LayoutDashboard, BarChart3, Target, GitBranch, Calendar } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Target, GitBranch, Calendar, Wrench } from 'lucide-react';
 
 const MOTION_LOGOS: Record<string, string> = {
   'Archera': '/logos/archera.png',
@@ -69,6 +69,15 @@ export function SMSidebar() {
         <Link href="/contribution" className={linkClass('/contribution')}>
           <Target size={16} />
           Goals
+        </Link>
+
+        <div className="pt-2 pb-1 px-1">
+          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Working Area</span>
+        </div>
+
+        <Link href="/sales-motion/development" className={linkClass('/sales-motion/development')}>
+          <Wrench size={16} />
+          Motion Development
         </Link>
       </nav>
     </aside>

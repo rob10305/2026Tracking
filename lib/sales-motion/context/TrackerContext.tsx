@@ -32,6 +32,7 @@ type Action =
   | { type: 'TOGGLE_MOTION_LOCK'; motionId: string }
   | { type: 'DELETE_MOTION'; motionId: string }
   | { type: 'UPDATE_USER_MOTION_FIELD'; userId: UserId; motionId: string; field: 'sellers'; value: string }
+  | { type: 'PROMOTE_DRAFT_TO_PARENT'; motion: Motion }
   | { type: 'IMPORT_STATE'; state: MultiUserState }
   | { type: 'RESET_STATE' }
   | { type: 'SET_FULL_STATE'; state: MultiUserState };
@@ -215,6 +216,10 @@ function multiUserReducer(full: MultiUserState, action: Action): MultiUserState 
   if (action.type === 'DELETE_PARENT_MOTION') {
     return { ...full, parentMotions: (full.parentMotions ?? []).filter((m) => m.id !== action.motionId) };
   }
+  if (action.type === 'PROMOTE_DRAFT_TO_PARENT') {
+    const promoted: Motion = { ...action.motion, id: crypto.randomUUID(), parentMotionId: undefined, parentUserId: undefined };
+    return { ...full, parentMotions: [...(full.parentMotions ?? []), promoted] };
+  }
   if (action.type === 'TOGGLE_PARENT_MOTION_LOCK') {
     return mapParentMotion(full, action.motionId, (m) => ({ ...m, locked: !m.locked }));
   }
@@ -256,7 +261,7 @@ const TrackerContext = createContext<TrackerContextValue | undefined>(undefined)
 
 // Actions that should trigger an immediate save (no debounce)
 const IMMEDIATE_SAVE_ACTIONS = new Set([
-  'ADD_PARENT_MOTION', 'DELETE_PARENT_MOTION',
+  'ADD_PARENT_MOTION', 'DELETE_PARENT_MOTION', 'PROMOTE_DRAFT_TO_PARENT',
   'ADD_MOTION', 'DELETE_MOTION', 'CLONE_MOTION',
   'IMPORT_STATE', 'RESET_STATE',
 ]);
