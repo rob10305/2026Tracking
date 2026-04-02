@@ -189,15 +189,31 @@ export function MotionDevelopment() {
       reader.onload = (ev) => {
         try {
           const wb = XLSX.read(ev.target?.result, { type: 'array' });
-          const motionsSheet = wb.Sheets['Motions'] || wb.Sheets[wb.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json<Record<string, string>>(motionsSheet);
-          const activitiesSheet = wb.Sheets['Activities'];
-          const activityRows = activitiesSheet ? XLSX.utils.sheet_to_json<Record<string, string>>(activitiesSheet) : [];
+
+          // Find motion rows — support multiple sheet name formats from different exports
+          const motionsSheet = wb.Sheets['Motions'] || wb.Sheets['All Motions'] || wb.Sheets['Parent Campaigns'];
+          const motionRows = motionsSheet ? XLSX.utils.sheet_to_json<Record<string, string>>(motionsSheet) : [];
+
+          // Combine all activity sheets that exist
+          const activitySheetNames = ['Activities', 'All Activities', 'Parent Activities'];
+          let activityRows: Record<string, string>[] = [];
+          for (const sn of activitySheetNames) {
+            if (wb.Sheets[sn]) {
+              const rows = XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets[sn]);
+              // Skip sheets with only "(No data)" placeholder
+              if (rows.length > 0 && !rows[0]['(No data)']) activityRows = [...activityRows, ...rows];
+            }
+          }
+
+          // If no motions sheet found, try first sheet as fallback
+          const allRows = motionRows.length > 0 ? motionRows : XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets[wb.SheetNames[0]]);
 
           const motionMap = new Map<string, Motion>();
-          for (const row of rows) {
+          for (const row of allRows) {
             const name = row['Campaign'] || row['Name'] || row['name'] || '';
-            if (!name) continue;
+            if (!name || name === '(No data)') continue;
+            // Skip duplicate campaign names (e.g. same motion from different reps)
+            if (motionMap.has(name)) continue;
             const m = createBlankMotion(name);
             m.type = row['Type'] || m.type;
             m.owner = row['Owner'] || '';
@@ -208,6 +224,25 @@ export function MotionDevelopment() {
             m.wins = row['Wins'] || '';
             m.categories = [];
             motionMap.set(name, m);
+          }
+
+          // Also scan Parent Campaigns if we used All Motions as primary
+          if (wb.Sheets['Parent Campaigns'] && motionsSheet !== wb.Sheets['Parent Campaigns']) {
+            const parentRows = XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets['Parent Campaigns']);
+            for (const row of parentRows) {
+              const name = row['Campaign'] || '';
+              if (!name || name === '(No data)' || motionMap.has(name)) continue;
+              const m = createBlankMotion(name);
+              m.type = row['Type'] || m.type;
+              m.owner = row['Owner'] || '';
+              m.ragStatus = (row['RAG Status'] || '') as Motion['ragStatus'];
+              m.contributionGoal = row['Contribution Goal'] || '';
+              m.actual = row['Actual'] || '';
+              m.leads = row['Leads'] || '';
+              m.wins = row['Wins'] || '';
+              m.categories = [];
+              motionMap.set(name, m);
+            }
           }
 
           // Group activities by campaign → category
@@ -222,6 +257,14 @@ export function MotionDevelopment() {
               cat.tasks = [];
               motion.categories.push(cat);
             }
+            // Also populate category-level fields from the first activity row
+            if (row['Category Owner']) cat.assignedTo = row['Category Owner'];
+            if (row['Category Status']) cat.status = row['Category Status'] as Category['status'];
+            if (row['Category Priority']) cat.priority = row['Category Priority'] as Category['priority'];
+            if (row['Category Due Date']) cat.dueDate = row['Category Due Date'];
+            if (row['Category RAG']) cat.rag = row['Category RAG'] as Category['rag'];
+            if (row['Category Notes']) cat.notes = row['Category Notes'];
+
             cat.tasks.push({
               id: newId(),
               activityText: row['Activity'] || '',
