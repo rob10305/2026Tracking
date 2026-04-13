@@ -46,7 +46,7 @@ export function SMSidebar() {
 
         {salesMotionsOpen && (
           <div className="ml-3 pl-3 border-l border-gray-200 space-y-1">
-            <Link href="/sales-motion" className={linkClass('/sales-motion', true)}>
+            <Link href="/sales-motion/dashboard" className={linkClass('/sales-motion/dashboard')}>
               <LayoutDashboard size={14} />
               Dashboard
             </Link>

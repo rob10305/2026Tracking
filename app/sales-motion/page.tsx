@@ -1,5 +1,7 @@
-import { Dashboard } from '@/components/sales-motion/Dashboard/Dashboard';
+'use client';
+
+import { SalesOverview } from '@/components/sales-motion/Dashboard/SalesOverview';
 
 export default function SalesMotionPage() {
-  return <Dashboard />;
+  return <SalesOverview />;
 }
