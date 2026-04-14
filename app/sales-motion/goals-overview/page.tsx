@@ -10,15 +10,16 @@ import {
   CONTRIBUTION_MONTHS,
   CONTRIBUTION_MONTH_LABELS,
   type ContributorInfo,
+  type ContributionMonth,
 } from '@/lib/contribution/data';
 import { Pencil, Target } from 'lucide-react';
 
 type Period =
   | { type: 'year' }
   | { type: 'quarter'; q: 'Q2' | 'Q3' | 'Q4' }
-  | { type: 'month'; month: string };
+  | { type: 'month'; month: ContributionMonth };
 
-const QUARTERS: Record<'Q2' | 'Q3' | 'Q4', string[]> = {
+const QUARTERS: Record<'Q2' | 'Q3' | 'Q4', ContributionMonth[]> = {
   Q2: ['2026-04', '2026-05', '2026-06'],
   Q3: ['2026-07', '2026-08', '2026-09'],
   Q4: ['2026-10', '2026-11', '2026-12'],
@@ -212,7 +213,7 @@ export default function GoalsOverviewPage() {
           <select
             value={period.type === 'month' ? period.month : ''}
             onChange={(e) => {
-              if (e.target.value) setPeriod({ type: 'month', month: e.target.value });
+              if (e.target.value) setPeriod({ type: 'month', month: e.target.value as ContributionMonth });
             }}
             className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 bg-white text-gray-700 focus:outline-none focus:border-indigo-400"
           >
