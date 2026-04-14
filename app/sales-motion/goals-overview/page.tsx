@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import {
   CONTRIBUTORS,
   METRICS,
@@ -11,7 +10,7 @@ import {
   CONTRIBUTION_MONTH_LABELS,
   type ContributorInfo,
 } from '@/lib/contribution/data';
-import { Pencil, Target } from 'lucide-react';
+import { Target } from 'lucide-react';
 
 type QuarterKey = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 
@@ -172,12 +171,6 @@ export default function GoalsOverviewPage() {
           <h1 className="text-xl font-bold text-gray-900">Goals vs Actuals</h1>
           <p className="text-sm text-gray-500 mt-0.5">{periodLabel}</p>
         </div>
-        <Link
-          href="/settings/goals"
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
-        >
-          <Pencil size={14} /> Edit Goals
-        </Link>
       </div>
 
       <div className="p-6 space-y-4">
