@@ -235,7 +235,7 @@ export default function GoalsOverviewPage() {
                   {CONTRIBUTORS.map((c) => (
                     <th key={c.id} className="px-3 py-3 border-b border-gray-200 border-r last:border-r-0 min-w-[170px]">
                       <div className="flex flex-col items-center gap-1.5">
-                        <Avatar contributor={c as ContributorInfo} size={32} />
+                        <Avatar contributor={c as ContributorInfo} size={64} />
                         <div className="text-center">
                           <div className="text-sm font-semibold text-gray-800">{c.name}</div>
                           <span className={`inline-block text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded border ${TEAM_BADGE[c.color]}`}>
