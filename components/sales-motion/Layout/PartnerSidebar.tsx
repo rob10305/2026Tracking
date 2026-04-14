@@ -38,10 +38,12 @@ export function PartnerSidebar() {
 
       <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
         <Link href="/sales-motion/partner" className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-          pathname === '/sales-motion/partner' ? 'bg-white shadow-sm text-gray-900 font-medium' : 'text-gray-600 hover:bg-white/60 hover:text-gray-900'
+          pathname === '/sales-motion/partner' || pathname.startsWith('/sales-motion/partner/details')
+            ? 'bg-white shadow-sm text-gray-900 font-medium'
+            : 'text-gray-600 hover:bg-white/60 hover:text-gray-900'
         }`}>
           <LayoutDashboard size={16} />
-          Overview
+          Dashboard
         </Link>
 
         {/* Active */}
