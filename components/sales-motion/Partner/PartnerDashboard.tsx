@@ -6,6 +6,8 @@ import { createNewPartner } from '@/lib/sales-motion/partner/types';
 import type { PartnerStatus } from '@/lib/sales-motion/partner/types';
 import { PARTNER_STATUS_OPTIONS } from '@/lib/sales-motion/partner/types';
 import { PartnerCard } from './PartnerCard';
+import { PartnerEditBar } from './PartnerEditBar';
+import { usePartnerEditGate } from './usePartnerEditGate';
 import { Handshake, Plus, Search } from 'lucide-react';
 
 function parseNum(s: string): number {
@@ -16,6 +18,7 @@ function parseNum(s: string): number {
 
 export function PartnerDashboard() {
   const { state, dispatch, isLoading } = usePartner();
+  const { unlocked, tryUnlock, lock } = usePartnerEditGate();
   const [statusFilter, setStatusFilter] = useState<PartnerStatus | 'All'>('All');
   const [query, setQuery] = useState('');
 
@@ -68,12 +71,15 @@ export function PartnerDashboard() {
           <h1 className="text-xl font-bold text-gray-900">Partner Dashboard</h1>
           <p className="text-sm text-gray-500 mt-0.5">Partner summary cards — click any card to view the full record.</p>
         </div>
-        <button
-          onClick={handleAddPartner}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-        >
-          <Plus size={14} /> Add Partner
-        </button>
+        <PartnerEditBar unlocked={unlocked} onUnlock={tryUnlock} onLock={lock} />
+        {unlocked && (
+          <button
+            onClick={handleAddPartner}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
+            <Plus size={14} /> Add Partner
+          </button>
+        )}
       </div>
 
       <div className="p-6 space-y-6">
@@ -126,13 +132,16 @@ export function PartnerDashboard() {
                 ? 'Add your first partner to start tracking GTM plans, pipeline, and results.'
                 : 'Try a different status or clear the search.'}
             </p>
-            {state.partners.length === 0 && (
+            {state.partners.length === 0 && unlocked && (
               <button
                 onClick={handleAddPartner}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700"
               >
                 <Plus size={14} /> Add Partner
               </button>
+            )}
+            {state.partners.length === 0 && !unlocked && (
+              <p className="text-xs text-gray-400">Unlock editing above to add partners.</p>
             )}
           </div>
         ) : (

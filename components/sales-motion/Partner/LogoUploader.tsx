@@ -8,6 +8,7 @@ interface LogoUploaderProps {
   value: string;
   partnerName: string;
   onChange: (value: string) => void;
+  disabled?: boolean;
 }
 
 const MAX_DIM = 256;      // longest side of the downsized image
@@ -43,7 +44,7 @@ function resizeImage(file: File): Promise<string> {
   });
 }
 
-export function LogoUploader({ value, partnerName, onChange }: LogoUploaderProps) {
+export function LogoUploader({ value, partnerName, onChange, disabled = false }: LogoUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUrl, setShowUrl] = useState(false);
   const [draftUrl, setDraftUrl] = useState('');
@@ -112,30 +113,32 @@ export function LogoUploader({ value, partnerName, onChange }: LogoUploaderProps
         )}
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center gap-1.5 flex-wrap justify-center">
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={busy}
-          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-gray-700 disabled:opacity-40"
-        >
-          <Upload size={11} /> {value ? 'Replace' : 'Upload'}
-        </button>
-        <button
-          onClick={() => { setShowUrl(!showUrl); setDraftUrl(value && value.startsWith('http') ? value : ''); }}
-          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-gray-700"
-        >
-          <LinkIcon size={11} /> URL
-        </button>
-        {value && (
+      {/* Controls — hidden in read-only mode */}
+      {!disabled && (
+        <div className="flex items-center gap-1.5 flex-wrap justify-center">
           <button
-            onClick={handleRemove}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-red-200 rounded-lg bg-white hover:bg-red-50 text-red-600"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={busy}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-gray-700 disabled:opacity-40"
           >
-            <X size={11} /> Remove
+            <Upload size={11} /> {value ? 'Replace' : 'Upload'}
           </button>
-        )}
-      </div>
+          <button
+            onClick={() => { setShowUrl(!showUrl); setDraftUrl(value && value.startsWith('http') ? value : ''); }}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-gray-700"
+          >
+            <LinkIcon size={11} /> URL
+          </button>
+          {value && (
+            <button
+              onClick={handleRemove}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium border border-red-200 rounded-lg bg-white hover:bg-red-50 text-red-600"
+            >
+              <X size={11} /> Remove
+            </button>
+          )}
+        </div>
+      )}
 
       <input
         ref={fileInputRef}
@@ -146,7 +149,7 @@ export function LogoUploader({ value, partnerName, onChange }: LogoUploaderProps
       />
 
       {/* URL input (toggled) */}
-      {showUrl && (
+      {showUrl && !disabled && (
         <div className="flex items-center gap-1 w-full max-w-xs">
           <div className="relative flex-1">
             <ImageIcon size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -171,7 +174,7 @@ export function LogoUploader({ value, partnerName, onChange }: LogoUploaderProps
       )}
 
       {error && <p className="text-[10px] text-red-600 max-w-[160px] text-center">{error}</p>}
-      {!error && !showUrl && (
+      {!error && !showUrl && !disabled && (
         <p className="text-[10px] text-gray-400 text-center">PNG, JPG, SVG &lt;5MB. Auto-resized to 256px.</p>
       )}
     </div>

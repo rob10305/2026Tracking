@@ -8,9 +8,10 @@ interface EditableFieldProps {
   placeholder?: string;
   className?: string;
   multiline?: boolean;
+  disabled?: boolean;
 }
 
-export function EditableField({ value, onSave, placeholder = 'Click to edit', className = '', multiline = false }: EditableFieldProps) {
+export function EditableField({ value, onSave, placeholder = 'Click to edit', className = '', multiline = false, disabled = false }: EditableFieldProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
@@ -33,6 +34,14 @@ export function EditableField({ value, onSave, placeholder = 'Click to edit', cl
     if (e.key === 'Enter' && !multiline) { e.preventDefault(); commit(); }
     if (e.key === 'Escape') { setDraft(value); setEditing(false); }
   };
+
+  if (disabled) {
+    return (
+      <span className={`inline-block min-w-[2rem] ${!value ? 'text-gray-400 italic' : ''} ${className}`}>
+        {value || placeholder}
+      </span>
+    );
+  }
 
   if (!editing) {
     return (
