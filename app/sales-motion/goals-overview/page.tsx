@@ -10,19 +10,21 @@ import {
   CONTRIBUTION_MONTHS,
   CONTRIBUTION_MONTH_LABELS,
   type ContributorInfo,
-  type ContributionMonth,
 } from '@/lib/contribution/data';
 import { Pencil, Target } from 'lucide-react';
 
+type QuarterKey = 'Q1' | 'Q2' | 'Q3' | 'Q4';
+
 type Period =
   | { type: 'year' }
-  | { type: 'quarter'; q: 'Q2' | 'Q3' | 'Q4' }
-  | { type: 'month'; month: ContributionMonth };
+  | { type: 'quarter'; q: QuarterKey }
+  | { type: 'month'; month: string };
 
-const QUARTERS: Record<'Q2' | 'Q3' | 'Q4', ContributionMonth[]> = {
-  Q2: ['2026-04', '2026-05', '2026-06'],
-  Q3: ['2026-07', '2026-08', '2026-09'],
-  Q4: ['2026-10', '2026-11', '2026-12'],
+const QUARTERS: Record<QuarterKey, { months: string[]; label: string }> = {
+  Q1: { months: ['2026-01', '2026-02', '2026-03'], label: 'Jan – Mar' },
+  Q2: { months: ['2026-04', '2026-05', '2026-06'], label: 'Apr – Jun' },
+  Q3: { months: ['2026-07', '2026-08', '2026-09'], label: 'Jul – Sep' },
+  Q4: { months: ['2026-10', '2026-11', '2026-12'], label: 'Oct – Dec' },
 };
 
 const TEAM_BG: Record<string, string> = {
@@ -109,25 +111,25 @@ export default function GoalsOverviewPage() {
 
   const selectedMonths: string[] = useMemo(() => {
     if (period.type === 'year') return [...CONTRIBUTION_MONTHS];
-    if (period.type === 'quarter') return QUARTERS[period.q];
+    if (period.type === 'quarter') return QUARTERS[period.q].months;
     return [period.month];
   }, [period]);
 
   const periodLabel = useMemo(() => {
     if (period.type === 'year') return 'Full Year (Apr – Dec 2026)';
     if (period.type === 'quarter') {
-      const months = QUARTERS[period.q];
-      const first = CONTRIBUTION_MONTH_LABELS[CONTRIBUTION_MONTHS.indexOf(months[0])];
-      const last = CONTRIBUTION_MONTH_LABELS[CONTRIBUTION_MONTHS.indexOf(months[months.length - 1])];
-      return `${period.q} 2026 (${first} – ${last})`;
+      return `${period.q} 2026 (${QUARTERS[period.q].label})`;
     }
-    return CONTRIBUTION_MONTH_LABELS[CONTRIBUTION_MONTHS.indexOf(period.month)] + ' 2026';
+    const idx = (CONTRIBUTION_MONTHS as readonly string[]).indexOf(period.month);
+    const label = idx >= 0 ? CONTRIBUTION_MONTH_LABELS[idx] : period.month;
+    return `${label} 2026`;
   }, [period]);
 
   const getGoalFor = (cid: string, mid: string, month: string): number => {
     const key = `${cid}::${mid}::${month}`;
     if (goals[key] !== undefined) return goals[key];
-    const mi = CONTRIBUTION_MONTHS.indexOf(month as typeof CONTRIBUTION_MONTHS[number]);
+    const mi = (CONTRIBUTION_MONTHS as readonly string[]).indexOf(month);
+    if (mi === -1) return 0;
     return (GOALS as Record<string, Record<string, number[]>>)[cid]?.[mid]?.[mi] ?? 0;
   };
 
@@ -194,7 +196,7 @@ export default function GoalsOverviewPage() {
 
           <div className="h-5 w-px bg-gray-200 mx-1" />
 
-          {(['Q2', 'Q3', 'Q4'] as const).map((q) => (
+          {(['Q1', 'Q2', 'Q3', 'Q4'] as const).map((q) => (
             <button
               key={q}
               onClick={() => setPeriod({ type: 'quarter', q })}
@@ -213,7 +215,7 @@ export default function GoalsOverviewPage() {
           <select
             value={period.type === 'month' ? period.month : ''}
             onChange={(e) => {
-              if (e.target.value) setPeriod({ type: 'month', month: e.target.value as ContributionMonth });
+              if (e.target.value) setPeriod({ type: 'month', month: e.target.value });
             }}
             className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 bg-white text-gray-700 focus:outline-none focus:border-indigo-400"
           >
