@@ -36,7 +36,7 @@ export function SMUserSwitcher() {
 
   const handleSwitchUser = (userId: UserId) => {
     dispatch({ type: 'SWITCH_USER', userId });
-    router.push('/sales-motion');
+    router.push('/sales-motion/dashboard');
   };
 
   const handleViewAll = () => {

@@ -18,12 +18,14 @@ export function SMSidebar() {
   const isPipelineRoute = pathname.startsWith('/sales-motion/pipeline');
   const isKeyDealsRoute = pathname.startsWith('/sales-motion/key-deals');
   const isDemandGenRoute = pathname.startsWith('/sales-motion/demand-gen');
-  const isSalesMotionRoute = pathname.startsWith('/sales-motion')
-    && !pathname.startsWith('/sales-motion/marketing')
-    && !pathname.startsWith('/sales-motion/partner')
-    && !isPipelineRoute
-    && !isKeyDealsRoute
-    && !isDemandGenRoute;
+  // Sales Motions is only considered "active" on its specific sub-routes, not the base /sales-motion
+  const isSalesMotionRoute =
+    pathname.startsWith('/sales-motion/dashboard') ||
+    pathname.startsWith('/sales-motion/motion/') ||
+    pathname.startsWith('/sales-motion/monthly-kpis') ||
+    pathname.startsWith('/sales-motion/reports') ||
+    pathname.startsWith('/sales-motion/goals') ||
+    pathname.startsWith('/sales-motion/development');
   const [salesMotionsOpen, setSalesMotionsOpen] = useState(isSalesMotionRoute);
   const [pipelineOpen, setPipelineOpen] = useState(isPipelineRoute);
   const [keyDealsOpen, setKeyDealsOpen] = useState(isKeyDealsRoute);
@@ -43,6 +45,26 @@ export function SMSidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
+        {/* Pipeline collapsible section */}
+        <button
+          onClick={() => setPipelineOpen(!pipelineOpen)}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            isPipelineRoute ? 'text-blue-700 bg-blue-50' : 'text-gray-700 hover:bg-white/60'
+          }`}
+        >
+          <TrendingUp size={16} />
+          <span className="flex-1 text-left">Pipeline</span>
+          {pipelineOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        </button>
+        {pipelineOpen && (
+          <div className="ml-3 pl-3 border-l border-gray-200 space-y-1">
+            <Link href="/sales-motion/pipeline" className={linkClass('/sales-motion/pipeline')}>
+              <LayoutDashboard size={14} />
+              Overview
+            </Link>
+          </div>
+        )}
+
         {/* Sales Motions collapsible section */}
         <button
           onClick={() => setSalesMotionsOpen(!salesMotionsOpen)}
@@ -107,26 +129,6 @@ export function SMSidebar() {
             <Link href="/sales-motion/development" className={linkClass('/sales-motion/development')}>
               <Wrench size={14} />
               Motion Development
-            </Link>
-          </div>
-        )}
-
-        {/* Pipeline collapsible section */}
-        <button
-          onClick={() => setPipelineOpen(!pipelineOpen)}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isPipelineRoute ? 'text-blue-700 bg-blue-50' : 'text-gray-700 hover:bg-white/60'
-          }`}
-        >
-          <TrendingUp size={16} />
-          <span className="flex-1 text-left">Pipeline</span>
-          {pipelineOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        </button>
-        {pipelineOpen && (
-          <div className="ml-3 pl-3 border-l border-gray-200 space-y-1">
-            <Link href="/sales-motion/pipeline" className={linkClass('/sales-motion/pipeline')}>
-              <LayoutDashboard size={14} />
-              Overview
             </Link>
           </div>
         )}
