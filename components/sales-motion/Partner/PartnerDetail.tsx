@@ -2,12 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePartner } from '@/lib/sales-motion/partner/PartnerContext';
 import { PARTNER_STATUS_OPTIONS, PARTNER_TIER_OPTIONS } from '@/lib/sales-motion/partner/types';
 import type { Partner, PartnerStatus, PartnerTier } from '@/lib/sales-motion/partner/types';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
 import { SelectDropdown } from '@/components/sales-motion/shared/SelectDropdown';
+import { LogoUploader } from './LogoUploader';
 import {
   ArrowLeft, Trash2, ExternalLink, Hash, DollarSign, Users, Trophy, Handshake,
   Target, TrendingUp, FileText, Calendar, Plus,
@@ -109,13 +109,11 @@ export function PartnerDetail({ partnerId }: { partnerId: string }) {
       <div className="bg-gradient-to-br from-purple-50 via-indigo-50 to-white border-b border-gray-100">
         <div className="px-6 py-6 max-w-6xl mx-auto">
           <div className="flex items-start gap-5 flex-wrap">
-            <div className="w-28 h-28 bg-white rounded-2xl border-2 border-purple-200 flex items-center justify-center shrink-0 overflow-hidden">
-              {partner.logo ? (
-                <Image src={partner.logo} alt={partner.name} width={112} height={112} className="object-contain p-2" unoptimized />
-              ) : (
-                <Handshake size={40} className="text-purple-400" />
-              )}
-            </div>
+            <LogoUploader
+              value={partner.logo}
+              partnerName={partner.name}
+              onChange={(v) => updateField('logo', v)}
+            />
             <div className="flex-1 min-w-[260px]">
               <EditableField
                 value={partner.name}
@@ -157,8 +155,6 @@ export function PartnerDetail({ partnerId }: { partnerId: string }) {
                 ) : (
                   <EditableField value={partner.website} onSave={(v) => updateField('website', v)} placeholder="https://…" className="text-xs text-gray-600" />
                 )}
-                <span className="text-gray-500 ml-2">Logo URL:</span>
-                <EditableField value={partner.logo} onSave={(v) => updateField('logo', v)} placeholder="URL…" className="text-xs text-gray-600" />
               </div>
             </div>
           </div>
