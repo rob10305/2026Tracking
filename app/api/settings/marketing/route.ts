@@ -11,14 +11,10 @@ const NO_CACHE_HEADERS = {
 
 const KEY = 'marketing-settings';
 
-interface MarketingSettings {
-  onedriveUrl?: string;
-}
-
 export async function GET() {
   try {
     const row = await prisma.appSettings.findUnique({ where: { key: KEY } });
-    if (!row) return NextResponse.json({} as MarketingSettings, { headers: NO_CACHE_HEADERS });
+    if (!row) return NextResponse.json({}, { headers: NO_CACHE_HEADERS });
     return NextResponse.json(row.value, { headers: NO_CACHE_HEADERS });
   } catch (e) {
     console.error('[settings/marketing GET]', e);
@@ -28,7 +24,7 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    const data = (await req.json()) as MarketingSettings;
+    const data = await req.json();
     await prisma.appSettings.upsert({
       where: { key: KEY },
       create: { key: KEY, value: data },
