@@ -1,12 +1,7 @@
 'use client';
 
-import { MarketingProvider } from '@/lib/sales-motion/marketing/MarketingContext';
-import { MarketingDashboard } from '@/components/sales-motion/Marketing/MarketingDashboard';
+import { MarketingOverview } from '@/components/sales-motion/Marketing/MarketingOverview';
 
 export default function MarketingPage() {
-  return (
-    <MarketingProvider>
-      <MarketingDashboard />
-    </MarketingProvider>
-  );
+  return <MarketingOverview />;
 }
