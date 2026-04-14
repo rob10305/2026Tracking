@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useTracker } from '@/lib/sales-motion/context/TrackerContext';
-import { LayoutDashboard, BarChart3, Target, GitBranch, Calendar, Wrench, ChevronDown, ChevronRight, Zap } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Target, GitBranch, Calendar, Wrench, ChevronDown, ChevronRight, Zap, TrendingUp, Star, Megaphone } from 'lucide-react';
 
 const MOTION_LOGOS: Record<string, string> = {
   'Archera': '/logos/archera.png',
@@ -15,8 +15,19 @@ export function SMSidebar() {
   const { state } = useTracker();
   const pathname = usePathname();
 
-  const isSalesMotionRoute = pathname.startsWith('/sales-motion') && !pathname.startsWith('/sales-motion/marketing') && !pathname.startsWith('/sales-motion/partner');
+  const isPipelineRoute = pathname.startsWith('/sales-motion/pipeline');
+  const isKeyDealsRoute = pathname.startsWith('/sales-motion/key-deals');
+  const isDemandGenRoute = pathname.startsWith('/sales-motion/demand-gen');
+  const isSalesMotionRoute = pathname.startsWith('/sales-motion')
+    && !pathname.startsWith('/sales-motion/marketing')
+    && !pathname.startsWith('/sales-motion/partner')
+    && !isPipelineRoute
+    && !isKeyDealsRoute
+    && !isDemandGenRoute;
   const [salesMotionsOpen, setSalesMotionsOpen] = useState(isSalesMotionRoute);
+  const [pipelineOpen, setPipelineOpen] = useState(isPipelineRoute);
+  const [keyDealsOpen, setKeyDealsOpen] = useState(isKeyDealsRoute);
+  const [demandGenOpen, setDemandGenOpen] = useState(isDemandGenRoute);
 
   const linkClass = (href: string, exact = false) => {
     const active = exact ? pathname === href : pathname.startsWith(href);
@@ -96,6 +107,66 @@ export function SMSidebar() {
             <Link href="/sales-motion/development" className={linkClass('/sales-motion/development')}>
               <Wrench size={14} />
               Motion Development
+            </Link>
+          </div>
+        )}
+
+        {/* Pipeline collapsible section */}
+        <button
+          onClick={() => setPipelineOpen(!pipelineOpen)}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            isPipelineRoute ? 'text-blue-700 bg-blue-50' : 'text-gray-700 hover:bg-white/60'
+          }`}
+        >
+          <TrendingUp size={16} />
+          <span className="flex-1 text-left">Pipeline</span>
+          {pipelineOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        </button>
+        {pipelineOpen && (
+          <div className="ml-3 pl-3 border-l border-gray-200 space-y-1">
+            <Link href="/sales-motion/pipeline" className={linkClass('/sales-motion/pipeline')}>
+              <LayoutDashboard size={14} />
+              Overview
+            </Link>
+          </div>
+        )}
+
+        {/* Key Deals collapsible section */}
+        <button
+          onClick={() => setKeyDealsOpen(!keyDealsOpen)}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            isKeyDealsRoute ? 'text-blue-700 bg-blue-50' : 'text-gray-700 hover:bg-white/60'
+          }`}
+        >
+          <Star size={16} />
+          <span className="flex-1 text-left">Key Deals</span>
+          {keyDealsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        </button>
+        {keyDealsOpen && (
+          <div className="ml-3 pl-3 border-l border-gray-200 space-y-1">
+            <Link href="/sales-motion/key-deals" className={linkClass('/sales-motion/key-deals')}>
+              <LayoutDashboard size={14} />
+              Overview
+            </Link>
+          </div>
+        )}
+
+        {/* Demand Gen collapsible section */}
+        <button
+          onClick={() => setDemandGenOpen(!demandGenOpen)}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            isDemandGenRoute ? 'text-blue-700 bg-blue-50' : 'text-gray-700 hover:bg-white/60'
+          }`}
+        >
+          <Megaphone size={16} />
+          <span className="flex-1 text-left">Demand Gen</span>
+          {demandGenOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        </button>
+        {demandGenOpen && (
+          <div className="ml-3 pl-3 border-l border-gray-200 space-y-1">
+            <Link href="/sales-motion/demand-gen" className={linkClass('/sales-motion/demand-gen')}>
+              <LayoutDashboard size={14} />
+              Overview
             </Link>
           </div>
         )}
