@@ -56,6 +56,17 @@ export function SMSidebar() {
           Dashboard
         </Link>
 
+        {/* Goals link — annual goals summary */}
+        <Link
+          href="/sales-motion/goals-overview"
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+            pathname.startsWith('/sales-motion/goals-overview') ? 'bg-white shadow-sm text-gray-900 font-medium' : 'text-gray-600 hover:bg-white/60 hover:text-gray-900'
+          }`}
+        >
+          <Target size={16} />
+          Goals
+        </Link>
+
         {/* Pipeline collapsible section */}
         <button
           onClick={() => setPipelineOpen(!pipelineOpen)}
