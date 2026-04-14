@@ -99,6 +99,17 @@ const SUB_PAGES = [
     ),
     color: "border-amber-200 hover:border-amber-400 hover:bg-amber-50",
   },
+  {
+    href: "/settings/marketing",
+    title: "Marketing",
+    description: "Configure the OneDrive embed URL for the Marketing Content library and other marketing integrations.",
+    icon: (
+      <svg className="w-8 h-8 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m16.5 0a48.667 48.667 0 00-16.5 0m16.5 0a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25M8.25 11.25h7.5" />
+      </svg>
+    ),
+    color: "border-teal-200 hover:border-teal-400 hover:bg-teal-50",
+  },
 ];
 
 export default function SettingsPage() {

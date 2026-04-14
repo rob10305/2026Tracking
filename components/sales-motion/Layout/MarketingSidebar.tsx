@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Calendar, Mail, DollarSign, FileText, Share2 } from 'lucide-react';
+import { LayoutDashboard, Calendar, Mail, DollarSign, FileText, Share2, Archive } from 'lucide-react';
 
 const ITEMS = [
   { href: '/sales-motion/marketing', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -11,6 +11,7 @@ const ITEMS = [
   { href: '/sales-motion/marketing/paid-ads', label: 'Paid Ads', icon: DollarSign, exact: false },
   { href: '/sales-motion/marketing/thought-leadership', label: 'Thought Leadership', icon: FileText, exact: false },
   { href: '/sales-motion/marketing/socials', label: 'Socials', icon: Share2, exact: false },
+  { href: '/sales-motion/marketing/content', label: 'Content', icon: Archive, exact: false },
 ];
 
 export function MarketingSidebar() {
