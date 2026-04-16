@@ -176,7 +176,6 @@ model AopInitiative {
   id          String @id @default(cuid())
   dept        String
   order       Int    @default(0)
-  area        String @default("")
   number      String @default("")
   description String @default("")
   owner       String @default("")

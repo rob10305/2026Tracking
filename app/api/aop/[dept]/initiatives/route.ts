@@ -15,7 +15,6 @@ const VALID_RAG = new Set(["", "red", "amber", "green"]);
 type InitiativeInput = {
   id?: string;
   order: number;
-  area: string;
   number: string;
   description: string;
   owner: string;
@@ -93,7 +92,6 @@ export async function PUT(
       const i = initiatives[idx];
       const data = {
         order: idx,
-        area: String(i.area ?? ""),
         number: String(i.number ?? ""),
         description: String(i.description ?? ""),
         owner: String(i.owner ?? ""),

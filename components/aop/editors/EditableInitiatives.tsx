@@ -13,7 +13,6 @@ import RagPicker, { Rag } from "./RagPicker";
 type Initiative = {
   id?: string;
   order: number;
-  area: string;
   number: string;
   description: string;
   owner: string;
@@ -78,7 +77,6 @@ export default function EditableInitiatives({
             ? init
             : Array.from({ length: 6 }, (_, i) => ({
                 order: i,
-                area: "",
                 number: String(i + 1).padStart(2, "0"),
                 description: "",
                 owner: "",
@@ -160,7 +158,6 @@ export default function EditableInitiatives({
       ...prev,
       {
         order: prev.length,
-        area: "",
         number: String(prev.length + 1).padStart(2, "0"),
         description: "",
         owner: "",
