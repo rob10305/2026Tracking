@@ -2,21 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-type Department = {
-  number: string;
-  name: string;
-  href: string;
-  accentText: string;
-  accentBg: string;
-};
-
-const DEPARTMENTS: Department[] = [
-  { number: "01", name: "CS", href: "/aop/cs", accentText: "text-sky-400", accentBg: "bg-sky-400" },
-  { number: "02", name: "Sales", href: "/aop/sales", accentText: "text-emerald-400", accentBg: "bg-emerald-400" },
-  { number: "03", name: "Partner", href: "/aop/partner", accentText: "text-amber-400", accentBg: "bg-amber-400" },
-  { number: "04", name: "Support", href: "/aop/support", accentText: "text-violet-400", accentBg: "bg-violet-400" },
-];
+import { DEPARTMENTS, SECTIONS } from "@/lib/aop/configs";
 
 export default function AopLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -26,8 +12,10 @@ export default function AopLayout({ children }: { children: React.ReactNode }) {
       <aside className="w-[240px] shrink-0 bg-gray-900 text-white flex flex-col">
         <Link
           href="/aop"
-          className={`px-6 py-5 border-b border-white/10 block hover:bg-white/5 transition-colors ${
-            pathname === "/aop" ? "bg-black/40 border-l-4 border-l-white" : ""
+          className={`px-6 py-5 border-b border-white/10 block hover:bg-white/5 transition-colors border-l-4 ${
+            pathname === "/aop"
+              ? "bg-black/40 border-l-white"
+              : "border-l-transparent"
           }`}
         >
           <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-400">
@@ -43,23 +31,56 @@ export default function AopLayout({ children }: { children: React.ReactNode }) {
             Departments
           </p>
           {DEPARTMENTS.map((dept) => {
-            const active = pathname === dept.href || pathname.startsWith(dept.href + "/");
+            const onDept = pathname === dept.href || pathname.startsWith(dept.href + "/");
+            const onDeptRoot = pathname === dept.href;
             return (
-              <Link
-                key={dept.href}
-                href={dept.href}
-                className={`flex items-center gap-4 px-6 py-3 text-sm transition-colors ${
-                  active
-                    ? "bg-black/40 border-l-4 border-l-white pl-5 text-white"
-                    : "border-l-4 border-l-transparent text-gray-300 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <span className={`text-lg font-bold ${dept.accentText}`}>{dept.number}</span>
-                <span className="font-medium">{dept.name}</span>
-                {active && (
-                  <span className={`ml-auto h-2 w-2 rounded-full ${dept.accentBg}`} />
+              <div key={dept.href}>
+                <Link
+                  href={dept.href}
+                  className={`flex items-center gap-4 px-6 py-3 text-sm transition-colors border-l-4 ${
+                    onDeptRoot
+                      ? "bg-black/40 border-l-white pl-5 text-white"
+                      : onDept
+                      ? "bg-black/20 border-l-transparent text-white"
+                      : "border-l-transparent text-gray-300 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <span className={`text-lg font-bold ${dept.accentText}`}>
+                    {dept.number}
+                  </span>
+                  <span className="font-medium">{dept.name}</span>
+                  {onDept && (
+                    <span className={`ml-auto h-2 w-2 rounded-full ${dept.accentBg}`} />
+                  )}
+                </Link>
+
+                {onDept && (
+                  <div className="bg-black/20 py-1">
+                    {SECTIONS.map((section) => {
+                      const sectionHref = `${dept.href}/${section.slug}`;
+                      const active = pathname === sectionHref;
+                      return (
+                        <Link
+                          key={section.slug}
+                          href={sectionHref}
+                          className={`flex items-center gap-3 pl-14 pr-6 py-2 text-xs transition-colors border-l-4 ${
+                            active
+                              ? "border-l-white bg-black/40 text-white pl-[52px]"
+                              : "border-l-transparent text-gray-400 hover:bg-white/5 hover:text-white"
+                          }`}
+                        >
+                          <span
+                            className={`h-1 w-1 rounded-full ${dept.accentBg} ${
+                              active ? "opacity-100" : "opacity-50"
+                            }`}
+                          />
+                          {section.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 )}
-              </Link>
+              </div>
             );
           })}
         </nav>
