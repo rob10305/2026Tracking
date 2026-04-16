@@ -130,3 +130,17 @@ model LaunchRequirement {
 
   @@unique([product_id, deliverable])
 }
+
+model AopMonthlyMetric {
+  id        String   @id @default(cuid())
+  dept      String   // department slug: cs | sales | partner | support
+  kind      String   // metric kind: leading | lagging
+  metric    String   // metric name from lib/aop/configs.ts
+  month     String   // "YYYY-MM"
+  value     Float    @default(0)
+  notes     String   @default("")
+  updatedAt DateTime @updatedAt
+
+  @@unique([dept, kind, metric, month])
+  @@index([dept])
+}

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { toEmbedUrl } from '@/lib/onedrive/embed-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,12 +26,16 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     const data = await req.json();
+    const incoming = typeof data?.onedriveUrl === 'string' ? data.onedriveUrl : '';
+    const normalized = incoming ? toEmbedUrl(incoming) : '';
+    const value = { ...(data && typeof data === 'object' ? data : {}), onedriveUrl: normalized };
+
     await prisma.appSettings.upsert({
       where: { key: KEY },
-      create: { key: KEY, value: data },
-      update: { value: data },
+      create: { key: KEY, value },
+      update: { value },
     });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, onedriveUrl: normalized });
   } catch (e) {
     console.error('[settings/marketing PUT]', e);
     return NextResponse.json({ ok: false }, { status: 500 });

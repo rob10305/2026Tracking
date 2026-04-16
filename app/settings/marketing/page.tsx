@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Check, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Archive, Check, ExternalLink, AlertTriangle } from 'lucide-react';
+import { analyzeOneDriveUrl } from '@/lib/onedrive/embed-url';
 
 export default function MarketingSettingsPage() {
   const [onedriveUrl, setOnedriveUrl] = useState('');
@@ -26,6 +27,10 @@ export default function MarketingSettingsPage() {
     })();
   }, []);
 
+  const analysis = useMemo(() => analyzeOneDriveUrl(draft), [draft]);
+  const willSaveAs = analysis.embedUrl;
+  const transformed = willSaveAs && willSaveAs !== draft.trim();
+
   const save = async () => {
     setSaving(true);
     setSaved(false);
@@ -33,9 +38,10 @@ export default function MarketingSettingsPage() {
       await fetch('/api/settings/marketing', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ onedriveUrl: draft.trim() }),
+        body: JSON.stringify({ onedriveUrl: willSaveAs }),
       });
-      setOnedriveUrl(draft.trim());
+      setOnedriveUrl(willSaveAs);
+      setDraft(willSaveAs);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
@@ -56,7 +62,8 @@ export default function MarketingSettingsPage() {
     );
   }
 
-  const dirty = draft.trim() !== onedriveUrl;
+  const dirty = willSaveAs !== onedriveUrl;
+  const previewUrl = willSaveAs;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -80,12 +87,13 @@ export default function MarketingSettingsPage() {
         </div>
 
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-semibold text-gray-700 mb-1.5">How to get a OneDrive embed URL</p>
-          <ol className="text-xs text-gray-600 ml-4 list-decimal space-y-1">
-            <li>In OneDrive, right-click the folder and choose <strong>Embed</strong> (or Share → Copy link).</li>
-            <li>Copy the <code className="bg-white px-1 rounded border border-gray-200">src</code> URL from the iframe snippet (starts with <code className="bg-white px-1 rounded border border-gray-200">https://onedrive.live.com/embed?...</code> or a SharePoint URL).</li>
-            <li>Paste it below. Permissions are enforced by the folder's sharing settings.</li>
-          </ol>
+          <p className="text-xs font-semibold text-gray-700 mb-1.5">Supported URL formats</p>
+          <ul className="text-xs text-gray-600 ml-4 list-disc space-y-1">
+            <li><strong>OneDrive Personal embed:</strong> <code className="bg-white px-1 rounded border border-gray-200">https://onedrive.live.com/embed?cid=...&amp;resid=...</code> (use the Embed dialog → copy the iframe src URL).</li>
+            <li><strong>OneDrive Personal share link:</strong> <code className="bg-white px-1 rounded border border-gray-200">https://onedrive.live.com/?cid=...&amp;id=...&amp;authkey=...</code> — we'll auto-convert to the embed URL on save.</li>
+            <li><strong>SharePoint / OneDrive for Business folder:</strong> we'll append <code className="bg-white px-1 rounded border border-gray-200">&amp;action=embedview</code>. The folder must be shared as "Anyone with the link".</li>
+            <li><strong>1drv.ms short links won't work</strong> — open them in a browser and copy the long URL instead.</li>
+          </ul>
         </div>
 
         <div>
@@ -97,9 +105,26 @@ export default function MarketingSettingsPage() {
             placeholder="https://onedrive.live.com/embed?resid=..."
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
           />
-          {draft && (
+
+          {analysis.warning && (
+            <div className="mt-2 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-2">
+              <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+              <span>{analysis.warning}</span>
+            </div>
+          )}
+
+          {transformed && (
+            <div className="mt-2 text-xs text-gray-500">
+              <p className="font-semibold text-gray-700">We'll save this URL:</p>
+              <code className="block mt-1 bg-gray-50 border border-gray-200 rounded px-2 py-1 break-all">
+                {willSaveAs}
+              </code>
+            </div>
+          )}
+
+          {willSaveAs && (
             <div className="mt-1.5 text-xs text-gray-500">
-              <a href={draft} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline inline-flex items-center gap-1">
+              <a href={willSaveAs} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline inline-flex items-center gap-1">
                 Open in new tab <ExternalLink size={11} />
               </a>
               {' '}to verify the link before saving.
@@ -110,7 +135,7 @@ export default function MarketingSettingsPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={save}
-            disabled={!dirty || saving}
+            disabled={!dirty || saving || !willSaveAs}
             className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving…' : 'Save'}
@@ -124,6 +149,24 @@ export default function MarketingSettingsPage() {
             <span className="text-xs text-gray-400">No unsaved changes</span>
           )}
         </div>
+
+        {previewUrl && (
+          <div className="pt-2">
+            <p className="text-xs font-semibold text-gray-700 mb-1.5">Live preview</p>
+            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+              <iframe
+                key={previewUrl}
+                src={previewUrl}
+                className="w-full"
+                style={{ height: 360, border: 0 }}
+                allowFullScreen
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-gray-500">
+              If the preview is blank, the folder isn't shared publicly or the URL isn't an embed URL. Check the warnings above.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
