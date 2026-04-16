@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useReducer, useEffect, useRef, useCallback, useState } from 'react';
 import type { Partner, PartnerState } from './types';
-import { createFreshPartnerState } from './types';
+import { createFreshPartnerState, normalizePartnerState } from './types';
 
 // ── Actions ──────────────────────────────────────────────────────
 type Action =
@@ -80,7 +80,7 @@ export function PartnerProvider({ children }: { children: React.ReactNode }) {
         const res = await fetch(API_URL);
         const data = await res.json();
         if (data && data.version === 1) {
-          rawDispatch({ type: 'SET_FULL_STATE', state: data });
+          rawDispatch({ type: 'SET_FULL_STATE', state: normalizePartnerState(data) });
         }
       } catch (e) {
         console.error('[PartnerContext] load failed', e);

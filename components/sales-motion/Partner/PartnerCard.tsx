@@ -71,9 +71,6 @@ export function PartnerCard({ partner }: { partner: Partner }) {
         <h3 className="text-base font-bold text-gray-900 group-hover:text-purple-700 transition-colors truncate">
           {partner.name || 'Unnamed Partner'}
         </h3>
-        {partner.owner && (
-          <p className="text-[11px] text-gray-500 mt-0.5">Owner: {partner.owner}</p>
-        )}
       </div>
 
       {/* Metrics grid */}

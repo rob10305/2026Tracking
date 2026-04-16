@@ -3,23 +3,21 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePartner } from '@/lib/sales-motion/partner/PartnerContext';
-import { PARTNER_STATUS_OPTIONS, PARTNER_TIER_OPTIONS } from '@/lib/sales-motion/partner/types';
-import type { Partner, PartnerStatus, PartnerTier } from '@/lib/sales-motion/partner/types';
+import type { Partner } from '@/lib/sales-motion/partner/types';
 import { EditableField } from '@/components/sales-motion/shared/EditableField';
-import { SelectDropdown } from '@/components/sales-motion/shared/SelectDropdown';
-import { LogoUploader } from './LogoUploader';
 import { PartnerEditBar } from './PartnerEditBar';
 import { usePartnerEditGate } from './usePartnerEditGate';
-import {
-  ArrowLeft, Trash2, ExternalLink, Hash, DollarSign, Users, Trophy, Handshake,
-  Target, TrendingUp, FileText, Calendar, Plus,
-} from 'lucide-react';
-
-const STATUS_COLORS: Record<PartnerStatus, string> = {
-  Active: 'bg-green-100 text-green-700 border-green-200',
-  Recruit: 'bg-blue-100 text-blue-700 border-blue-200',
-  Dormant: 'bg-gray-100 text-gray-600 border-gray-200',
-};
+import { ArrowLeft, Trash2, Hash, DollarSign, Users, Trophy, Handshake, TrendingUp } from 'lucide-react';
+import { PartnerHeader } from './sections/PartnerHeader';
+import { GtmStrategy } from './sections/GtmStrategy';
+import { Leads } from './sections/Leads';
+import { ActiveCampaigns } from './sections/ActiveCampaigns';
+import { Contacts } from './sections/Contacts';
+import { Deliverables } from './sections/Deliverables';
+import { Enablement } from './sections/Enablement';
+import { ActivityLog } from './sections/ActivityLog';
+import { Collateral } from './sections/Collateral';
+import { NotesFeed } from './sections/NotesFeed';
 
 export function PartnerDetail({ partnerId }: { partnerId: string }) {
   const router = useRouter();
@@ -46,7 +44,7 @@ export function PartnerDetail({ partnerId }: { partnerId: string }) {
           <Handshake size={48} className="text-gray-300 mx-auto mb-3" />
           <h2 className="text-lg font-semibold text-gray-700">Partner not found</h2>
           <p className="text-sm text-gray-500 mb-4">This partner may have been deleted.</p>
-          <Link href="/sales-motion/partner/dashboard" className="inline-flex items-center gap-1.5 px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700">
+          <Link href="/sales-motion/partner" className="inline-flex items-center gap-1.5 px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700">
             <ArrowLeft size={14} /> Back to Dashboard
           </Link>
         </div>
@@ -58,48 +56,17 @@ export function PartnerDetail({ partnerId }: { partnerId: string }) {
     dispatch({ type: 'UPDATE_PARTNER', id: partner.id, patch: { [key]: value } as Partial<Partner> });
   };
 
-  const updateNested = <K extends 'gtmPlan' | 'impact'>(key: K, field: string, value: string) => {
-    const current = partner[key];
-    dispatch({ type: 'UPDATE_PARTNER', id: partner.id, patch: { [key]: { ...current, [field]: value } } as Partial<Partner> });
-  };
-
   const handleDelete = () => {
     if (!confirm(`Delete partner "${partner.name}"? This cannot be undone.`)) return;
     dispatch({ type: 'DELETE_PARTNER', id: partner.id });
-    router.push('/sales-motion/partner/dashboard');
+    router.push('/sales-motion/partner');
   };
 
-  const addContact = () => {
-    const contacts = [...partner.contacts, { id: crypto.randomUUID(), name: '', role: '', email: '', phone: '', active: true, notes: '' }];
-    updateField('contacts', contacts);
-  };
-
-  const updateContact = (cid: string, field: string, value: string | boolean) => {
-    const contacts = partner.contacts.map((c) => (c.id === cid ? { ...c, [field]: value } : c));
-    updateField('contacts', contacts);
-  };
-
-  const removeContact = (cid: string) => {
-    updateField('contacts', partner.contacts.filter((c) => c.id !== cid));
-  };
-
-  const addActivity = () => {
-    const activities = [...partner.activities, { id: crypto.randomUUID(), date: new Date().toISOString().slice(0, 10), type: '', summary: '', owner: '' }];
-    updateField('activities', activities);
-  };
-
-  const updateActivity = (aid: string, field: string, value: string) => {
-    const activities = partner.activities.map((a) => (a.id === aid ? { ...a, [field]: value } : a));
-    updateField('activities', activities);
-  };
-
-  const removeActivity = (aid: string) => {
-    updateField('activities', partner.activities.filter((a) => a.id !== aid));
-  };
+  const sectionProps = { partner, updateField, readOnly };
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50">
-      {/* Back link + edit gate */}
+      {/* Top bar: back + edit gate */}
       <div className="px-6 py-3 border-b border-gray-100 bg-white flex items-center justify-between gap-3 flex-wrap">
         <Link href="/sales-motion/partner" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
           <ArrowLeft size={14} /> Back to Partner Dashboard
@@ -114,66 +81,8 @@ export function PartnerDetail({ partnerId }: { partnerId: string }) {
         </div>
       </div>
 
-      {/* Hero */}
-      <div className="bg-gradient-to-br from-purple-50 via-indigo-50 to-white border-b border-gray-100">
-        <div className="px-6 py-6 max-w-6xl mx-auto">
-          <div className="flex items-start gap-5 flex-wrap">
-            <LogoUploader
-              value={partner.logo}
-              partnerName={partner.name}
-              onChange={(v) => updateField('logo', v)}
-              disabled={readOnly}
-            />
-            <div className="flex-1 min-w-[260px]">
-              <EditableField
-                value={partner.name}
-                onSave={(v) => updateField('name', v)}
-                placeholder="Partner name"
-                className="text-2xl font-bold text-gray-900"
-                disabled={readOnly}
-              />
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <SelectDropdown
-                  value={partner.status}
-                  options={PARTNER_STATUS_OPTIONS as unknown as PartnerStatus[]}
-                  onChange={(v) => updateField('status', v)}
-                  className={`${STATUS_COLORS[partner.status]} text-[11px] font-semibold uppercase`}
-                  disabled={readOnly}
-                />
-                <SelectDropdown
-                  value={partner.tier}
-                  options={PARTNER_TIER_OPTIONS as unknown as PartnerTier[]}
-                  onChange={(v) => updateField('tier', v)}
-                  disabled={readOnly}
-                />
-                <span className="text-xs text-gray-500">•</span>
-                <span className="text-xs text-gray-500">Owner:</span>
-                <EditableField value={partner.owner} onSave={(v) => updateField('owner', v)} placeholder="Set owner" className="text-xs font-medium text-gray-700" disabled={readOnly} />
-              </div>
-              <div className="mt-3">
-                <EditableField
-                  value={partner.description}
-                  onSave={(v) => updateField('description', v)}
-                  placeholder="Short description of the partner…"
-                  className="text-sm text-gray-600"
-                  multiline
-                  disabled={readOnly}
-                />
-              </div>
-              <div className="mt-3 flex items-center gap-3 flex-wrap text-xs">
-                <span className="text-gray-500">Website:</span>
-                {partner.website ? (
-                  <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline inline-flex items-center gap-1">
-                    {partner.website} <ExternalLink size={10} />
-                  </a>
-                ) : (
-                  <EditableField value={partner.website} onSave={(v) => updateField('website', v)} placeholder="https://…" className="text-xs text-gray-600" disabled={readOnly} />
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Hero + breadcrumb */}
+      <PartnerHeader {...sectionProps} />
 
       <div className="px-6 py-6 max-w-6xl mx-auto space-y-6">
         {/* Baseball card metrics */}
@@ -185,128 +94,35 @@ export function PartnerDetail({ partnerId }: { partnerId: string }) {
           <MetricCard icon={TrendingUp} label="Closed $" value={partner.closedRevenue} onChange={(v) => updateField('closedRevenue', v)} color="green" disabled={readOnly} />
         </div>
 
-        {/* GTM Plan */}
-        <Section icon={Target} title="GTM Plan" color="bg-indigo-100 text-indigo-600">
-          <GTMField label="Summary" value={partner.gtmPlan.summary} onSave={(v) => updateNested('gtmPlan', 'summary', v)} disabled={readOnly} />
-          <GTMField label="Target Accounts / Segments" value={partner.gtmPlan.targets} onSave={(v) => updateNested('gtmPlan', 'targets', v)} disabled={readOnly} />
-          <GTMField label="Joint Offerings" value={partner.gtmPlan.jointOfferings} onSave={(v) => updateNested('gtmPlan', 'jointOfferings', v)} disabled={readOnly} />
-          <GTMField label="Marketing Initiatives" value={partner.gtmPlan.marketingInitiatives} onSave={(v) => updateNested('gtmPlan', 'marketingInitiatives', v)} disabled={readOnly} />
-          <GTMField label="Key Milestones" value={partner.gtmPlan.keyMilestones} onSave={(v) => updateNested('gtmPlan', 'keyMilestones', v)} disabled={readOnly} />
-        </Section>
-
-        {/* Impact & Results */}
-        <Section icon={TrendingUp} title="Impact & Results" color="bg-emerald-100 text-emerald-600">
-          <GTMField label="Deals Influenced" value={partner.impact.dealsInfluenced} onSave={(v) => updateNested('impact', 'dealsInfluenced', v)} disabled={readOnly} />
-          <GTMField label="Revenue Sourced" value={partner.impact.revenueSourced} onSave={(v) => updateNested('impact', 'revenueSourced', v)} disabled={readOnly} />
-          <GTMField label="Marketing Contribution" value={partner.impact.marketingContribution} onSave={(v) => updateNested('impact', 'marketingContribution', v)} disabled={readOnly} />
-          <GTMField label="Notable Wins" value={partner.impact.notableWins} onSave={(v) => updateNested('impact', 'notableWins', v)} disabled={readOnly} />
-        </Section>
-
-        {/* Contacts */}
-        <Section icon={Users} title={`Contacts (${partner.contacts.length})`} color="bg-teal-100 text-teal-600">
-          {partner.contacts.length === 0 ? (
-            <p className="text-sm text-gray-400 italic px-1">No contacts yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left bg-gray-50">
-                    <th className="px-3 py-2 text-xs font-semibold text-gray-500">Name</th>
-                    <th className="px-3 py-2 text-xs font-semibold text-gray-500">Role</th>
-                    <th className="px-3 py-2 text-xs font-semibold text-gray-500">Email</th>
-                    <th className="px-3 py-2 text-xs font-semibold text-gray-500">Phone</th>
-                    <th className="px-3 py-2 text-xs font-semibold text-gray-500">Notes</th>
-                    <th className="px-3 py-2 w-[40px]" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {partner.contacts.map((c) => (
-                    <tr key={c.id} className="border-t border-gray-100">
-                      <td className="px-3 py-2"><EditableField value={c.name} onSave={(v) => updateContact(c.id, 'name', v)} placeholder="Name" className="text-sm font-medium" disabled={readOnly} /></td>
-                      <td className="px-3 py-2"><EditableField value={c.role} onSave={(v) => updateContact(c.id, 'role', v)} placeholder="Role" className="text-xs" disabled={readOnly} /></td>
-                      <td className="px-3 py-2"><EditableField value={c.email} onSave={(v) => updateContact(c.id, 'email', v)} placeholder="email@…" className="text-xs" disabled={readOnly} /></td>
-                      <td className="px-3 py-2"><EditableField value={c.phone} onSave={(v) => updateContact(c.id, 'phone', v)} placeholder="Phone" className="text-xs" disabled={readOnly} /></td>
-                      <td className="px-3 py-2"><EditableField value={c.notes} onSave={(v) => updateContact(c.id, 'notes', v)} placeholder="Notes" className="text-xs" disabled={readOnly} /></td>
-                      <td className="px-3 py-2">
-                        {!readOnly && <button onClick={() => removeContact(c.id)} className="text-gray-300 hover:text-red-500"><Trash2 size={14} /></button>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {!readOnly && (
-            <button onClick={addContact} className="mt-2 inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-purple-600">
-              <Plus size={12} /> Add Contact
-            </button>
-          )}
-        </Section>
-
-        {/* Activity Log */}
-        <Section icon={Calendar} title={`Activity Log (${partner.activities.length})`} color="bg-amber-100 text-amber-600">
-          {partner.activities.length === 0 ? (
-            <p className="text-sm text-gray-400 italic px-1">No activities logged yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left bg-gray-50">
-                    <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[120px]">Date</th>
-                    <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[100px]">Type</th>
-                    <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[100px]">Owner</th>
-                    <th className="px-3 py-2 text-xs font-semibold text-gray-500">Summary</th>
-                    <th className="px-3 py-2 w-[40px]" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...partner.activities].sort((a, b) => b.date.localeCompare(a.date)).map((a) => (
-                    <tr key={a.id} className="border-t border-gray-100">
-                      <td className="px-3 py-2">
-                        {readOnly ? (
-                          <span className="text-xs text-gray-600">{a.date || '—'}</span>
-                        ) : (
-                          <input type="date" value={a.date} onChange={(e) => updateActivity(a.id, 'date', e.target.value)} className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white" />
-                        )}
-                      </td>
-                      <td className="px-3 py-2"><EditableField value={a.type} onSave={(v) => updateActivity(a.id, 'type', v)} placeholder="Call, Meeting…" className="text-xs" disabled={readOnly} /></td>
-                      <td className="px-3 py-2"><EditableField value={a.owner} onSave={(v) => updateActivity(a.id, 'owner', v)} placeholder="Owner" className="text-xs" disabled={readOnly} /></td>
-                      <td className="px-3 py-2"><EditableField value={a.summary} onSave={(v) => updateActivity(a.id, 'summary', v)} placeholder="Summary…" className="text-xs" multiline disabled={readOnly} /></td>
-                      <td className="px-3 py-2">
-                        {!readOnly && <button onClick={() => removeActivity(a.id)} className="text-gray-300 hover:text-red-500"><Trash2 size={14} /></button>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {!readOnly && (
-            <button onClick={addActivity} className="mt-2 inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-purple-600">
-              <Plus size={12} /> Log Activity
-            </button>
-          )}
-        </Section>
-
-        {/* Notes */}
-        <Section icon={FileText} title="Notes" color="bg-gray-100 text-gray-600">
-          <EditableField
-            value={partner.notes}
-            onSave={(v) => updateField('notes', v)}
-            placeholder="Free-form notes about this partner…"
-            className="text-sm text-gray-700 block w-full whitespace-pre-wrap break-words"
-            multiline
-            disabled={readOnly}
-          />
-        </Section>
+        <GtmStrategy {...sectionProps} />
+        <Leads {...sectionProps} />
+        <ActiveCampaigns {...sectionProps} />
+        <Contacts {...sectionProps} />
+        <Deliverables {...sectionProps} />
+        <Enablement {...sectionProps} />
+        <ActivityLog {...sectionProps} />
+        <Collateral {...sectionProps} />
+        <NotesFeed {...sectionProps} />
       </div>
     </div>
   );
 }
 
 function MetricCard({
-  icon: Icon, label, value, onChange, color, disabled,
-}: { icon: typeof Hash; label: string; value: string; onChange: (v: string) => void; color: 'blue' | 'indigo' | 'teal' | 'amber' | 'green'; disabled?: boolean }) {
+  icon: Icon,
+  label,
+  value,
+  onChange,
+  color,
+  disabled,
+}: {
+  icon: typeof Hash;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  color: 'blue' | 'indigo' | 'teal' | 'amber' | 'green';
+  disabled?: boolean;
+}) {
   const colorMap = {
     blue: { bg: 'bg-blue-50', text: 'text-blue-700', icon: 'text-blue-600' },
     indigo: { bg: 'bg-indigo-50', text: 'text-indigo-700', icon: 'text-indigo-600' },
@@ -324,36 +140,6 @@ function MetricCard({
       <div className={`text-lg font-bold ${c.text}`}>
         <EditableField value={value} onSave={onChange} placeholder="—" className={`text-lg font-bold ${c.text}`} disabled={disabled} />
       </div>
-    </div>
-  );
-}
-
-function Section({ icon: Icon, title, color, children }: { icon: typeof Target; title: string; color: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2.5">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>
-          <Icon size={15} />
-        </div>
-        <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
-      </div>
-      <div className="p-4 space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function GTMField({ label, value, onSave, disabled }: { label: string; value: string; onSave: (v: string) => void; disabled?: boolean }) {
-  return (
-    <div>
-      <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-1">{label}</div>
-      <EditableField
-        value={value}
-        onSave={onSave}
-        placeholder={`Add ${label.toLowerCase()}…`}
-        className="text-sm text-gray-700 block w-full whitespace-pre-wrap break-words"
-        multiline
-        disabled={disabled}
-      />
     </div>
   );
 }
