@@ -144,3 +144,73 @@ model AopMonthlyMetric {
   @@unique([dept, kind, metric, month])
   @@index([dept])
 }
+
+model AopGoal {
+  id          String @id @default(cuid())
+  dept        String
+  order       Int    @default(0)
+  number      String @default("")
+  title       String @default("")
+  description String @default("")
+  updatedAt   DateTime @updatedAt
+
+  progress AopGoalProgress[]
+
+  @@index([dept])
+}
+
+model AopGoalProgress {
+  id        String   @id @default(cuid())
+  goalId    String
+  month     String   // "YYYY-MM"
+  rag       String   @default("")  // red | amber | green | ""
+  note      String   @default("")
+  updatedAt DateTime @updatedAt
+
+  goal AopGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@unique([goalId, month])
+}
+
+model AopInitiative {
+  id          String @id @default(cuid())
+  dept        String
+  order       Int    @default(0)
+  area        String @default("")
+  number      String @default("")
+  description String @default("")
+  owner       String @default("")
+  q1Rag       String @default("")  // red | amber | green | ""
+  q2Rag       String @default("")
+  q3Rag       String @default("")
+  q4Rag       String @default("")
+  q1Note      String @default("")
+  q2Note      String @default("")
+  q3Note      String @default("")
+  q4Note      String @default("")
+  updatedAt   DateTime @updatedAt
+
+  @@index([dept])
+}
+
+model AopInsight {
+  id        String   @id @default(cuid())
+  dept      String
+  order     Int      @default(0)
+  body      String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dept])
+}
+
+model AopRetrospect {
+  id        String   @id @default(cuid())
+  dept      String
+  kind      String   // "onTarget" | "offTarget" | "needChange" | "lessons"
+  order     Int      @default(0)
+  body      String   @default("")
+  updatedAt DateTime @updatedAt
+
+  @@index([dept, kind])
+}

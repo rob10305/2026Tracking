@@ -5,6 +5,7 @@ export type DepartmentSlug = "cs" | "sales" | "partner" | "support";
 export type SectionSlug =
   | "goals"
   | "initiatives"
+  | "retrospect"
   | "key-metrics"
   | "compensation"
   | "organisation";
@@ -17,6 +18,7 @@ export type SectionMeta = {
 export const SECTIONS: SectionMeta[] = [
   { slug: "goals", label: "Goals" },
   { slug: "initiatives", label: "Initiatives" },
+  { slug: "retrospect", label: "FY25 Retrospect" },
   { slug: "key-metrics", label: "Key Metrics" },
   { slug: "compensation", label: "Compensation" },
   { slug: "organisation", label: "Organisation" },

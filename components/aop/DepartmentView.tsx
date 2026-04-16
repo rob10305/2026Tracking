@@ -165,39 +165,41 @@ export function DepartmentCover({ config }: { config: DepartmentConfig }) {
 export function GoalsSection({ config }: { config: DepartmentConfig }) {
   const accentText = ACCENT_TEXT[config.accent];
   return (
-    <>
-      <Section eyebrow="FY2026 Goals" title={config.goals.headline}>
-        <p className="text-gray-400">{config.goals.subhead}</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-          {config.goals.items.map((g, i) => (
-            <Card key={i} accent={config.accent}>
-              <p className={`text-3xl font-bold ${accentText}`}>{g.number}</p>
-              <h3 className="mt-3 text-lg font-semibold text-white">{g.title}</h3>
-              <p className="mt-2 text-sm text-gray-400 leading-relaxed">{g.description}</p>
-            </Card>
-          ))}
-        </div>
-      </Section>
+    <Section eyebrow="FY2026 Goals" title={config.goals.headline}>
+      <p className="text-gray-400">{config.goals.subhead}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+        {config.goals.items.map((g, i) => (
+          <Card key={i} accent={config.accent}>
+            <p className={`text-3xl font-bold ${accentText}`}>{g.number}</p>
+            <h3 className="mt-3 text-lg font-semibold text-white">{g.title}</h3>
+            <p className="mt-2 text-sm text-gray-400 leading-relaxed">{g.description}</p>
+          </Card>
+        ))}
+      </div>
+    </Section>
+  );
+}
 
-      <Section eyebrow="FY25 Retrospect" title="What worked, what didn't, what changes">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {RETRO_CARDS.map((card) => (
-            <Card key={card.key} accent={card.accent}>
-              <h3 className={`text-sm font-semibold uppercase tracking-wider ${ACCENT_TEXT[card.accent]}`}>
-                {card.title}
-              </h3>
-              <ul className="mt-3 space-y-2">
-                {config.retrospect[card.key].map((line, i) => (
-                  <li key={i} className="text-sm text-gray-300 leading-relaxed">
-                    {line}
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ))}
-        </div>
-      </Section>
-    </>
+export function RetrospectSection({ config }: { config: DepartmentConfig }) {
+  return (
+    <Section eyebrow="FY25 Retrospect" title="What worked, what didn't, what changes">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {RETRO_CARDS.map((card) => (
+          <Card key={card.key} accent={card.accent}>
+            <h3 className={`text-sm font-semibold uppercase tracking-wider ${ACCENT_TEXT[card.accent]}`}>
+              {card.title}
+            </h3>
+            <ul className="mt-3 space-y-2">
+              {config.retrospect[card.key].map((line, i) => (
+                <li key={i} className="text-sm text-gray-300 leading-relaxed">
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ))}
+      </div>
+    </Section>
   );
 }
 
@@ -448,6 +450,7 @@ export default function DepartmentView({ config }: { config: DepartmentConfig })
       <DepartmentCover config={config} />
       <GoalsSection config={config} />
       <InitiativesSection />
+      <RetrospectSection config={config} />
       <KeyMetricsSection config={config} />
       <CompensationSection config={config} />
       <OrganisationSection config={config} />
