@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, TrendingUp, Check, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, TrendingUp, Check, ArrowUp, ArrowDown, Search, Loader2, AlertCircle } from 'lucide-react';
 
 type PipelineView = {
   id: string;
@@ -10,6 +10,16 @@ type PipelineView = {
   description: string;
   reportId: string;
   sortOrder: number;
+};
+
+type SfdcReportSummary = {
+  id: string;
+  name: string;
+  developerName: string;
+  folderName: string;
+  format: string;
+  description: string;
+  lastModifiedDate: string;
 };
 
 const REPORT_ID_RE = /^[a-zA-Z0-9]{15,18}$/;
@@ -31,6 +41,17 @@ export default function PipelineSettingsPage() {
   const [error, setError] = useState('');
   const [savedAt, setSavedAt] = useState(0);
 
+  const [search, setSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<SfdcReportSummary[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const existingIds = useMemo(
+    () => new Set(views.map((v) => v.reportId)),
+    [views],
+  );
+
   const load = async () => {
     try {
       const res = await fetch('/api/settings/pipeline-views');
@@ -45,6 +66,51 @@ export default function PipelineSettingsPage() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!searchOpen) return;
+    setSearchLoading(true);
+    setSearchError('');
+    const handle = setTimeout(async () => {
+      try {
+        const qs = new URLSearchParams();
+        if (search.trim()) qs.set('q', search.trim());
+        qs.set('limit', '25');
+        const res = await fetch(`/api/salesforce/reports?${qs.toString()}`, {
+          cache: 'no-store',
+        });
+        const data = await res.json();
+        if (cancelled) return;
+        if (!res.ok) {
+          setSearchError(
+            typeof data?.detail === 'string'
+              ? data.detail
+              : data?.error ?? 'Failed to search reports',
+          );
+          setSearchResults([]);
+        } else {
+          setSearchResults(Array.isArray(data) ? data : []);
+        }
+      } catch (e) {
+        if (cancelled) return;
+        setSearchError(e instanceof Error ? e.message : String(e));
+        setSearchResults([]);
+      }
+      if (!cancelled) setSearchLoading(false);
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [search, searchOpen]);
+
+  const selectReport = (r: SfdcReportSummary) => {
+    setNewReportId(r.id);
+    if (!newLabel.trim()) setNewLabel(r.name);
+    if (!newDescription.trim() && r.description) setNewDescription(r.description);
+    setSearchOpen(false);
+  };
 
   const normalizedNewReportId = extractReportId(newReportId);
   const canAdd =
@@ -171,8 +237,102 @@ export default function PipelineSettingsPage() {
           <div>
             <h2 className="text-base font-semibold text-gray-800">Add a view</h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              Paste a Salesforce report URL or a 15/18-char report ID.
+              Browse your Salesforce reports, or paste an ID / URL below.
             </p>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Browse Salesforce reports
+          </label>
+          <div className="relative">
+            <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 focus-within:border-blue-400">
+              <Search size={14} className="text-gray-400 flex-shrink-0" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onFocus={() => setSearchOpen(true)}
+                placeholder="Search report name, folder, or developer name…"
+                className="flex-1 text-sm outline-none bg-transparent"
+              />
+              {searchLoading && (
+                <Loader2 size={14} className="text-gray-400 animate-spin flex-shrink-0" />
+              )}
+              {searchOpen && (
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(false)}
+                  className="text-xs text-gray-400 hover:text-gray-600"
+                >
+                  Hide
+                </button>
+              )}
+              {!searchOpen && (
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(true)}
+                  className="text-xs text-blue-600 hover:text-blue-700"
+                >
+                  Browse
+                </button>
+              )}
+            </div>
+
+            {searchOpen && (
+              <div className="mt-2 border border-gray-200 rounded-lg bg-white shadow-sm max-h-80 overflow-y-auto">
+                {searchError ? (
+                  <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 p-3">
+                    <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">Couldn&apos;t load reports</p>
+                      <p className="text-xs mt-0.5 break-words">{searchError}</p>
+                    </div>
+                  </div>
+                ) : searchResults.length === 0 && !searchLoading ? (
+                  <p className="text-sm text-gray-500 p-3">
+                    {search.trim() ? 'No reports match that search.' : 'No reports returned.'}
+                  </p>
+                ) : (
+                  <ul className="divide-y divide-gray-100">
+                    {searchResults.map((r) => {
+                      const alreadyAdded = existingIds.has(r.id);
+                      return (
+                        <li key={r.id}>
+                          <button
+                            type="button"
+                            onClick={() => selectReport(r)}
+                            className="w-full text-left px-3 py-2 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-800 truncate">
+                                  {r.name || r.developerName || r.id}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate">
+                                  {r.folderName || 'Private'} · {r.format || 'TABULAR'}
+                                  {r.lastModifiedDate && (
+                                    <>
+                                      {' · updated '}
+                                      {new Date(r.lastModifiedDate).toLocaleDateString()}
+                                    </>
+                                  )}
+                                </p>
+                              </div>
+                              {alreadyAdded && (
+                                <span className="text-[10px] font-semibold uppercase tracking-wide text-green-700 bg-green-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                                  Added
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
