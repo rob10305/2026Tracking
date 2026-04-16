@@ -2,6 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/* === UITEST: AOP-style dark theme ===
+   Surfaces:
+     --surface-bg     #050914  page background
+     --surface-card   #0b1120  panel / card
+     --surface-elev   #101a30  hover / elevated panel
+     --border-soft    rgba(255,255,255,0.06)
+*/
+
+:root {
+  --surface-bg: #050914;
+  --surface-card: #0b1120;
+  --surface-elev: #101a30;
+}
+
+html, body {
+  background-color: var(--surface-bg);
+  color: #e5e7eb; /* gray-200 */
+}
+
+/* Make existing white panels read on dark without rewriting every page */
+.bg-white {
+  background-color: var(--surface-card) !important;
+  color: #e5e7eb !important;
+}
+
+.bg-gray-50 {
+  background-color: var(--surface-bg) !important;
+}
+
+.bg-gray-100 {
+  background-color: var(--surface-elev) !important;
+}
+
+/* Soften default borders so light borders disappear on dark */
+.border-gray-200,
+.border-gray-300 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Default text colors used widely across the app -> dark theme equivalents */
+.text-gray-900 { color: #f3f4f6 !important; }
+.text-gray-800 { color: #e5e7eb !important; }
+.text-gray-700 { color: #d1d5db !important; }
+.text-gray-600 { color: #9ca3af !important; }
+.text-gray-500 { color: #9ca3af !important; }
+
+/* Inputs feel native on dark */
+input, select, textarea {
+  background-color: var(--surface-card);
+  color: #e5e7eb;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+input::placeholder, textarea::placeholder {
+  color: #6b7280;
+}
+
 /* Handsontable overrides for compact look */
 .handsontable td,
 .handsontable th {
