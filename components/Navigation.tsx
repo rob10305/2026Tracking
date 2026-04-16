@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/sales-motion", label: "Sales" },
   { href: "/sales-motion/marketing", label: "Marketing" },
   { href: "/sales-motion/partner", label: "Partner" },
+  { href: "/aop", label: "AOP" },
   { href: "/settings", label: "Settings" },
 ];
 
