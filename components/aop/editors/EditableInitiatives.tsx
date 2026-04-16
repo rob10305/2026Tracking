@@ -209,7 +209,7 @@ export default function EditableInitiatives({
             <table className="w-full text-sm">
               <thead className="bg-white/5 text-gray-300">
                 <tr>
-                  {["Area", "#", "Description", "Q1", "Q2", "Q3", "Q4", "Who", ""].map((h) => (
+                  {["#", "Description", "Q1", "Q2", "Q3", "Q4", "Who", ""].map((h) => (
                     <th
                       key={h}
                       className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider"
@@ -222,20 +222,6 @@ export default function EditableInitiatives({
               <tbody>
                 {rows.map((r, idx) => (
                   <tr key={r.id ?? idx} className="border-t border-white/5 align-top">
-                    <td className="px-3 py-2 min-w-[140px]">
-                      {editing ? (
-                        <input
-                          value={r.area}
-                          onChange={(e) => updateRow(idx, { area: e.target.value })}
-                          placeholder="Area"
-                          className="w-full bg-[#050914] border border-white/10 rounded px-2 py-1 text-sm text-gray-200"
-                        />
-                      ) : (
-                        <span className="text-gray-200">
-                          {r.area || <span className="text-gray-600">—</span>}
-                        </span>
-                      )}
-                    </td>
                     <td className="px-3 py-2 w-14">
                       {editing ? (
                         <input
