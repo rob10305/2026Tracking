@@ -132,7 +132,14 @@ export default function EditableInitiatives({
           insights: draftIns.map((i, idx) => ({ ...i, order: idx })),
         }),
       });
-      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try {
+          const body = await res.json();
+          if (body?.error) detail = body.error;
+        } catch {}
+        throw new Error(detail);
+      }
       const r2 = await fetch(`/api/aop/${dept}/initiatives`, { cache: "no-store" });
       const data = await r2.json();
       setInitiatives(data.initiatives ?? []);
@@ -144,7 +151,8 @@ export default function EditableInitiatives({
       setTimeout(() => setSavedAt(null), 2500);
     } catch (e) {
       console.error("Failed to save initiatives", e);
-      alert("Failed to save. Please try again.");
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      alert(`Failed to save initiatives.\n\n${msg}`);
     } finally {
       setSaving(false);
     }

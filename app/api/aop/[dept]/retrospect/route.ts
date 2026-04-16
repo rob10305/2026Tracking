@@ -78,6 +78,7 @@ export async function PUT(
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("[aop/retrospect PUT]", e);
-    return NextResponse.json({ ok: false }, { status: 500 });
+    const error = e instanceof Error ? e.message : "Unknown error";
+    return NextResponse.json({ ok: false, error }, { status: 500 });
   }
 }

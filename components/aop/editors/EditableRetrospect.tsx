@@ -92,7 +92,14 @@ export default function EditableRetrospect({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items: draft }),
       });
-      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try {
+          const body = await res.json();
+          if (body?.error) detail = body.error;
+        } catch {}
+        throw new Error(detail);
+      }
       const r2 = await fetch(`/api/aop/${dept}/retrospect`, { cache: "no-store" });
       const data = await r2.json();
       setItems(data.items ?? []);
@@ -102,7 +109,8 @@ export default function EditableRetrospect({
       setTimeout(() => setSavedAt(null), 2500);
     } catch (e) {
       console.error("Failed to save retrospect", e);
-      alert("Failed to save. Please try again.");
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      alert(`Failed to save retrospect.\n\n${msg}`);
     } finally {
       setSaving(false);
     }

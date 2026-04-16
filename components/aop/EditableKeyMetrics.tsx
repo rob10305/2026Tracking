@@ -105,14 +105,22 @@ export default function EditableKeyMetrics({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entries }),
       });
-      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try {
+          const body = await res.json();
+          if (body?.error) detail = body.error;
+        } catch {}
+        throw new Error(detail);
+      }
       setValues(draft);
       setEditing(false);
       setSavedAt(Date.now());
       setTimeout(() => setSavedAt(null), 2500);
     } catch (e) {
       console.error("Failed to save AOP metrics", e);
-      alert("Failed to save metrics. Please try again.");
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      alert(`Failed to save metrics.\n\n${msg}`);
     } finally {
       setSaving(false);
     }
