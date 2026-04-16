@@ -1,13 +1,17 @@
 // Client-side PPT generator for AOP departments.
 // Imported only from client components — pptxgenjs is browser-friendly.
 
-import type PptxGenJsType from "pptxgenjs";
 import type { DepartmentConfig } from "@/components/aop/DepartmentView";
 import { shortMonthLabel } from "./months";
 
-type Slide = ReturnType<PptxGenJsType["addSlide"]>;
-type TableCell = Parameters<Slide["addTable"]>[0][number][number];
+// pptxgenjs ships its own types but mixes `export =` + ambient namespace, which
+// makes it fiddly to consume them under our isolatedModules + esModuleInterop
+// setup. We're not exposing these types to callers, so use loose internal types.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type Slide = any;
+type TableCell = any;
 type TableRow = TableCell[];
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // Hex color tokens that mirror the in-app accent palette.
 const ACCENT_HEX: Record<DepartmentConfig["accent"], string> = {
@@ -352,7 +356,7 @@ function drawCard(
     x: opts.x, y: opts.y, w: opts.w, h: opts.h,
     fill: { color: SURFACE_CARD },
     line: opts.dashed
-      ? { type: "dash", color: BORDER_SOFT, width: 1 }
+      ? { color: BORDER_SOFT, width: 1, dashType: "dash" }
       : { color: BORDER_SOFT, width: 0.5 },
   });
   if (!opts.dashed) {
