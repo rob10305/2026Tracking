@@ -12,7 +12,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { ReportRenderer, type ReportResult } from '@/components/salesforce/ReportRenderer';
-import { DashboardRenderer } from '@/components/salesforce/DashboardRenderer';
+import { DashboardRenderer, type DashboardRunResult } from '@/components/salesforce/DashboardRenderer';
 
 type ViewKind = 'report' | 'dashboard';
 
@@ -23,11 +23,6 @@ type PipelineView = {
   kind: ViewKind;
   reportId: string;
   sortOrder: number;
-};
-
-type DashboardRunResult = {
-  dashboardMetadata?: { name?: string };
-  componentData?: unknown[];
 };
 
 const INSTANCE_URL =

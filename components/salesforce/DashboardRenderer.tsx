@@ -43,7 +43,7 @@ type DashboardComponent = {
   componentType?: string;
 };
 
-type DashboardRunResult = {
+export type DashboardRunResult = {
   dashboardMetadata?: {
     id?: string;
     name?: string;
