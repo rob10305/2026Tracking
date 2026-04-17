@@ -8,24 +8,26 @@
 // admins don't lose anything.
 
 export type ContentCategory =
-  | 'Sales Deck'
-  | 'One-Pager'
-  | 'Battlecard'
-  | 'Case Study'
-  | 'Video'
-  | 'Technical Doc'
-  | 'Brochure'
-  | 'Other';
+  | '2026 AOP'
+  | 'Case Studies'
+  | 'Customer Success'
+  | 'Marketing'
+  | 'Partners'
+  | 'Pre-Sales'
+  | 'Product Management'
+  | 'Sales'
+  | 'Sales Presentations';
 
 export const CONTENT_CATEGORY_OPTIONS: ContentCategory[] = [
-  'Sales Deck',
-  'One-Pager',
-  'Battlecard',
-  'Case Study',
-  'Video',
-  'Technical Doc',
-  'Brochure',
-  'Other',
+  '2026 AOP',
+  'Case Studies',
+  'Customer Success',
+  'Marketing',
+  'Partners',
+  'Pre-Sales',
+  'Product Management',
+  'Sales',
+  'Sales Presentations',
 ];
 
 export type ContentLink = {

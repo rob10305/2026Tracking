@@ -15,14 +15,15 @@ type CategoryFilter = ContentCategory | 'All';
 const FILTER_OPTIONS: CategoryFilter[] = ['All', ...CONTENT_CATEGORY_OPTIONS];
 
 const CATEGORY_BADGE: Record<ContentCategory, string> = {
-  'Sales Deck': 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  'One-Pager': 'bg-sky-50 text-sky-700 border-sky-200',
-  'Battlecard': 'bg-rose-50 text-rose-700 border-rose-200',
-  'Case Study': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'Video': 'bg-purple-50 text-purple-700 border-purple-200',
-  'Technical Doc': 'bg-slate-50 text-slate-700 border-slate-200',
-  'Brochure': 'bg-amber-50 text-amber-700 border-amber-200',
-  'Other': 'bg-gray-50 text-gray-600 border-gray-200',
+  '2026 AOP': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'Case Studies': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Customer Success': 'bg-sky-50 text-sky-700 border-sky-200',
+  'Marketing': 'bg-rose-50 text-rose-700 border-rose-200',
+  'Partners': 'bg-amber-50 text-amber-700 border-amber-200',
+  'Pre-Sales': 'bg-purple-50 text-purple-700 border-purple-200',
+  'Product Management': 'bg-teal-50 text-teal-700 border-teal-200',
+  'Sales': 'bg-blue-50 text-blue-700 border-blue-200',
+  'Sales Presentations': 'bg-orange-50 text-orange-700 border-orange-200',
 };
 
 export default function ContentPage() {
