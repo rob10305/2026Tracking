@@ -9,11 +9,11 @@ const NO_CACHE_HEADERS = {
   Expires: '0',
 };
 
-const REPORT_ID_RE = /^[a-zA-Z0-9]{15,18}$/;
+const ID_RE = /^[a-zA-Z0-9]{15,18}$/;
+const ALLOWED_KINDS = new Set(['report', 'dashboard']);
 
-function normalizeReportId(raw: string): string {
+function normalizeId(raw: string): string {
   const trimmed = raw.trim();
-  // Accept a pasted Salesforce URL and extract the 15/18-char ID.
   const urlMatch = trimmed.match(/\/([a-zA-Z0-9]{15,18})(?:\/|$|\?)/);
   return urlMatch ? urlMatch[1] : trimmed;
 }
@@ -37,14 +37,16 @@ export async function POST(req: Request) {
     const description =
       typeof body?.description === 'string' ? body.description.trim() : '';
     const reportIdRaw = typeof body?.reportId === 'string' ? body.reportId : '';
-    const reportId = normalizeReportId(reportIdRaw);
+    const reportId = normalizeId(reportIdRaw);
+    const kindRaw = typeof body?.kind === 'string' ? body.kind : 'report';
+    const kind = ALLOWED_KINDS.has(kindRaw) ? kindRaw : 'report';
 
     if (!label) {
       return NextResponse.json({ error: 'label is required' }, { status: 400 });
     }
-    if (!REPORT_ID_RE.test(reportId)) {
+    if (!ID_RE.test(reportId)) {
       return NextResponse.json(
-        { error: 'reportId must be a 15- or 18-char Salesforce ID' },
+        { error: `${kind === 'dashboard' ? 'dashboardId' : 'reportId'} must be a 15- or 18-char Salesforce ID` },
         { status: 400 },
       );
     }
@@ -55,7 +57,7 @@ export async function POST(req: Request) {
     const nextOrder = (max._max.sortOrder ?? -1) + 1;
 
     const created = await prisma.pipelineView.create({
-      data: { label, description, reportId, sortOrder: nextOrder },
+      data: { label, description, kind, reportId, sortOrder: nextOrder },
     });
     return NextResponse.json(created);
   } catch (e) {

@@ -229,6 +229,8 @@ model PipelineView {
   id          String   @id @default(cuid())
   label       String
   description String   @default("")
+  // "report" | "dashboard" — determines whether reportId is a Salesforce report or dashboard ID.
+  kind        String   @default("report")
   reportId    String
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())

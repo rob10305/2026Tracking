@@ -2,35 +2,32 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, ExternalLink, RefreshCw, Settings, TrendingUp } from 'lucide-react';
+import {
+  AlertCircle,
+  ExternalLink,
+  FileText,
+  LayoutDashboard,
+  RefreshCw,
+  Settings,
+  TrendingUp,
+} from 'lucide-react';
+import { ReportRenderer, type ReportResult } from '@/components/salesforce/ReportRenderer';
+import { DashboardRenderer } from '@/components/salesforce/DashboardRenderer';
+
+type ViewKind = 'report' | 'dashboard';
 
 type PipelineView = {
   id: string;
   label: string;
   description: string;
+  kind: ViewKind;
   reportId: string;
   sortOrder: number;
 };
 
-type ReportResult = {
-  allData?: boolean;
-  factMap?: Record<
-    string,
-    {
-      aggregates?: Array<{ label: string; value: number | string | null }>;
-      rows?: Array<{ dataCells: Array<{ label: string; value: unknown }> }>;
-    }
-  >;
-  reportMetadata?: {
-    name?: string;
-    reportFormat?: 'TABULAR' | 'SUMMARY' | 'MATRIX' | string;
-    detailColumns?: string[];
-    aggregates?: string[];
-  };
-  reportExtendedMetadata?: {
-    detailColumnInfo?: Record<string, { label?: string; dataType?: string }>;
-    aggregateColumnInfo?: Record<string, { label?: string; dataType?: string }>;
-  };
+type DashboardRunResult = {
+  dashboardMetadata?: { name?: string };
+  componentData?: unknown[];
 };
 
 const INSTANCE_URL =
@@ -42,8 +39,9 @@ export default function PipelinePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const [report, setReport] = useState<ReportResult | null>(null);
-  const [reportLoading, setReportLoading] = useState(false);
-  const [reportError, setReportError] = useState('');
+  const [dashboard, setDashboard] = useState<DashboardRunResult | null>(null);
+  const [paneLoading, setPaneLoading] = useState(false);
+  const [paneError, setPaneError] = useState('');
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
@@ -70,34 +68,39 @@ export default function PipelinePage() {
   useEffect(() => {
     if (!selected) {
       setReport(null);
+      setDashboard(null);
       return;
     }
     let cancelled = false;
-    setReportLoading(true);
-    setReportError('');
+    setPaneLoading(true);
+    setPaneError('');
     setReport(null);
+    setDashboard(null);
     (async () => {
       try {
-        const res = await fetch(
-          `/api/salesforce/reports/${selected.reportId}`,
-          { cache: 'no-store' },
-        );
+        const endpoint =
+          selected.kind === 'dashboard'
+            ? `/api/salesforce/dashboards/${selected.reportId}`
+            : `/api/salesforce/reports/${selected.reportId}`;
+        const res = await fetch(endpoint, { cache: 'no-store' });
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) {
-          setReportError(
+          setPaneError(
             typeof data?.detail === 'string'
               ? data.detail
-              : data?.error ?? 'Failed to run report',
+              : data?.error ?? `Failed to run ${selected.kind}`,
           );
+        } else if (selected.kind === 'dashboard') {
+          setDashboard(data);
         } else {
           setReport(data);
         }
       } catch (e) {
         if (cancelled) return;
-        setReportError(e instanceof Error ? e.message : String(e));
+        setPaneError(e instanceof Error ? e.message : String(e));
       }
-      if (!cancelled) setReportLoading(false);
+      if (!cancelled) setPaneLoading(false);
     })();
     return () => {
       cancelled = true;
@@ -115,7 +118,7 @@ export default function PipelinePage() {
             <div>
               <h1 className="text-2xl font-bold text-gray-800">Pipeline</h1>
               <p className="text-sm text-gray-500">
-                Live Salesforce reports. Switch views below.
+                Live Salesforce reports and dashboards. Switch views below.
               </p>
             </div>
           </div>
@@ -135,17 +138,14 @@ export default function PipelinePage() {
           <EmptyState />
         ) : (
           <>
-            <ViewSelector
-              views={views}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-            />
+            <ViewSelector views={views} selectedId={selectedId} onSelect={setSelectedId} />
             {selected && (
-              <ReportPane
+              <Pane
                 view={selected}
-                loading={reportLoading}
-                error={reportError}
+                loading={paneLoading}
+                error={paneError}
                 report={report}
+                dashboard={dashboard}
                 onReload={() => setReloadToken((t) => t + 1)}
               />
             )}
@@ -164,11 +164,8 @@ function EmptyState() {
       </div>
       <h2 className="font-semibold text-gray-800 mb-1">No pipeline views yet</h2>
       <p className="text-sm text-gray-500 max-w-md mx-auto mb-4">
-        Add Salesforce reports in{' '}
-        <Link
-          href="/settings/pipeline"
-          className="text-blue-600 hover:underline"
-        >
+        Add Salesforce reports or dashboards in{' '}
+        <Link href="/settings/pipeline" className="text-blue-600 hover:underline">
           Settings → Pipeline Views
         </Link>{' '}
         and they&apos;ll appear here as selectable views.
@@ -196,17 +193,19 @@ function ViewSelector({
     <div className="flex flex-wrap gap-2">
       {views.map((v) => {
         const active = v.id === selectedId;
+        const Icon = v.kind === 'dashboard' ? LayoutDashboard : FileText;
         return (
           <button
             key={v.id}
             onClick={() => onSelect(v.id)}
-            className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full border transition-colors ${
               active
                 ? 'bg-blue-600 text-white border-blue-600'
                 : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
             }`}
             title={v.description || undefined}
           >
+            <Icon size={12} className={active ? 'opacity-80' : 'opacity-60'} />
             {v.label}
           </button>
         );
@@ -215,30 +214,45 @@ function ViewSelector({
   );
 }
 
-function ReportPane({
+function Pane({
   view,
   loading,
   error,
   report,
+  dashboard,
   onReload,
 }: {
   view: PipelineView;
   loading: boolean;
   error: string;
   report: ReportResult | null;
+  dashboard: DashboardRunResult | null;
   onReload: () => void;
 }) {
-  const reportUrl = `${INSTANCE_URL.replace(/\/$/, '')}/lightning/r/Report/${view.reportId}/view`;
+  const isDashboard = view.kind === 'dashboard';
+  const sfPath = isDashboard ? 'Dashboard' : 'Report';
+  const sfUrl = `${INSTANCE_URL.replace(/\/$/, '')}/lightning/r/${sfPath}/${view.reportId}/view`;
+  const displayName = isDashboard
+    ? dashboard?.dashboardMetadata?.name ?? view.label
+    : report?.reportMetadata?.name ?? view.label;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-base font-semibold text-gray-800">
-            {report?.reportMetadata?.name ?? view.label}
-          </h2>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
+                isDashboard ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'
+              }`}
+            >
+              {isDashboard ? <LayoutDashboard size={10} /> : <FileText size={10} />}
+              {isDashboard ? 'Dashboard' : 'Report'}
+            </span>
+            <h2 className="text-base font-semibold text-gray-800 truncate">{displayName}</h2>
+          </div>
           {view.description && (
-            <p className="text-sm text-gray-500 mt-0.5">{view.description}</p>
+            <p className="text-sm text-gray-500 mt-0.5 truncate">{view.description}</p>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -251,7 +265,7 @@ function ReportPane({
             Refresh
           </button>
           <a
-            href={reportUrl}
+            href={sfUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 px-2.5 py-1.5 border border-blue-200 rounded-lg bg-blue-50"
@@ -272,116 +286,15 @@ function ReportPane({
           <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
             <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium">Failed to run report</p>
+              <p className="font-medium">Failed to run {isDashboard ? 'dashboard' : 'report'}</p>
               <p className="text-xs mt-0.5 break-words">{error}</p>
             </div>
           </div>
+        ) : isDashboard ? (
+          dashboard ? <DashboardRenderer dashboard={dashboard} /> : null
         ) : report ? (
-          <ReportContent report={report} />
+          <ReportRenderer report={report} />
         ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ReportContent({ report }: { report: ReportResult }) {
-  const format = report.reportMetadata?.reportFormat ?? 'TABULAR';
-  const grand = report.factMap?.['T!T'];
-  const aggregateNames = report.reportMetadata?.aggregates ?? [];
-  const aggregateInfo = report.reportExtendedMetadata?.aggregateColumnInfo ?? {};
-
-  return (
-    <div className="space-y-5">
-      {grand?.aggregates && grand.aggregates.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-          {grand.aggregates.map((agg, i) => {
-            const apiName = aggregateNames[i];
-            const label = apiName
-              ? aggregateInfo[apiName]?.label ?? agg.label ?? apiName
-              : agg.label ?? `Total ${i + 1}`;
-            return (
-              <div
-                key={i}
-                className="border border-gray-200 rounded-lg p-3 bg-gray-50"
-              >
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  {label}
-                </p>
-                <p className="text-xl font-semibold text-gray-800 mt-1 break-words">
-                  {agg.label ?? String(agg.value ?? '')}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {format === 'TABULAR' ? (
-        <TabularTable report={report} />
-      ) : (
-        <div className="text-sm text-gray-500 border border-gray-200 rounded-lg p-4 bg-gray-50">
-          This report is in <code className="bg-white px-1 rounded">{format}</code>{' '}
-          format. Only totals are shown here. Use a{' '}
-          <strong>Tabular</strong> report format in Salesforce to render full
-          detail rows.
-        </div>
-      )}
-
-      {report.allData === false && (
-        <p className="text-xs text-amber-700">
-          Results were truncated by Salesforce (more rows exist than the API
-          returned).
-        </p>
-      )}
-    </div>
-  );
-}
-
-function TabularTable({ report }: { report: ReportResult }) {
-  const detailColumns = report.reportMetadata?.detailColumns ?? [];
-  const detailInfo = report.reportExtendedMetadata?.detailColumnInfo ?? {};
-  const rows = report.factMap?.['T!T']?.rows ?? [];
-
-  if (detailColumns.length === 0 || rows.length === 0) {
-    return (
-      <p className="text-sm text-gray-500">No detail rows returned.</p>
-    );
-  }
-
-  return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
-      <div className="overflow-x-auto max-h-[560px]">
-        <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 sticky top-0">
-            <tr>
-              {detailColumns.map((col) => (
-                <th
-                  key={col}
-                  className="text-left font-medium text-gray-600 px-3 py-2 border-b border-gray-200 whitespace-nowrap"
-                >
-                  {detailInfo[col]?.label ?? col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, ri) => (
-              <tr key={ri} className="odd:bg-white even:bg-gray-50/50">
-                {row.dataCells.map((cell, ci) => (
-                  <td
-                    key={ci}
-                    className="px-3 py-2 text-gray-800 border-b border-gray-100 whitespace-nowrap"
-                  >
-                    {cell.label ?? String(cell.value ?? '')}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="px-3 py-2 text-xs text-gray-500 border-t border-gray-200 bg-gray-50">
-        {rows.length} row{rows.length === 1 ? '' : 's'}
       </div>
     </div>
   );

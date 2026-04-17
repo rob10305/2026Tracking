@@ -2,29 +2,45 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, TrendingUp, Check, ArrowUp, ArrowDown, Search, Loader2, AlertCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  TrendingUp,
+  Check,
+  ArrowUp,
+  ArrowDown,
+  Search,
+  Loader2,
+  AlertCircle,
+  LayoutDashboard,
+  FileText,
+} from 'lucide-react';
+
+type ViewKind = 'report' | 'dashboard';
 
 type PipelineView = {
   id: string;
   label: string;
   description: string;
+  kind: ViewKind;
   reportId: string;
   sortOrder: number;
 };
 
-type SfdcReportSummary = {
+type SfdcSummary = {
   id: string;
   name: string;
   developerName: string;
   folderName: string;
-  format: string;
+  format?: string;
   description: string;
   lastModifiedDate: string;
 };
 
-const REPORT_ID_RE = /^[a-zA-Z0-9]{15,18}$/;
+const ID_RE = /^[a-zA-Z0-9]{15,18}$/;
 
-function extractReportId(raw: string): string {
+function extractId(raw: string): string {
   const trimmed = raw.trim();
   const urlMatch = trimmed.match(/\/([a-zA-Z0-9]{15,18})(?:\/|$|\?)/);
   return urlMatch ? urlMatch[1] : trimmed;
@@ -35,20 +51,21 @@ export default function PipelineSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const [newKind, setNewKind] = useState<ViewKind>('report');
   const [newLabel, setNewLabel] = useState('');
   const [newDescription, setNewDescription] = useState('');
-  const [newReportId, setNewReportId] = useState('');
+  const [newId, setNewId] = useState('');
   const [error, setError] = useState('');
   const [savedAt, setSavedAt] = useState(0);
 
   const [search, setSearch] = useState('');
-  const [searchResults, setSearchResults] = useState<SfdcReportSummary[]>([]);
+  const [searchResults, setSearchResults] = useState<SfdcSummary[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
 
   const existingIds = useMemo(
-    () => new Set(views.map((v) => v.reportId)),
+    () => new Set(views.map((v) => `${v.kind}:${v.reportId}`)),
     [views],
   );
 
@@ -67,6 +84,13 @@ export default function PipelineSettingsPage() {
     load();
   }, []);
 
+  // Reset search when switching kind so we don't show stale results.
+  useEffect(() => {
+    setSearch('');
+    setSearchResults([]);
+    setSearchError('');
+  }, [newKind]);
+
   useEffect(() => {
     let cancelled = false;
     if (!searchOpen) return;
@@ -77,16 +101,18 @@ export default function PipelineSettingsPage() {
         const qs = new URLSearchParams();
         if (search.trim()) qs.set('q', search.trim());
         qs.set('limit', '25');
-        const res = await fetch(`/api/salesforce/reports?${qs.toString()}`, {
-          cache: 'no-store',
-        });
+        const endpoint =
+          newKind === 'dashboard'
+            ? `/api/salesforce/dashboards?${qs.toString()}`
+            : `/api/salesforce/reports?${qs.toString()}`;
+        const res = await fetch(endpoint, { cache: 'no-store' });
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) {
           setSearchError(
             typeof data?.detail === 'string'
               ? data.detail
-              : data?.error ?? 'Failed to search reports',
+              : data?.error ?? `Failed to search ${newKind}s`,
           );
           setSearchResults([]);
         } else {
@@ -103,18 +129,17 @@ export default function PipelineSettingsPage() {
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [search, searchOpen]);
+  }, [search, searchOpen, newKind]);
 
-  const selectReport = (r: SfdcReportSummary) => {
-    setNewReportId(r.id);
+  const selectItem = (r: SfdcSummary) => {
+    setNewId(r.id);
     if (!newLabel.trim()) setNewLabel(r.name);
     if (!newDescription.trim() && r.description) setNewDescription(r.description);
     setSearchOpen(false);
   };
 
-  const normalizedNewReportId = extractReportId(newReportId);
-  const canAdd =
-    newLabel.trim().length > 0 && REPORT_ID_RE.test(normalizedNewReportId);
+  const normalizedNewId = extractId(newId);
+  const canAdd = newLabel.trim().length > 0 && ID_RE.test(normalizedNewId);
 
   const handleAdd = async () => {
     if (!canAdd) return;
@@ -127,7 +152,8 @@ export default function PipelineSettingsPage() {
         body: JSON.stringify({
           label: newLabel.trim(),
           description: newDescription.trim(),
-          reportId: normalizedNewReportId,
+          kind: newKind,
+          reportId: normalizedNewId,
         }),
       });
       const data = await res.json();
@@ -136,7 +162,7 @@ export default function PipelineSettingsPage() {
       } else {
         setNewLabel('');
         setNewDescription('');
-        setNewReportId('');
+        setNewId('');
         setSavedAt(Date.now());
         await load();
       }
@@ -218,11 +244,8 @@ export default function PipelineSettingsPage() {
         </Link>
         <h1 className="text-2xl font-bold">Pipeline Views</h1>
         <p className="text-gray-500 mt-1">
-          Configure which Salesforce reports appear as selectable views on{' '}
-          <Link
-            href="/sales-motion/pipeline"
-            className="text-blue-600 hover:underline"
-          >
+          Configure which Salesforce reports or dashboards appear as selectable views on{' '}
+          <Link href="/sales-motion/pipeline" className="text-blue-600 hover:underline">
             Pipeline → Overview
           </Link>
           .
@@ -237,14 +260,30 @@ export default function PipelineSettingsPage() {
           <div>
             <h2 className="text-base font-semibold text-gray-800">Add a view</h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              Browse your Salesforce reports, or paste an ID / URL below.
+              Pick between a single report or an entire dashboard.
             </p>
           </div>
         </div>
 
+        {/* Kind toggle */}
+        <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+          <KindButton
+            active={newKind === 'report'}
+            onClick={() => setNewKind('report')}
+            icon={<FileText size={14} />}
+            label="Report"
+          />
+          <KindButton
+            active={newKind === 'dashboard'}
+            onClick={() => setNewKind('dashboard')}
+            icon={<LayoutDashboard size={14} />}
+            label="Dashboard"
+          />
+        </div>
+
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">
-            Browse Salesforce reports
+            Browse Salesforce {newKind === 'dashboard' ? 'dashboards' : 'reports'}
           </label>
           <div className="relative">
             <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 focus-within:border-blue-400">
@@ -253,13 +292,13 @@ export default function PipelineSettingsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onFocus={() => setSearchOpen(true)}
-                placeholder="Search report name, folder, or developer name…"
+                placeholder={`Search ${newKind} name, folder, or developer name…`}
                 className="flex-1 text-sm outline-none bg-transparent"
               />
               {searchLoading && (
                 <Loader2 size={14} className="text-gray-400 animate-spin flex-shrink-0" />
               )}
-              {searchOpen && (
+              {searchOpen ? (
                 <button
                   type="button"
                   onClick={() => setSearchOpen(false)}
@@ -267,8 +306,7 @@ export default function PipelineSettingsPage() {
                 >
                   Hide
                 </button>
-              )}
-              {!searchOpen && (
+              ) : (
                 <button
                   type="button"
                   onClick={() => setSearchOpen(true)}
@@ -285,23 +323,25 @@ export default function PipelineSettingsPage() {
                   <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 p-3">
                     <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-medium">Couldn&apos;t load reports</p>
+                      <p className="font-medium">Couldn&apos;t load {newKind}s</p>
                       <p className="text-xs mt-0.5 break-words">{searchError}</p>
                     </div>
                   </div>
                 ) : searchResults.length === 0 && !searchLoading ? (
                   <p className="text-sm text-gray-500 p-3">
-                    {search.trim() ? 'No reports match that search.' : 'No reports returned.'}
+                    {search.trim()
+                      ? `No ${newKind}s match that search.`
+                      : `No ${newKind}s returned.`}
                   </p>
                 ) : (
                   <ul className="divide-y divide-gray-100">
                     {searchResults.map((r) => {
-                      const alreadyAdded = existingIds.has(r.id);
+                      const alreadyAdded = existingIds.has(`${newKind}:${r.id}`);
                       return (
                         <li key={r.id}>
                           <button
                             type="button"
-                            onClick={() => selectReport(r)}
+                            onClick={() => selectItem(r)}
                             className="w-full text-left px-3 py-2 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none"
                           >
                             <div className="flex items-start justify-between gap-3">
@@ -310,7 +350,8 @@ export default function PipelineSettingsPage() {
                                   {r.name || r.developerName || r.id}
                                 </p>
                                 <p className="text-xs text-gray-500 truncate">
-                                  {r.folderName || 'Private'} · {r.format || 'TABULAR'}
+                                  {r.folderName || 'Private'}
+                                  {r.format && <> · {r.format}</>}
                                   {r.lastModifiedDate && (
                                     <>
                                       {' · updated '}
@@ -338,40 +379,35 @@ export default function PipelineSettingsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Label
-            </label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Label</label>
             <input
               value={newLabel}
               onChange={(e) => setNewLabel(e.target.value)}
-              placeholder="e.g. Open Pipeline"
+              placeholder={newKind === 'dashboard' ? 'e.g. Sales Overview' : 'e.g. Open Pipeline'}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
             />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              Report ID or URL
+              {newKind === 'dashboard' ? 'Dashboard ID or URL' : 'Report ID or URL'}
             </label>
             <input
-              value={newReportId}
-              onChange={(e) => setNewReportId(e.target.value)}
-              placeholder="00O8Z000001pQrZUAU"
+              value={newId}
+              onChange={(e) => setNewId(e.target.value)}
+              placeholder={newKind === 'dashboard' ? '01Z...' : '00O...'}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 font-mono"
             />
-            {newReportId && !REPORT_ID_RE.test(normalizedNewReportId) && (
+            {newId && !ID_RE.test(normalizedNewId) && (
               <p className="mt-1 text-xs text-amber-700">
-                Couldn&apos;t find a valid report ID in that value.
+                Couldn&apos;t find a valid ID in that value.
               </p>
             )}
-            {newReportId && REPORT_ID_RE.test(normalizedNewReportId) &&
-              normalizedNewReportId !== newReportId.trim() && (
-                <p className="mt-1 text-xs text-gray-500">
-                  Will save as{' '}
-                  <code className="bg-gray-100 px-1 rounded">
-                    {normalizedNewReportId}
-                  </code>
-                </p>
-              )}
+            {newId && ID_RE.test(normalizedNewId) && normalizedNewId !== newId.trim() && (
+              <p className="mt-1 text-xs text-gray-500">
+                Will save as{' '}
+                <code className="bg-gray-100 px-1 rounded">{normalizedNewId}</code>
+              </p>
+            )}
           </div>
           <div className="md:col-span-2">
             <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -411,9 +447,7 @@ export default function PipelineSettingsPage() {
             <TrendingUp size={20} className="text-blue-600" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-gray-800">
-              Configured views
-            </h2>
+            <h2 className="text-base font-semibold text-gray-800">Configured views</h2>
             <p className="text-sm text-gray-500 mt-0.5">
               {views.length === 0
                 ? 'No views yet — add one above.'
@@ -447,6 +481,33 @@ export default function PipelineSettingsPage() {
   );
 }
 
+function KindButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+        active
+          ? 'bg-white shadow-sm text-gray-900'
+          : 'text-gray-500 hover:text-gray-700'
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
 function ViewRow({
   view,
   isFirst,
@@ -464,21 +525,26 @@ function ViewRow({
 }) {
   const [label, setLabel] = useState(view.label);
   const [description, setDescription] = useState(view.description);
-  const [reportIdInput, setReportIdInput] = useState(view.reportId);
+  const [idInput, setIdInput] = useState(view.reportId);
 
   useEffect(() => {
     setLabel(view.label);
     setDescription(view.description);
-    setReportIdInput(view.reportId);
+    setIdInput(view.reportId);
   }, [view.id, view.label, view.description, view.reportId]);
 
-  const normalized = extractReportId(reportIdInput);
-  const reportValid = REPORT_ID_RE.test(normalized);
+  const normalized = extractId(idInput);
+  const idValid = ID_RE.test(normalized);
   const dirty =
     label.trim() !== view.label ||
     description.trim() !== view.description ||
     normalized !== view.reportId;
-  const canSave = dirty && label.trim().length > 0 && reportValid;
+  const canSave = dirty && label.trim().length > 0 && idValid;
+
+  const kindBadge =
+    view.kind === 'dashboard'
+      ? { label: 'Dashboard', className: 'bg-indigo-100 text-indigo-700' }
+      : { label: 'Report', className: 'bg-blue-100 text-blue-700' };
 
   return (
     <div className="flex items-start gap-4">
@@ -502,10 +568,20 @@ function ViewRow({
       </div>
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="md:col-span-2 flex items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${kindBadge.className}`}
+          >
+            {view.kind === 'dashboard' ? (
+              <LayoutDashboard size={10} />
+            ) : (
+              <FileText size={10} />
+            )}
+            {kindBadge.label}
+          </span>
+        </div>
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Label
-          </label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Label</label>
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
@@ -514,18 +590,16 @@ function ViewRow({
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">
-            Report ID
+            {view.kind === 'dashboard' ? 'Dashboard ID' : 'Report ID'}
           </label>
           <input
-            value={reportIdInput}
-            onChange={(e) => setReportIdInput(e.target.value)}
+            value={idInput}
+            onChange={(e) => setIdInput(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 font-mono"
           />
         </div>
         <div className="md:col-span-2">
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Description
-          </label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}

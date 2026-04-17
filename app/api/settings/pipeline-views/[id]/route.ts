@@ -23,6 +23,7 @@ export async function PATCH(
       label?: string;
       description?: string;
       reportId?: string;
+      kind?: string;
       sortOrder?: number;
     } = {};
 
@@ -45,6 +46,9 @@ export async function PATCH(
         );
       }
       data.reportId = reportId;
+    }
+    if (typeof body?.kind === 'string' && (body.kind === 'report' || body.kind === 'dashboard')) {
+      data.kind = body.kind;
     }
     if (typeof body?.sortOrder === 'number' && Number.isFinite(body.sortOrder)) {
       data.sortOrder = Math.trunc(body.sortOrder);
