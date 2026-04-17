@@ -39,6 +39,12 @@ export type DepartmentConfig = {
     teams: { name: string; description: string }[];
     notes: string;
   };
+  mbrHighlights: {
+    wins: string[];
+    misses: string[];
+    risks: string[];
+    asks: string[];
+  };
 };
 
 // Static class maps so Tailwind can detect them at build time.
@@ -75,6 +81,13 @@ const RETRO_CARDS: { key: keyof DepartmentConfig["retrospect"]; title: string; a
   { key: "offTarget", title: "Off Target Results", accent: "amber" },
   { key: "needChange", title: "In Need of Change", accent: "sky" },
   { key: "lessons", title: "Lessons Learned", accent: "violet" },
+];
+
+export const MBR_CARDS: { key: keyof DepartmentConfig["mbrHighlights"]; title: string; accent: AccentKey }[] = [
+  { key: "wins", title: "Wins", accent: "emerald" },
+  { key: "misses", title: "Misses", accent: "amber" },
+  { key: "risks", title: "Risks", accent: "sky" },
+  { key: "asks", title: "Asks", accent: "violet" },
 ];
 
 // ---------- Shared primitives ----------
@@ -191,6 +204,29 @@ export function RetrospectSection({ config }: { config: DepartmentConfig }) {
             </h3>
             <ul className="mt-3 space-y-2">
               {config.retrospect[card.key].map((line, i) => (
+                <li key={i} className="text-sm text-gray-300 leading-relaxed">
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+export function MbrHighlightsSection({ config }: { config: DepartmentConfig }) {
+  return (
+    <Section eyebrow="MBR Highlights" title="Wins, misses, risks, and asks">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {MBR_CARDS.map((card) => (
+          <Card key={card.key} accent={card.accent}>
+            <h3 className={`text-sm font-semibold uppercase tracking-wider ${ACCENT_TEXT[card.accent]}`}>
+              {card.title}
+            </h3>
+            <ul className="mt-3 space-y-2">
+              {config.mbrHighlights[card.key].map((line, i) => (
                 <li key={i} className="text-sm text-gray-300 leading-relaxed">
                   {line}
                 </li>
@@ -451,6 +487,7 @@ export default function DepartmentView({ config }: { config: DepartmentConfig })
       <GoalsSection config={config} />
       <InitiativesSection />
       <RetrospectSection config={config} />
+      <MbrHighlightsSection config={config} />
       <KeyMetricsSection config={config} />
       <CompensationSection config={config} />
       <OrganisationSection config={config} />

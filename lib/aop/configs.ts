@@ -6,6 +6,7 @@ export type SectionSlug =
   | "goals"
   | "initiatives"
   | "retrospect"
+  | "mbr-highlights"
   | "key-metrics"
   | "compensation"
   | "organisation";
@@ -19,6 +20,7 @@ export const SECTIONS: SectionMeta[] = [
   { slug: "goals", label: "Goals" },
   { slug: "initiatives", label: "Initiatives" },
   { slug: "retrospect", label: "FY25 Retrospect" },
+  { slug: "mbr-highlights", label: "MBR Highlights" },
   { slug: "key-metrics", label: "Key Metrics" },
   { slug: "compensation", label: "Compensation" },
   { slug: "organisation", label: "Organisation" },
@@ -56,6 +58,8 @@ const PLACEHOLDER_GOAL = {
 
 const PLACEHOLDER_FINDING = ["Insert key findings here."];
 
+const PLACEHOLDER_MBR = ["Insert highlight here."];
+
 const PLACEHOLDER_LEAD = { name: "TBD", role: "Department Lead" };
 
 const PLACEHOLDER_ORG_NOTE =
@@ -81,6 +85,12 @@ export const CONFIGS: Record<DepartmentSlug, DepartmentConfig> = {
       offTarget: PLACEHOLDER_FINDING,
       needChange: PLACEHOLDER_FINDING,
       lessons: PLACEHOLDER_FINDING,
+    },
+    mbrHighlights: {
+      wins: PLACEHOLDER_MBR,
+      misses: PLACEHOLDER_MBR,
+      risks: PLACEHOLDER_MBR,
+      asks: PLACEHOLDER_MBR,
     },
     metrics: {
       leading: [
@@ -127,6 +137,12 @@ export const CONFIGS: Record<DepartmentSlug, DepartmentConfig> = {
       offTarget: PLACEHOLDER_FINDING,
       needChange: PLACEHOLDER_FINDING,
       lessons: PLACEHOLDER_FINDING,
+    },
+    mbrHighlights: {
+      wins: PLACEHOLDER_MBR,
+      misses: PLACEHOLDER_MBR,
+      risks: PLACEHOLDER_MBR,
+      asks: PLACEHOLDER_MBR,
     },
     metrics: {
       leading: [
@@ -184,6 +200,12 @@ export const CONFIGS: Record<DepartmentSlug, DepartmentConfig> = {
       needChange: PLACEHOLDER_FINDING,
       lessons: PLACEHOLDER_FINDING,
     },
+    mbrHighlights: {
+      wins: PLACEHOLDER_MBR,
+      misses: PLACEHOLDER_MBR,
+      risks: PLACEHOLDER_MBR,
+      asks: PLACEHOLDER_MBR,
+    },
     metrics: {
       leading: [
         "Active partner count",
@@ -234,6 +256,12 @@ export const CONFIGS: Record<DepartmentSlug, DepartmentConfig> = {
       offTarget: PLACEHOLDER_FINDING,
       needChange: PLACEHOLDER_FINDING,
       lessons: PLACEHOLDER_FINDING,
+    },
+    mbrHighlights: {
+      wins: PLACEHOLDER_MBR,
+      misses: PLACEHOLDER_MBR,
+      risks: PLACEHOLDER_MBR,
+      asks: PLACEHOLDER_MBR,
     },
     metrics: {
       leading: [

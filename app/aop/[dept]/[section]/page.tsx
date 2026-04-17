@@ -9,6 +9,7 @@ import EditableKeyMetrics from "@/components/aop/EditableKeyMetrics";
 import EditableGoals from "@/components/aop/editors/EditableGoals";
 import EditableInitiatives from "@/components/aop/editors/EditableInitiatives";
 import EditableRetrospect from "@/components/aop/editors/EditableRetrospect";
+import EditableMbrHighlights from "@/components/aop/editors/EditableMbrHighlights";
 import { getConfig, isSection } from "@/lib/aop/configs";
 
 export default async function DepartmentSectionPage({
@@ -26,6 +27,7 @@ export default async function DepartmentSectionPage({
       {section === "goals" && <EditableGoals dept={dept} config={config} />}
       {section === "initiatives" && <EditableInitiatives dept={dept} config={config} />}
       {section === "retrospect" && <EditableRetrospect dept={dept} config={config} />}
+      {section === "mbr-highlights" && <EditableMbrHighlights dept={dept} config={config} />}
       {section === "key-metrics" && <EditableKeyMetrics dept={dept} config={config} />}
       {section === "compensation" && <CompensationSection config={config} />}
       {section === "organisation" && <OrganisationSection config={config} />}

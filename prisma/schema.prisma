@@ -214,6 +214,17 @@ model AopRetrospect {
   @@index([dept, kind])
 }
 
+model AopMbrHighlight {
+  id        String   @id @default(cuid())
+  dept      String
+  kind      String   // "wins" | "misses" | "risks" | "asks"
+  order     Int      @default(0)
+  body      String   @default("")
+  updatedAt DateTime @updatedAt
+
+  @@index([dept, kind])
+}
+
 model PipelineView {
   id          String   @id @default(cuid())
   label       String
