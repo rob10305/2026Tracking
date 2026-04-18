@@ -33,8 +33,15 @@ function fmt(n: number): string {
 export default function BuildForecastListPage() {
   const router = useRouter();
   const { state } = useStore();
-  const { forecasts, isLoaded, addForecast, deleteForecast, renameForecast, duplicateForecast, toggleLock } =
-    useSavedForecasts();
+  const {
+    forecasts,
+    isLoaded,
+    addForecast,
+    deleteForecast,
+    renameForecast,
+    duplicateForecast,
+    toggleLock,
+  } = useSavedForecasts();
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -47,8 +54,8 @@ export default function BuildForecastListPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-pulse flex flex-col items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-full" />
-          <div className="h-3 w-24 bg-gray-200 rounded" />
+          <div className="w-10 h-10 bg-accent-sky/10 rounded-full border border-accent-sky/30" />
+          <div className="h-3 w-24 bg-white/10 rounded" />
         </div>
       </div>
     );
@@ -154,7 +161,13 @@ export default function BuildForecastListPage() {
       }
     }
 
-    return { totalUnits, grossRevenue, netRevenue, oneTimeRevenue, activeProducts: activeProducts.size };
+    return {
+      totalUnits,
+      grossRevenue,
+      netRevenue,
+      oneTimeRevenue,
+      activeProducts: activeProducts.size,
+    };
   };
 
   const formatDate = (iso: string) => {
@@ -190,8 +203,10 @@ export default function BuildForecastListPage() {
     const height = 32;
     const width = 120;
     const step = width / (values.length - 1);
-    const points = values.map((v, i) => `${i * step},${height - (v / max) * height}`).join(" ");
-    const hasData = values.some(v => v > 0);
+    const points = values
+      .map((v, i) => `${i * step},${height - (v / max) * height}`)
+      .join(" ");
+    const hasData = values.some((v) => v > 0);
     if (!hasData) return null;
     return (
       <svg width={width} height={height} className="overflow-visible">
@@ -202,7 +217,7 @@ export default function BuildForecastListPage() {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-blue-400"
+          className="text-accent-sky"
         />
       </svg>
     );
@@ -210,49 +225,69 @@ export default function BuildForecastListPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
+      {/* Hero header — AOP / AI Showcase style */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Forecast Modelling</h1>
-        <p className="text-gray-500 mt-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-accent-sky">
+          FY2026
+        </p>
+        <div className="mt-3 flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-accent-sky/10 border border-accent-sky/30 flex items-center justify-center">
+            <BarChart3 size={20} className="text-accent-sky" />
+          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            Forecast Modelling
+          </h1>
+        </div>
+        <p className="mt-3 text-gray-400 max-w-2xl">
           Create and compare forecast models to plan your revenue targets.
         </p>
       </div>
 
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-            <Plus className="w-5 h-5" />
+      {/* New Forecast card — canvas-raised with left-accent rail and corner glow */}
+      <div className="relative overflow-hidden bg-canvas-raised border border-white/5 border-l-4 border-l-accent-sky rounded-xl p-6">
+        <div
+          aria-hidden
+          className="absolute -top-12 -right-12 h-40 w-40 rounded-full glow-sky blur-3xl pointer-events-none"
+        />
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-accent-sky/10 border border-accent-sky/30 flex items-center justify-center">
+              <Plus className="w-5 h-5 text-accent-sky" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-accent-sky">
+                New Forecast
+              </p>
+              <p className="text-sm text-gray-400">Name your model and start planning</p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-semibold text-lg">New Forecast</h2>
-            <p className="text-blue-100 text-sm">Name your model and start planning</p>
+          <div className="flex gap-3 flex-wrap">
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              placeholder="e.g., Q1 Aggressive, Conservative Plan, Base Case"
+              className="flex-1 min-w-[240px] bg-canvas border border-white/10 text-white placeholder-gray-500 rounded-md px-4 py-2.5 focus:outline-none focus:border-accent-sky/50"
+            />
+            <button
+              onClick={handleCreate}
+              className="bg-accent-sky text-[#050914] px-5 py-2.5 rounded-md font-semibold hover:brightness-110 transition flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create
+            </button>
           </div>
-        </div>
-        <div className="flex gap-3">
-          <input
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-            placeholder="e.g., Q1 Aggressive, Conservative Plan, Base Case"
-            className="flex-1 bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur-sm"
-          />
-          <button
-            onClick={handleCreate}
-            className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2 shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Create
-          </button>
         </div>
       </div>
 
       {forecasts.length === 0 ? (
-        <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-16 text-center">
-          <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <BarChart3 className="w-8 h-8 text-blue-500" />
+        <div className="bg-canvas-raised border border-dashed border-white/10 rounded-xl p-16 text-center">
+          <div className="w-14 h-14 rounded-xl bg-accent-sky/10 border border-accent-sky/30 flex items-center justify-center mx-auto mb-4">
+            <BarChart3 className="w-7 h-7 text-accent-sky" />
           </div>
-          <h3 className="font-semibold text-gray-700 text-lg mb-2">No forecasts yet</h3>
-          <p className="text-gray-500 max-w-md mx-auto">
+          <h3 className="font-semibold text-white text-lg mb-2">No forecasts yet</h3>
+          <p className="text-sm text-gray-400 max-w-md mx-auto">
             Create your first forecast model above to start planning product sales by month.
             Each forecast is independent so you can compare different scenarios.
           </p>
@@ -264,17 +299,24 @@ export default function BuildForecastListPage() {
             .map((fc) => {
               const stats = getForecastStats(fc);
               const sparkline = getMonthlySparkline(fc);
+              const accentBorder = fc.locked ? "border-l-accent-amber" : "border-l-accent-sky";
 
               return (
                 <div
                   key={fc.id}
-                  className="group bg-white rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                  className={`group relative overflow-hidden bg-canvas-raised border border-white/5 ${accentBorder} border-l-4 rounded-xl transition-colors hover:bg-canvas-elevated`}
                 >
-                  <div className="p-5">
+                  <div
+                    aria-hidden
+                    className={`absolute -top-12 -right-12 h-32 w-32 rounded-full ${
+                      fc.locked ? "glow-amber" : "glow-sky"
+                    } blur-3xl pointer-events-none opacity-70`}
+                  />
+                  <div className="relative p-5">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1 min-w-0">
                         {editingId === fc.id ? (
-                          <div className="flex gap-2 items-center">
+                          <div className="flex gap-2 items-center flex-wrap">
                             <input
                               type="text"
                               value={editName}
@@ -284,28 +326,34 @@ export default function BuildForecastListPage() {
                                 if (e.key === "Escape") setEditingId(null);
                               }}
                               autoFocus
-                              className="border border-blue-300 rounded-lg px-3 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="bg-canvas border border-accent-sky/40 text-white rounded-md px-3 py-1.5 text-sm flex-1 focus:outline-none focus:border-accent-sky"
                             />
                             <button
                               onClick={handleRenameSave}
-                              className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700"
+                              className="text-xs bg-accent-sky text-[#050914] font-semibold px-3 py-1.5 rounded-md hover:brightness-110"
                             >
                               Save
                             </button>
                             <button
                               onClick={() => setEditingId(null)}
-                              className="text-xs text-gray-500 hover:text-gray-700"
+                              className="text-xs text-gray-400 hover:text-white"
                             >
                               Cancel
                             </button>
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-gray-900 text-lg truncate">{fc.name}</h3>
-                            {fc.locked && <Lock className="w-4 h-4 text-amber-500 flex-shrink-0" />}
+                            <h3 className="font-semibold text-white text-lg truncate">
+                              {fc.name}
+                            </h3>
+                            {fc.locked && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent-amber bg-accent-amber/10 border border-accent-amber/30 px-2 py-0.5 rounded-full">
+                                <Lock className="w-3 h-3" /> Locked
+                              </span>
+                            )}
                           </div>
                         )}
-                        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                        <p className="text-[11px] text-gray-500 mt-1.5 flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           Updated {formatDate(fc.updatedAt)}
                         </p>
@@ -317,35 +365,43 @@ export default function BuildForecastListPage() {
                             e.stopPropagation();
                             setMenuOpenId(menuOpenId === fc.id ? null : fc.id);
                           }}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                          className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
                         >
                           <MoreHorizontal className="w-4 h-4" />
                         </button>
                         {menuOpenId === fc.id && (
-                          <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-xl shadow-xl z-20 py-1 min-w-[160px]">
+                          <div className="absolute right-0 top-8 bg-canvas-raised border border-white/10 rounded-md shadow-soft-dark z-20 py-1 min-w-[160px]">
                             <button
                               onClick={() => handleRenameStart(fc.id, fc.name)}
-                              className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
                             >
                               <Pencil className="w-3.5 h-3.5" /> Rename
                             </button>
                             <button
                               onClick={() => handleDuplicate(fc.id, fc.name)}
-                              className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
                             >
                               <Copy className="w-3.5 h-3.5" /> Duplicate
                             </button>
                             <button
                               onClick={() => handleLockToggle(fc.id)}
-                              className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
                             >
-                              {fc.locked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                              {fc.locked ? (
+                                <Unlock className="w-3.5 h-3.5" />
+                              ) : (
+                                <Lock className="w-3.5 h-3.5" />
+                              )}
                               {fc.locked ? "Unlock" : "Lock"}
                             </button>
-                            <hr className="my-1 border-gray-100" />
+                            <hr className="my-1 border-white/5" />
                             <button
                               onClick={() => handleDelete(fc.id, fc.name)}
-                              className={`flex items-center gap-2 w-full px-4 py-2.5 text-sm transition-colors ${fc.locked ? "text-gray-300 cursor-not-allowed" : "text-red-600 hover:bg-red-50"}`}
+                              className={`flex items-center gap-2 w-full px-4 py-2 text-sm transition-colors ${
+                                fc.locked
+                                  ? "text-gray-600 cursor-not-allowed"
+                                  : "text-accent-rose hover:bg-accent-rose/10"
+                              }`}
                               disabled={fc.locked}
                             >
                               <Trash2 className="w-3.5 h-3.5" /> Delete
@@ -355,61 +411,47 @@ export default function BuildForecastListPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-5 gap-3 mb-4">
-                      <div className="bg-gray-50 rounded-xl p-3 text-center">
-                        <div className="flex items-center justify-center gap-1 text-gray-400 mb-1">
-                          <DollarSign className="w-3 h-3" />
-                          <span className="text-xs">Gross Revenue</span>
-                        </div>
-                        <div className="font-semibold text-gray-900">
-                          {stats.grossRevenue > 0 ? fmt(stats.grossRevenue) : "--"}
-                        </div>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-3 text-center">
-                        <div className="flex items-center justify-center gap-1 text-gray-400 mb-1">
-                          <DollarSign className="w-3 h-3" />
-                          <span className="text-xs">Net Revenue</span>
-                        </div>
-                        <div className="font-semibold text-gray-900">
-                          {stats.netRevenue > 0 ? fmt(stats.netRevenue) : "--"}
-                        </div>
-                      </div>
-                      <div className="bg-orange-50 rounded-xl p-3 text-center">
-                        <div className="flex items-center justify-center gap-1 text-orange-400 mb-1">
-                          <DollarSign className="w-3 h-3" />
-                          <span className="text-xs">One Time Revenue (Gross)</span>
-                        </div>
-                        <div className="font-semibold text-gray-900">
-                          {stats.oneTimeRevenue > 0 ? fmt(stats.oneTimeRevenue) : "--"}
-                        </div>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-3 text-center">
-                        <div className="flex items-center justify-center gap-1 text-gray-400 mb-1">
-                          <Package className="w-3 h-3" />
-                          <span className="text-xs">Won Deals</span>
-                        </div>
-                        <div className="font-semibold text-gray-900">
-                          {stats.totalUnits > 0 ? stats.totalUnits.toLocaleString() : "--"}
-                        </div>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-3 text-center">
-                        <div className="flex items-center justify-center gap-1 text-gray-400 mb-1">
-                          <TrendingUp className="w-3 h-3" />
-                          <span className="text-xs">Products</span>
-                        </div>
-                        <div className="font-semibold text-gray-900">
-                          {stats.activeProducts > 0 ? stats.activeProducts : "--"}
-                        </div>
-                      </div>
+                    {/* Stat tiles — dark-aware with accent colors */}
+                    <div className="grid grid-cols-5 gap-2 mb-4">
+                      <StatTile
+                        icon={<DollarSign className="w-3 h-3" />}
+                        label="Gross Revenue"
+                        value={stats.grossRevenue > 0 ? fmt(stats.grossRevenue) : "—"}
+                        accent="emerald"
+                      />
+                      <StatTile
+                        icon={<DollarSign className="w-3 h-3" />}
+                        label="Net Revenue"
+                        value={stats.netRevenue > 0 ? fmt(stats.netRevenue) : "—"}
+                        accent="emerald"
+                      />
+                      <StatTile
+                        icon={<DollarSign className="w-3 h-3" />}
+                        label="One Time (Gross)"
+                        value={stats.oneTimeRevenue > 0 ? fmt(stats.oneTimeRevenue) : "—"}
+                        accent="amber"
+                      />
+                      <StatTile
+                        icon={<Package className="w-3 h-3" />}
+                        label="Won Deals"
+                        value={
+                          stats.totalUnits > 0 ? stats.totalUnits.toLocaleString() : "—"
+                        }
+                        accent="sky"
+                      />
+                      <StatTile
+                        icon={<TrendingUp className="w-3 h-3" />}
+                        label="Products"
+                        value={stats.activeProducts > 0 ? String(stats.activeProducts) : "—"}
+                        accent="violet"
+                      />
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <div className="text-gray-300">
-                        {renderSparkline(sparkline)}
-                      </div>
+                      <div>{renderSparkline(sparkline)}</div>
                       <Link
                         href={`/forecast/${fc.id}`}
-                        className="inline-flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+                        className="inline-flex items-center gap-1.5 bg-accent-sky text-[#050914] px-4 py-2 rounded-md text-sm font-semibold hover:brightness-110 transition"
                       >
                         Open <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
@@ -425,61 +467,112 @@ export default function BuildForecastListPage() {
         <div className="fixed inset-0 z-10" onClick={() => setMenuOpenId(null)} />
       )}
 
-      {lockModalId && (() => {
-        const targetFc = forecasts.find((f) => f.id === lockModalId);
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4">
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${targetFc?.locked ? "bg-green-100" : "bg-amber-100"}`}>
-                  {targetFc?.locked ? <Unlock className="w-5 h-5 text-green-600" /> : <Lock className="w-5 h-5 text-amber-600" />}
+      {lockModalId &&
+        (() => {
+          const targetFc = forecasts.find((f) => f.id === lockModalId);
+          const unlocking = !!targetFc?.locked;
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+              <div className="bg-canvas-raised border border-white/10 rounded-xl shadow-soft-dark-lg p-6 w-full max-w-sm mx-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center border ${
+                      unlocking
+                        ? "bg-accent-emerald/10 border-accent-emerald/30"
+                        : "bg-accent-amber/10 border-accent-amber/30"
+                    }`}
+                  >
+                    {unlocking ? (
+                      <Unlock className="w-5 h-5 text-accent-emerald" />
+                    ) : (
+                      <Lock className="w-5 h-5 text-accent-amber" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white">
+                      {unlocking ? "Unlock Forecast" : "Lock Forecast"}
+                    </h3>
+                    <p className="text-xs text-gray-500">{targetFc?.name}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">
-                    {targetFc?.locked ? "Unlock Forecast" : "Lock Forecast"}
-                  </h3>
-                  <p className="text-xs text-gray-500">{targetFc?.name}</p>
+                <p className="text-sm text-gray-400 mb-4">
+                  {unlocking
+                    ? "Enter the password to unlock this forecast for editing."
+                    : "Enter the password to lock this forecast and prevent changes."}
+                </p>
+                <input
+                  type="password"
+                  value={lockPassword}
+                  onChange={(e) => {
+                    setLockPassword(e.target.value);
+                    setLockError("");
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && handleLockSubmit()}
+                  placeholder="Password"
+                  autoFocus
+                  className="w-full bg-canvas border border-white/10 text-white placeholder-gray-500 rounded-md px-4 py-2.5 text-sm focus:outline-none focus:border-accent-sky mb-2"
+                />
+                {lockError && (
+                  <p className="text-sm text-accent-rose mb-3">{lockError}</p>
+                )}
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => setLockModalId(null)}
+                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-300 bg-white/[0.03] border border-white/10 rounded-md hover:bg-white/[0.06] hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleLockSubmit}
+                    className={`flex-1 px-4 py-2.5 text-sm font-semibold text-[#050914] rounded-md transition ${
+                      unlocking ? "bg-accent-emerald" : "bg-accent-amber"
+                    } hover:brightness-110`}
+                  >
+                    {unlocking ? "Unlock" : "Lock"}
+                  </button>
                 </div>
-              </div>
-              <p className="text-sm text-gray-600 mb-4">
-                {targetFc?.locked
-                  ? "Enter the password to unlock this forecast for editing."
-                  : "Enter the password to lock this forecast and prevent changes."}
-              </p>
-              <input
-                type="password"
-                value={lockPassword}
-                onChange={(e) => { setLockPassword(e.target.value); setLockError(""); }}
-                onKeyDown={(e) => e.key === "Enter" && handleLockSubmit()}
-                placeholder="Password"
-                autoFocus
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-2"
-              />
-              {lockError && (
-                <p className="text-sm text-red-600 mb-3">{lockError}</p>
-              )}
-              <div className="flex gap-2 mt-4">
-                <button
-                  onClick={() => setLockModalId(null)}
-                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleLockSubmit}
-                  className={`flex-1 px-4 py-2.5 text-sm font-medium text-white rounded-xl transition-colors ${
-                    targetFc?.locked
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-amber-600 hover:bg-amber-700"
-                  }`}
-                >
-                  {targetFc?.locked ? "Unlock" : "Lock"}
-                </button>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
+    </div>
+  );
+}
+
+type Accent = "sky" | "emerald" | "amber" | "violet";
+
+const STAT_ACCENT: Record<Accent, { text: string; border: string }> = {
+  sky:     { text: "text-accent-sky",     border: "border-accent-sky/20" },
+  emerald: { text: "text-accent-emerald", border: "border-accent-emerald/20" },
+  amber:   { text: "text-accent-amber",   border: "border-accent-amber/20" },
+  violet:  { text: "text-accent-violet",  border: "border-accent-violet/20" },
+};
+
+function StatTile({
+  icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accent: Accent;
+}) {
+  const a = STAT_ACCENT[accent];
+  return (
+    <div
+      className={`bg-white/[0.02] border ${a.border} rounded-md p-2.5 text-center`}
+    >
+      <div
+        className={`flex items-center justify-center gap-1 mb-1 text-[9px] font-semibold uppercase tracking-[0.15em] ${a.text}`}
+      >
+        {icon}
+        <span className="truncate">{label}</span>
+      </div>
+      <div className={`font-bold text-sm ${value === "—" ? "text-gray-500" : "text-white"}`}>
+        {value}
+      </div>
     </div>
   );
 }
