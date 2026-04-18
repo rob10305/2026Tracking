@@ -111,56 +111,61 @@ export function Dashboard() {
   // ── Loading gate ────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
+      <div className="flex-1 flex items-center justify-center bg-canvas">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
-          <p className="mt-3 text-sm text-gray-500">Loading tracker data…</p>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-white/10 border-t-accent-sky" />
+          <p className="mt-3 text-sm text-gray-400">Loading tracker data…</p>
         </div>
       </div>
     );
   }
 
   // ── Shared header bar ──────────────────────────────────────────────────────
+  const btn = "flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-white/[0.03] border border-white/10 text-gray-300 hover:bg-white/[0.06] hover:text-white transition-colors";
+  const menuItem = "w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white";
   const headerBar = (
-    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4 flex-wrap">
-      <h1 className="text-xl font-bold text-gray-900">Sales Motion Monthly Impact Tracker</h1>
+    <div className="px-8 py-5 border-b border-white/5 bg-canvas-raised/40 flex items-center justify-between gap-4 flex-wrap">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-accent-emerald">FY2026</p>
+        <h1 className="mt-1 text-2xl font-bold text-white tracking-tight">Sales Motion Monthly Impact Tracker</h1>
+      </div>
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative">
-          <button onClick={() => setShowExportMenu(!showExportMenu)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button onClick={() => setShowExportMenu(!showExportMenu)} className={btn}>
             <Download size={14} /> Export <ChevronDown size={12} />
           </button>
           {showExportMenu && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowExportMenu(false)} />
-              <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
+              <div className="absolute right-0 top-full mt-1 w-56 bg-canvas-raised border border-white/10 rounded-lg shadow-soft-dark z-20 py-1">
                 {!viewAll && (
                   <>
-                    <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">My Data ({USERS.find((u) => u.id === activeUser)?.displayName})</div>
-                    <button onClick={() => { exportUserJSON(activeUser, fullState); toast('JSON exported'); setShowExportMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      <FileJson size={14} className="text-blue-500" /> My Data (JSON)
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.25em]">My Data ({USERS.find((u) => u.id === activeUser)?.displayName})</div>
+                    <button onClick={() => { exportUserJSON(activeUser, fullState); toast('JSON exported'); setShowExportMenu(false); }} className={menuItem}>
+                      <FileJson size={14} className="text-accent-sky" /> My Data (JSON)
                     </button>
-                    <button onClick={() => { exportUserExcel(activeUser, fullState); toast('Excel exported'); setShowExportMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                      <FileSpreadsheet size={14} className="text-green-600" /> My Data (Excel)
+                    <button onClick={() => { exportUserExcel(activeUser, fullState); toast('Excel exported'); setShowExportMenu(false); }} className={menuItem}>
+                      <FileSpreadsheet size={14} className="text-accent-emerald" /> My Data (Excel)
                     </button>
-                    <div className="border-t border-gray-100 my-1" />
+                    <div className="border-t border-white/5 my-1" />
                   </>
                 )}
-                <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">All Users</div>
-                <button onClick={() => { exportJSON(fullState); toast('JSON exported'); setShowExportMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                  <FileJson size={14} className="text-blue-500" /> All Users (JSON)
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.25em]">All Users</div>
+                <button onClick={() => { exportJSON(fullState); toast('JSON exported'); setShowExportMenu(false); }} className={menuItem}>
+                  <FileJson size={14} className="text-accent-sky" /> All Users (JSON)
                 </button>
-                <button onClick={() => { exportAllExcel(fullState); toast('Excel exported'); setShowExportMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                  <FileSpreadsheet size={14} className="text-green-600" /> All Users (Excel)
+                <button onClick={() => { exportAllExcel(fullState); toast('Excel exported'); setShowExportMenu(false); }} className={menuItem}>
+                  <FileSpreadsheet size={14} className="text-accent-emerald" /> All Users (Excel)
                 </button>
               </div>
             </>
           )}
         </div>
-        <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+        <button onClick={() => fileRef.current?.click()} className={btn}>
           <Upload size={14} /> Import
         </button>
         <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
-        <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50">
+        <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-accent-rose/10 border border-accent-rose/30 text-accent-rose hover:bg-accent-rose/20 transition-colors">
           <RotateCcw size={14} /> Reset
         </button>
       </div>
@@ -172,19 +177,19 @@ export function Dashboard() {
   // ══════════════════════════════════════════════════════════════════════════
   if (viewAll) {
     return (
-      <div className="flex-1 overflow-y-auto bg-gray-50">
+      <div className="flex-1 overflow-y-auto bg-canvas">
         {headerBar}
-        <div className="p-6 space-y-8">
+        <div className="p-8 space-y-10">
 
           {/* ── Parent Campaigns ────────────────────────────────────────────── */}
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <GitBranch size={16} className="text-gray-500" />
-                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Parent Campaigns</h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-700">{parentMotions.length}</span>
+                <GitBranch size={14} className="text-accent-sky" />
+                <h2 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gray-300">Parent Campaigns</h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/5 text-gray-300 border border-white/10">{parentMotions.length}</span>
               </div>
-              <p className="text-xs text-gray-400">Managed here · Reps clone these to create their own</p>
+              <p className="text-xs text-gray-500">Managed here · Reps clone these to create their own</p>
             </div>
 
             <div className="space-y-2">
@@ -200,28 +205,28 @@ export function Dashboard() {
             {/* Add parent campaign */}
             <div className="mt-3">
               {showAddParent ? (
-                <div className="bg-white rounded-xl border border-dashed border-blue-300 p-4 flex items-center gap-3 flex-wrap">
+                <div className="bg-canvas-raised rounded-xl border border-dashed border-accent-sky/40 p-4 flex items-center gap-3 flex-wrap">
                   <input
                     type="text"
                     value={newParentName}
                     onChange={(e) => setNewParentName(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleAddParent(); if (e.key === 'Escape') { setShowAddParent(false); setNewParentName(''); } }}
                     placeholder="Parent campaign name…"
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-blue-400"
+                    className="flex-1 bg-canvas border border-white/10 text-white placeholder-gray-500 rounded-md px-3 py-1.5 text-sm outline-none focus:border-accent-sky"
                     autoFocus
                   />
                   <div className="flex gap-1">
                     {MOTION_COLORS.map((c) => (
-                      <button key={c} onClick={() => setNewParentColor(c)} className={`w-5 h-5 rounded-full border-2 transition-transform ${newParentColor === c ? 'border-gray-800 scale-125' : 'border-transparent'}`} style={{ backgroundColor: c }} />
+                      <button key={c} onClick={() => setNewParentColor(c)} className={`w-5 h-5 rounded-full border-2 transition-transform ${newParentColor === c ? 'border-white scale-125' : 'border-transparent'}`} style={{ backgroundColor: c }} />
                     ))}
                   </div>
-                  <button onClick={handleAddParent} disabled={!newParentName.trim()} className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-40">Create</button>
-                  <button onClick={() => { setShowAddParent(false); setNewParentName(''); }} className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+                  <button onClick={handleAddParent} disabled={!newParentName.trim()} className="px-4 py-1.5 bg-accent-sky text-[#050914] text-sm font-semibold rounded-md hover:brightness-110 disabled:opacity-40">Create</button>
+                  <button onClick={() => { setShowAddParent(false); setNewParentName(''); }} className="px-3 py-1.5 text-sm text-gray-400 hover:text-white">Cancel</button>
                 </div>
               ) : (
                 <button
                   onClick={() => setShowAddParent(true)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-white/10 rounded-xl text-sm text-gray-500 hover:text-accent-sky hover:border-accent-sky/40 hover:bg-accent-sky/5 transition-colors"
                 >
                   <Plus size={14} /> Add Parent Campaign
                 </button>
@@ -231,24 +236,24 @@ export function Dashboard() {
 
           {/* ── Rep Campaigns ───────────────────────────────────────────────── */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Link2 size={16} className="text-indigo-500" />
-              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Rep Campaigns</h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700">{allRepMotions.length}</span>
+            <div className="flex items-center gap-2 mb-4">
+              <Link2 size={14} className="text-accent-violet" />
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gray-300">Rep Campaigns</h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent-violet/10 text-accent-violet border border-accent-violet/30">{allRepMotions.length}</span>
             </div>
 
             {allRepMotions.length === 0 ? (
-              <div className="text-center py-10 text-gray-400 text-sm bg-white rounded-xl border border-gray-200">
+              <div className="text-center py-10 text-gray-500 text-sm bg-canvas-raised rounded-xl border border-white/5">
                 No rep campaigns yet. Reps can clone a parent campaign or create their own.
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {USERS.map((user) => {
                   const userMotions = fullState.users[user.id].motions;
                   if (userMotions.length === 0) return null;
                   return (
                     <div key={user.id}>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">{user.displayName}</p>
+                      <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.25em] mb-2 ml-1">{user.displayName}</p>
                       <div className="space-y-1.5">
                         {userMotions.map((m) => <MotionCard key={m.id} motion={m} />)}
                       </div>
@@ -274,25 +279,26 @@ export function Dashboard() {
 
   const addSection = (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {/* Clone from parent */}
-      <div className="bg-white rounded-xl border border-indigo-200 p-5 flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-            <Copy size={15} className="text-indigo-600" />
+      {/* Clone from parent — violet accent rail */}
+      <div className="relative overflow-hidden bg-canvas-raised border border-white/5 border-l-4 border-l-accent-violet rounded-xl p-5 flex flex-col gap-3">
+        <div aria-hidden className="absolute -top-10 -right-10 h-32 w-32 rounded-full glow-violet blur-3xl pointer-events-none" />
+        <div className="relative flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-accent-violet/10 border border-accent-violet/30 flex items-center justify-center">
+            <Copy size={15} className="text-accent-violet" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900">Clone Existing Campaign</p>
-            <p className="text-xs text-gray-500">Inherit a parent&apos;s tasks &amp; structure</p>
+            <p className="text-sm font-semibold text-white">Clone Existing Campaign</p>
+            <p className="text-xs text-gray-400">Inherit a parent&apos;s tasks &amp; structure</p>
           </div>
         </div>
         {availableParents.length === 0 ? (
-          <p className="text-xs text-gray-400 italic">You&apos;ve already cloned all available parent campaigns.</p>
+          <p className="relative text-xs text-gray-500 italic">You&apos;ve already cloned all available parent campaigns.</p>
         ) : (
-          <>
+          <div className="relative flex flex-col gap-2">
             <select
               value={selectedCloneId}
               onChange={(e) => setSelectedCloneId(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-400 bg-white"
+              className="w-full bg-canvas border border-white/10 text-white rounded-md px-3 py-2 text-sm outline-none focus:border-accent-violet"
             >
               <option value="">Select a parent campaign…</option>
               {availableParents.map((p) => (
@@ -302,50 +308,51 @@ export function Dashboard() {
             <button
               onClick={handleCloneParent}
               disabled={!selectedCloneId}
-              className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 bg-accent-violet text-[#050914] text-sm font-semibold rounded-md hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               Clone Campaign
             </button>
-          </>
+          </div>
         )}
       </div>
 
-      {/* Create new */}
-      <div className="bg-white rounded-xl border border-emerald-200 p-5 flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-            <Sparkles size={15} className="text-emerald-600" />
+      {/* Create new — emerald accent rail */}
+      <div className="relative overflow-hidden bg-canvas-raised border border-white/5 border-l-4 border-l-accent-emerald rounded-xl p-5 flex flex-col gap-3">
+        <div aria-hidden className="absolute -top-10 -right-10 h-32 w-32 rounded-full glow-emerald blur-3xl pointer-events-none" />
+        <div className="relative flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-accent-emerald/10 border border-accent-emerald/30 flex items-center justify-center">
+            <Sparkles size={15} className="text-accent-emerald" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900">Create New Campaign</p>
-            <p className="text-xs text-gray-500">Build your own from scratch</p>
+            <p className="text-sm font-semibold text-white">Create New Campaign</p>
+            <p className="text-xs text-gray-400">Build your own from scratch</p>
           </div>
         </div>
         {showCreateNew ? (
-          <>
+          <div className="relative flex flex-col gap-2">
             <input
               type="text"
               value={newMotionName}
               onChange={(e) => setNewMotionName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleCreateNew(); if (e.key === 'Escape') { setShowCreateNew(false); setNewMotionName(''); } }}
               placeholder="Campaign name…"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400"
+              className="w-full bg-canvas border border-white/10 text-white placeholder-gray-500 rounded-md px-3 py-2 text-sm outline-none focus:border-accent-emerald"
               autoFocus
             />
             <div className="flex gap-1.5 flex-wrap">
               {MOTION_COLORS.map((c) => (
-                <button key={c} onClick={() => setNewMotionColor(c)} className={`w-5 h-5 rounded-full border-2 transition-transform ${newMotionColor === c ? 'border-gray-800 scale-125' : 'border-transparent'}`} style={{ backgroundColor: c }} />
+                <button key={c} onClick={() => setNewMotionColor(c)} className={`w-5 h-5 rounded-full border-2 transition-transform ${newMotionColor === c ? 'border-white scale-125' : 'border-transparent'}`} style={{ backgroundColor: c }} />
               ))}
             </div>
             <div className="flex gap-2">
-              <button onClick={handleCreateNew} disabled={!newMotionName.trim()} className="flex-1 px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 disabled:opacity-40 transition-colors">Create</button>
-              <button onClick={() => { setShowCreateNew(false); setNewMotionName(''); }} className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+              <button onClick={handleCreateNew} disabled={!newMotionName.trim()} className="flex-1 px-4 py-2 bg-accent-emerald text-[#050914] text-sm font-semibold rounded-md hover:brightness-110 disabled:opacity-40 transition">Create</button>
+              <button onClick={() => { setShowCreateNew(false); setNewMotionName(''); }} className="px-3 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
             </div>
-          </>
+          </div>
         ) : (
           <button
             onClick={() => setShowCreateNew(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 border border-dashed border-emerald-300 rounded-lg text-sm text-emerald-700 hover:bg-emerald-50 transition-colors"
+            className="relative flex items-center justify-center gap-2 px-4 py-2 border border-dashed border-accent-emerald/30 rounded-md text-sm text-accent-emerald hover:bg-accent-emerald/5 transition-colors"
           >
             <Plus size={14} /> Start building
           </button>
@@ -357,12 +364,12 @@ export function Dashboard() {
   if (myMotions.length === 0) {
     // Empty state — full screen prompt
     return (
-      <div className="flex-1 overflow-y-auto bg-gray-50">
+      <div className="flex-1 overflow-y-auto bg-canvas">
         {headerBar}
-        <div className="p-6 flex flex-col items-center justify-center min-h-[60vh] gap-8">
+        <div className="p-8 flex flex-col items-center justify-center min-h-[60vh] gap-8">
           <div className="text-center">
-            <p className="text-2xl font-bold text-gray-800 mb-1">No campaigns yet</p>
-            <p className="text-sm text-gray-500">Clone a parent campaign or create your own to get started.</p>
+            <p className="text-2xl font-bold text-white mb-1">No campaigns yet</p>
+            <p className="text-sm text-gray-400">Clone a parent campaign or create your own to get started.</p>
           </div>
           <div className="w-full max-w-2xl">
             {addSection}
@@ -374,9 +381,9 @@ export function Dashboard() {
 
   // Has motions — show them, add section below
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50">
+    <div className="flex-1 overflow-y-auto bg-canvas">
       {headerBar}
-      <div className="p-6 space-y-6">
+      <div className="p-8 space-y-8">
         {/* Motion list */}
         <div className="space-y-2">
           {myMotions.map((m) => <MotionCard key={m.id} motion={m} />)}
@@ -384,7 +391,7 @@ export function Dashboard() {
 
         {/* Add section */}
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Add Campaign</p>
+          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.25em] mb-4">Add Campaign</p>
           {addSection}
         </div>
 

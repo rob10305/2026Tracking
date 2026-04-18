@@ -11,8 +11,8 @@ import type { UserId } from '@/lib/sales-motion/types';
 
 function StatBox({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) {
   return (
-    <div className={`flex flex-col gap-0.5 px-4 py-2.5 rounded-xl border ${accent} min-w-[110px]`}>
-      <div className="flex items-center gap-1.5 text-[10px] font-medium opacity-60">{icon}{label}</div>
+    <div className={`flex flex-col gap-0.5 px-4 py-2.5 rounded-lg border bg-white/[0.02] ${accent} min-w-[110px]`}>
+      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] opacity-90">{icon}{label}</div>
       <div className="text-lg font-bold">{value || '—'}</div>
     </div>
   );
@@ -36,12 +36,12 @@ export function ParentMotionCard({ motion, childrenByUser }: Props) {
   return (
     <div
       onClick={() => router.push(`/sales-motion/motion/${motion.id}`)}
-      className={`bg-white rounded-xl shadow-sm border relative overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${motion.locked ? 'border-amber-200 bg-amber-50/20' : 'border-gray-200'}`}
+      className={`bg-canvas-raised rounded-xl border relative overflow-hidden cursor-pointer hover:bg-canvas-elevated transition-colors ${motion.locked ? 'border-accent-amber/30' : 'border-white/5'}`}
     >
-      <div className="absolute top-0 left-0 w-1.5 h-full rounded-l-xl" style={{ backgroundColor: motion.locked ? '#f59e0b' : motion.color }} />
+      <div className="absolute top-0 left-0 w-1 h-full rounded-l-xl" style={{ backgroundColor: motion.locked ? '#fbbf24' : motion.color }} />
 
       {motion.locked && (
-        <div className="absolute top-2 right-12 flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
+        <div className="absolute top-2 right-12 flex items-center gap-1 text-[10px] font-semibold text-accent-amber bg-accent-amber/10 border border-accent-amber/30 px-2 py-0.5 rounded-full">
           <Lock size={9} /> Locked
         </div>
       )}
@@ -54,7 +54,7 @@ export function ParentMotionCard({ motion, childrenByUser }: Props) {
               value={motion.name}
               onSave={(v) => !motion.locked && dispatch({ type: 'UPDATE_PARENT_MOTION_FIELD', motionId: motion.id, field: 'name', value: v })}
               placeholder="Campaign name"
-              className="text-base font-semibold text-gray-900"
+              className="text-base font-semibold text-white"
             />
           </div>
           <EditableField
@@ -64,16 +64,16 @@ export function ParentMotionCard({ motion, childrenByUser }: Props) {
             className="text-[11px] text-gray-500 mt-0.5"
           />
           {repCount > 0 && (
-            <p className="text-[10px] text-gray-400 mt-0.5">{repNames.join(', ')}</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">{repNames.join(', ')}</p>
           )}
         </div>
 
         {/* Aggregate stats */}
         <div className="flex items-center gap-2 flex-wrap">
-          <StatBox icon={<Users size={10} />} label="Reps" value={repCount > 0 ? String(repCount) : 'None'} accent="border-gray-200 bg-gray-50 text-gray-700" />
-          <StatBox icon={<TrendingUp size={10} />} label="Revenue" value={revenueTotal > 0 ? formatCurrency(revenueTotal) : ''} accent="border-green-200 bg-green-50 text-green-800" />
-          <StatBox icon={<Target size={10} />} label="Leads" value={leadsTotal > 0 ? String(leadsTotal) : ''} accent="border-blue-200 bg-blue-50 text-blue-800" />
-          <StatBox icon={<Trophy size={10} />} label="Wins" value={winsTotal > 0 ? String(winsTotal) : ''} accent="border-amber-200 bg-amber-50 text-amber-800" />
+          <StatBox icon={<Users size={10} />} label="Reps" value={repCount > 0 ? String(repCount) : 'None'} accent="border-white/10 text-gray-300" />
+          <StatBox icon={<TrendingUp size={10} />} label="Revenue" value={revenueTotal > 0 ? formatCurrency(revenueTotal) : ''} accent="border-accent-emerald/30 text-accent-emerald" />
+          <StatBox icon={<Target size={10} />} label="Leads" value={leadsTotal > 0 ? String(leadsTotal) : ''} accent="border-accent-sky/30 text-accent-sky" />
+          <StatBox icon={<Trophy size={10} />} label="Wins" value={winsTotal > 0 ? String(winsTotal) : ''} accent="border-accent-amber/30 text-accent-amber" />
         </div>
 
         {/* Actions */}
@@ -81,7 +81,7 @@ export function ParentMotionCard({ motion, childrenByUser }: Props) {
           <button
             onClick={(e) => { e.stopPropagation(); dispatch({ type: 'TOGGLE_PARENT_MOTION_LOCK', motionId: motion.id }); }}
             title={motion.locked ? 'Unlock' : 'Lock'}
-            className={`p-1.5 rounded-lg transition-colors ${motion.locked ? 'text-amber-500 hover:text-amber-600 bg-amber-50' : 'text-gray-300 hover:text-amber-500 hover:bg-amber-50'}`}
+            className={`p-1.5 rounded-md transition-colors ${motion.locked ? 'text-accent-amber bg-accent-amber/10' : 'text-gray-500 hover:text-accent-amber hover:bg-accent-amber/10'}`}
           >
             {motion.locked ? <Lock size={15} /> : <LockOpen size={15} />}
           </button>
@@ -95,13 +95,13 @@ export function ParentMotionCard({ motion, childrenByUser }: Props) {
               dispatch({ type: 'DELETE_PARENT_MOTION', motionId: motion.id });
             }}
             disabled={!!motion.locked}
-            className={`p-1.5 rounded-lg transition-colors ${motion.locked ? 'text-gray-200 cursor-not-allowed' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}
+            className={`p-1.5 rounded-md transition-colors ${motion.locked ? 'text-gray-600 cursor-not-allowed' : 'text-gray-500 hover:text-accent-rose hover:bg-accent-rose/10'}`}
           >
             <Trash2 size={15} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); router.push(`/sales-motion/motion/${motion.id}`); }}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="p-1.5 rounded-md text-gray-500 hover:text-white hover:bg-white/5 transition-colors"
           >
             <ChevronRight size={18} />
           </button>

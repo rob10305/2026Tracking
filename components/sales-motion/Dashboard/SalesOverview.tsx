@@ -12,6 +12,16 @@ function fmtCompact(n: number): string {
   return formatCurrency(n);
 }
 
+type Accent = 'sky' | 'emerald' | 'amber' | 'violet' | 'rose';
+
+const ACCENT: Record<Accent, { text: string; border: string; glow: string }> = {
+  sky:     { text: 'text-accent-sky',     border: 'border-l-accent-sky',     glow: 'glow-sky' },
+  emerald: { text: 'text-accent-emerald', border: 'border-l-accent-emerald', glow: 'glow-emerald' },
+  amber:   { text: 'text-accent-amber',   border: 'border-l-accent-amber',   glow: 'glow-amber' },
+  violet:  { text: 'text-accent-violet',  border: 'border-l-accent-violet',  glow: 'glow-violet' },
+  rose:    { text: 'text-accent-rose',    border: 'border-l-accent-rose',    glow: 'bg-accent-rose/12' },
+};
+
 export function SalesOverview() {
   const { fullState, parentMotions, isLoading } = useTracker();
 
@@ -44,79 +54,65 @@ export function SalesOverview() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
+      <div className="flex-1 flex items-center justify-center bg-canvas">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
-          <p className="mt-3 text-sm text-gray-500">Loading sales data...</p>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-white/10 border-t-accent-sky" />
+          <p className="mt-3 text-sm text-gray-400">Loading sales data...</p>
         </div>
       </div>
     );
   }
 
-  const kpis = [
-    {
-      label: 'Closed / Won Deals',
-      value: metrics.closedWon.toLocaleString(),
-      icon: Trophy,
-      color: 'bg-green-50 border-green-200',
-      iconBg: 'bg-green-100 text-green-600',
-      valueColor: 'text-green-700',
-    },
-    {
-      label: 'Pipeline # of Deals',
-      value: metrics.pipelineDeals.toLocaleString(),
-      icon: Hash,
-      color: 'bg-blue-50 border-blue-200',
-      iconBg: 'bg-blue-100 text-blue-600',
-      valueColor: 'text-blue-700',
-    },
-    {
-      label: 'Pipeline $$$ In-Year Value',
-      value: metrics.pipelineInYear > 0 ? fmtCompact(metrics.pipelineInYear) : '$0',
-      icon: DollarSign,
-      color: 'bg-indigo-50 border-indigo-200',
-      iconBg: 'bg-indigo-100 text-indigo-600',
-      valueColor: 'text-indigo-700',
-    },
-    {
-      label: 'Pipeline $$$ Total Value',
-      value: metrics.pipelineTotal > 0 ? fmtCompact(metrics.pipelineTotal) : '$0',
-      icon: TrendingUp,
-      color: 'bg-purple-50 border-purple-200',
-      iconBg: 'bg-purple-100 text-purple-600',
-      valueColor: 'text-purple-700',
-    },
-    {
-      label: 'Total Leads Generated',
-      value: metrics.totalLeads.toLocaleString(),
-      icon: PlusCircle,
-      color: 'bg-amber-50 border-amber-200',
-      iconBg: 'bg-amber-100 text-amber-600',
-      valueColor: 'text-amber-700',
-    },
+  const kpis: {
+    label: string;
+    value: string;
+    icon: typeof Trophy;
+    accent: Accent;
+  }[] = [
+    { label: 'Closed / Won Deals',        value: metrics.closedWon.toLocaleString(),                                    icon: Trophy,     accent: 'emerald' },
+    { label: 'Pipeline # of Deals',       value: metrics.pipelineDeals.toLocaleString(),                                icon: Hash,       accent: 'sky' },
+    { label: 'Pipeline $$$ In-Year',      value: metrics.pipelineInYear > 0 ? fmtCompact(metrics.pipelineInYear) : '$0', icon: DollarSign, accent: 'violet' },
+    { label: 'Pipeline $$$ Total',        value: metrics.pipelineTotal > 0 ? fmtCompact(metrics.pipelineTotal) : '$0',  icon: TrendingUp, accent: 'rose' },
+    { label: 'Total Leads Generated',     value: metrics.totalLeads.toLocaleString(),                                   icon: PlusCircle, accent: 'amber' },
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50">
-      <div className="px-6 py-4 border-b border-gray-100 bg-white">
-        <h1 className="text-xl font-bold text-gray-900">Sales Overview</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Key pipeline and revenue metrics across all reps and campaigns.</p>
+    <div className="flex-1 overflow-y-auto bg-canvas">
+      <div className="px-8 py-6 border-b border-white/5 bg-canvas-raised/40">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-accent-emerald">
+          FY2026
+        </p>
+        <h1 className="mt-2 text-3xl font-bold text-white tracking-tight">Sales Overview</h1>
+        <p className="text-sm text-gray-400 mt-1">
+          Key pipeline and revenue metrics across all reps and campaigns.
+        </p>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-8 space-y-8">
         {/* KPI Boxes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {kpis.map((kpi) => {
             const Icon = kpi.icon;
+            const a = ACCENT[kpi.accent];
             return (
-              <div key={kpi.label} className={`rounded-2xl border p-5 ${kpi.color}`}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${kpi.iconBg}`}>
+              <div
+                key={kpi.label}
+                className={`relative overflow-hidden bg-canvas-raised border border-white/5 ${a.border} border-l-4 rounded-xl p-5`}
+              >
+                <div
+                  aria-hidden
+                  className={`absolute -top-10 -right-10 h-32 w-32 rounded-full ${a.glow} blur-3xl pointer-events-none`}
+                />
+                <div className="relative">
+                  <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${a.text}`}
+                       style={{ borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.03)' }}>
                     <Icon size={20} />
                   </div>
+                  <div className={`mt-4 text-3xl font-bold ${a.text}`}>{kpi.value}</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 mt-2">
+                    {kpi.label}
+                  </div>
                 </div>
-                <div className={`text-3xl font-bold ${kpi.valueColor}`}>{kpi.value}</div>
-                <div className="text-sm text-gray-600 mt-1">{kpi.label}</div>
               </div>
             );
           })}
@@ -124,37 +120,42 @@ export function SalesOverview() {
 
         {/* Summary stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="text-sm font-medium text-gray-500 mb-1">Active Campaigns</div>
-            <div className="text-2xl font-bold text-gray-900">{metrics.totalMotions}</div>
-            <div className="text-xs text-gray-400 mt-1">Across {USERS.length} reps</div>
+          <div className="bg-canvas-raised border border-white/5 rounded-xl p-5">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gray-500">Active Campaigns</div>
+            <div className="text-2xl font-bold text-white mt-2">{metrics.totalMotions}</div>
+            <div className="text-xs text-gray-500 mt-1">Across {USERS.length} reps</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="text-sm font-medium text-gray-500 mb-1">Parent Campaigns</div>
-            <div className="text-2xl font-bold text-gray-900">{metrics.parentCount}</div>
-            <div className="text-xs text-gray-400 mt-1">Templates for reps to clone</div>
+          <div className="bg-canvas-raised border border-white/5 rounded-xl p-5">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gray-500">Parent Campaigns</div>
+            <div className="text-2xl font-bold text-white mt-2">{metrics.parentCount}</div>
+            <div className="text-xs text-gray-500 mt-1">Templates for reps to clone</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="text-sm font-medium text-gray-500 mb-1">Actual Revenue Booked</div>
-            <div className="text-2xl font-bold text-gray-900">{metrics.totalRevenue > 0 ? fmtCompact(metrics.totalRevenue) : '$0'}</div>
-            <div className="text-xs text-gray-400 mt-1">From reported actuals</div>
+          <div className="bg-canvas-raised border border-white/5 rounded-xl p-5">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gray-500">Actual Revenue Booked</div>
+            <div className="text-2xl font-bold text-white mt-2">
+              {metrics.totalRevenue > 0 ? fmtCompact(metrics.totalRevenue) : '$0'}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">From reported actuals</div>
           </div>
         </div>
 
         {/* Per-rep summary */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-800">Rep Summary</h2>
+        <div className="bg-canvas-raised border border-white/5 rounded-xl overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-white/5 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white tracking-tight">Rep Summary</h2>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500">
+              FY2026
+            </span>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 text-left">
-                <th className="px-5 py-2.5 font-medium text-gray-500">Rep</th>
-                <th className="px-5 py-2.5 font-medium text-gray-500 text-right">Campaigns</th>
-                <th className="px-5 py-2.5 font-medium text-gray-500 text-right">Leads</th>
-                <th className="px-5 py-2.5 font-medium text-gray-500 text-right">Wins</th>
-                <th className="px-5 py-2.5 font-medium text-gray-500 text-right">Revenue Target</th>
-                <th className="px-5 py-2.5 font-medium text-gray-500 text-right">Actual</th>
+              <tr className="bg-white/[0.02] text-left">
+                <th className="px-5 py-2.5 font-semibold text-[10px] uppercase tracking-[0.2em] text-gray-500">Rep</th>
+                <th className="px-5 py-2.5 font-semibold text-[10px] uppercase tracking-[0.2em] text-gray-500 text-right">Campaigns</th>
+                <th className="px-5 py-2.5 font-semibold text-[10px] uppercase tracking-[0.2em] text-gray-500 text-right">Leads</th>
+                <th className="px-5 py-2.5 font-semibold text-[10px] uppercase tracking-[0.2em] text-gray-500 text-right">Wins</th>
+                <th className="px-5 py-2.5 font-semibold text-[10px] uppercase tracking-[0.2em] text-gray-500 text-right">Revenue Target</th>
+                <th className="px-5 py-2.5 font-semibold text-[10px] uppercase tracking-[0.2em] text-gray-500 text-right">Actual</th>
               </tr>
             </thead>
             <tbody>
@@ -165,13 +166,13 @@ export function SalesOverview() {
                 const target = motions.reduce((s, m) => s + parseCurrency(m.contributionGoal), 0);
                 const actual = motions.reduce((s, m) => s + parseCurrency(m.actual), 0);
                 return (
-                  <tr key={user.id} className="border-t border-gray-100 hover:bg-gray-50/50">
-                    <td className="px-5 py-2.5 font-medium text-gray-800">{user.displayName}</td>
-                    <td className="px-5 py-2.5 text-right text-gray-700">{motions.length}</td>
-                    <td className="px-5 py-2.5 text-right text-gray-700">{leads}</td>
-                    <td className="px-5 py-2.5 text-right text-green-700 font-medium">{wins}</td>
-                    <td className="px-5 py-2.5 text-right text-gray-700">{target > 0 ? fmtCompact(target) : '—'}</td>
-                    <td className="px-5 py-2.5 text-right text-gray-700">{actual > 0 ? fmtCompact(actual) : '—'}</td>
+                  <tr key={user.id} className="border-t border-white/5 hover:bg-white/[0.02]">
+                    <td className="px-5 py-2.5 font-medium text-white">{user.displayName}</td>
+                    <td className="px-5 py-2.5 text-right text-gray-300">{motions.length}</td>
+                    <td className="px-5 py-2.5 text-right text-gray-300">{leads}</td>
+                    <td className="px-5 py-2.5 text-right text-accent-emerald font-medium">{wins}</td>
+                    <td className="px-5 py-2.5 text-right text-gray-300">{target > 0 ? fmtCompact(target) : '—'}</td>
+                    <td className="px-5 py-2.5 text-right text-gray-300">{actual > 0 ? fmtCompact(actual) : '—'}</td>
                   </tr>
                 );
               })}

@@ -26,8 +26,8 @@ function StatBox({
   placeholder?: string;
 }) {
   return (
-    <div className={`flex flex-col gap-1 px-5 py-3 rounded-xl border ${accent} min-w-[130px]`}>
-      <div className="flex items-center gap-1.5 text-[11px] font-medium opacity-70">
+    <div className={`flex flex-col gap-1 px-5 py-3 rounded-lg border bg-white/[0.02] ${accent} min-w-[130px]`}>
+      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] opacity-90">
         {icon}
         {label}
       </div>
@@ -56,12 +56,12 @@ export function MotionCard({ motion }: { motion: Motion }) {
 
   return (
     <div
-      className={`bg-white rounded-xl shadow-sm border transition-shadow cursor-pointer relative overflow-hidden hover:shadow-md ${motion.locked ? 'border-amber-200 bg-amber-50/20' : 'border-gray-200'}`}
+      className={`bg-canvas-raised rounded-xl border transition-colors cursor-pointer relative overflow-hidden hover:bg-canvas-elevated ${motion.locked ? 'border-accent-amber/30' : 'border-white/5'}`}
       onClick={() => router.push(`/sales-motion/motion/${motion.id}`)}
     >
-      <div className="absolute top-0 left-0 w-1.5 h-full" style={{ backgroundColor: motion.locked ? '#f59e0b' : motion.color }} />
+      <div className="absolute top-0 left-0 w-1 h-full" style={{ backgroundColor: motion.locked ? '#fbbf24' : motion.color }} />
       {motion.locked && (
-        <div className="absolute top-2 right-12 flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
+        <div className="absolute top-2 right-12 flex items-center gap-1 text-[10px] font-semibold text-accent-amber bg-accent-amber/10 border border-accent-amber/30 px-2 py-0.5 rounded-full">
           <Lock size={9} /> Locked
         </div>
       )}
@@ -70,30 +70,30 @@ export function MotionCard({ motion }: { motion: Motion }) {
         {/* Motion name / type */}
         <div className="min-w-[160px] shrink-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-base font-semibold text-gray-900">{motion.name}</h3>
+            <h3 className="text-base font-semibold text-white">{motion.name}</h3>
             {childMotion && motion.parentMotionId && (
               <button
                 onClick={(e) => { e.stopPropagation(); router.push(`/sales-motion/motion/${motion.parentMotionId}`); }}
                 title="Go to parent campaign"
-                className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200 transition-colors"
+                className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-accent-violet/10 text-accent-violet border border-accent-violet/30 hover:bg-accent-violet/20 transition-colors"
               >
                 <Link2 size={9} /> Child Campaign ↗
               </button>
             )}
             {!childMotion && childCount > 0 && (
-              <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+              <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/30">
                 <GitBranch size={9} /> Parent · {childCount} {childCount === 1 ? 'child' : 'children'}
               </span>
             )}
           </div>
           <p className="text-[11px] text-gray-500 leading-tight">{motion.type}</p>
           <div className="flex items-center gap-1.5 mt-1" onClick={(e) => e.stopPropagation()}>
-            <span className="text-[11px] text-gray-400">Owner:</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">Owner</span>
             <EditableField
               value={motion.owner}
               onSave={(v) => dispatch({ type: 'UPDATE_MOTION_FIELD', motionId: motion.id, field: 'owner', value: v })}
               placeholder="Set owner"
-              className="text-xs"
+              className="text-xs text-gray-300"
             />
           </div>
         </div>
@@ -104,7 +104,7 @@ export function MotionCard({ motion }: { motion: Motion }) {
             icon={<Users size={11} />}
             label="Sellers"
             value={motion.sellers || ''}
-            accent="border-gray-200 bg-gray-50 text-gray-700"
+            accent="border-white/10 text-gray-300"
             editable
             onSave={(v) => dispatch({ type: 'UPDATE_MOTION_FIELD', motionId: motion.id, field: 'sellers', value: v })}
             placeholder="Name"
@@ -113,7 +113,7 @@ export function MotionCard({ motion }: { motion: Motion }) {
             icon={<TrendingUp size={11} />}
             label="Revenue Expected"
             value={revenueDisplay}
-            accent="border-green-200 bg-green-50 text-green-800"
+            accent="border-accent-emerald/30 text-accent-emerald"
             editable
             onSave={(v) => dispatch({ type: 'UPDATE_MOTION_FIELD', motionId: motion.id, field: 'contributionGoal', value: v })}
             placeholder="$0"
@@ -122,7 +122,7 @@ export function MotionCard({ motion }: { motion: Motion }) {
             icon={<Target size={11} />}
             label="Leads"
             value={motion.leads}
-            accent="border-blue-200 bg-blue-50 text-blue-800"
+            accent="border-accent-sky/30 text-accent-sky"
             editable
             onSave={(v) => dispatch({ type: 'UPDATE_MOTION_FIELD', motionId: motion.id, field: 'leads', value: v })}
             placeholder="0"
@@ -131,7 +131,7 @@ export function MotionCard({ motion }: { motion: Motion }) {
             icon={<Trophy size={11} />}
             label="Wins"
             value={motion.wins}
-            accent="border-amber-200 bg-amber-50 text-amber-800"
+            accent="border-accent-amber/30 text-accent-amber"
             editable
             onSave={(v) => dispatch({ type: 'UPDATE_MOTION_FIELD', motionId: motion.id, field: 'wins', value: v })}
             placeholder="0"
@@ -150,7 +150,7 @@ export function MotionCard({ motion }: { motion: Motion }) {
               }
             }}
             title={motion.locked ? 'Unlock motion' : 'Lock motion'}
-            className={`p-1.5 rounded-lg transition-colors ${motion.locked ? 'text-amber-500 hover:text-amber-600 bg-amber-50 hover:bg-amber-100' : 'text-gray-300 hover:text-amber-500 hover:bg-amber-50'}`}
+            className={`p-1.5 rounded-md transition-colors ${motion.locked ? 'text-accent-amber bg-accent-amber/10 hover:bg-accent-amber/20' : 'text-gray-500 hover:text-accent-amber hover:bg-accent-amber/10'}`}
           >
             {motion.locked ? <Lock size={15} /> : <LockOpen size={15} />}
           </button>
@@ -162,12 +162,12 @@ export function MotionCard({ motion }: { motion: Motion }) {
               }
             }}
             disabled={!!motion.locked}
-            className={`p-1.5 rounded-lg transition-colors ${motion.locked ? 'text-gray-200 cursor-not-allowed' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}
+            className={`p-1.5 rounded-md transition-colors ${motion.locked ? 'text-gray-600 cursor-not-allowed' : 'text-gray-500 hover:text-accent-rose hover:bg-accent-rose/10'}`}
             title={motion.locked ? 'Unlock motion to delete' : 'Remove motion'}
           >
             <Trash2 size={15} />
           </button>
-          <ChevronRight size={18} className="text-gray-400" />
+          <ChevronRight size={18} className="text-gray-500" />
         </div>
       </div>
     </div>
