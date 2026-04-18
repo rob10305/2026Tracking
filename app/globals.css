@@ -3,27 +3,32 @@
 @tailwind utilities;
 
 /* -----------------------------------------------------------
-   Design tokens (CSS variables)
+   AOP / AI Showcase design tokens
    ----------------------------------------------------------- */
 :root {
-  --brand-50: #eef4ff;
-  --brand-100: #d9e5ff;
-  --brand-500: #3b66f5;
-  --brand-600: #2547e0;
-  --brand-700: #1d36b8;
+  --canvas: #050914;
+  --canvas-raised: #0b1120;
+  --canvas-elevated: #101a30;
+  --canvas-sidebar: #0a0f1f;
+  --line: rgba(255, 255, 255, 0.05);
+  --line-strong: rgba(255, 255, 255, 0.10);
 
-  --surface: #ffffff;
-  --surface-muted: #f7f8fb;
-  --surface-subtle: #f0f2f7;
-  --ink: #0b1020;
-  --ink-soft: #343a4a;
-  --ink-muted: #6b7280;
+  --accent-sky: #38bdf8;
+  --accent-emerald: #34d399;
+  --accent-amber: #fbbf24;
+  --accent-violet: #a78bfa;
+  --accent-rose: #fb7185;
 
-  --ring: 0 0 0 3px rgb(59 102 245 / 0.22);
+  --ink: #f3f4f6;
+  --ink-soft: #d1d5db;
+  --ink-muted: #9ca3af;
+  --ink-faint: #6b7280;
+
+  color-scheme: dark;
 }
 
 /* -----------------------------------------------------------
-   Base typography & background
+   Base typography & dark canvas
    ----------------------------------------------------------- */
 html {
   font-family:
@@ -32,14 +37,15 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  background-color: var(--canvas);
 }
 
 body {
-  background-color: var(--surface-muted);
+  background-color: var(--canvas);
   background-image:
-    radial-gradient(1200px 600px at 10% -10%, rgba(59, 102, 245, 0.08), transparent 60%),
-    radial-gradient(900px 500px at 110% 10%, rgba(147, 51, 234, 0.06), transparent 55%),
-    linear-gradient(180deg, #f7f8fb 0%, #eef1f7 100%);
+    radial-gradient(1100px 500px at 10% -10%, rgba(56, 189, 248, 0.10), transparent 60%),
+    radial-gradient(900px 450px at 110% 10%, rgba(167, 139, 250, 0.08), transparent 55%),
+    radial-gradient(700px 400px at 50% 110%, rgba(52, 211, 153, 0.05), transparent 60%);
   background-attachment: fixed;
   color: var(--ink);
   letter-spacing: -0.005em;
@@ -47,79 +53,116 @@ body {
 
 h1, h2, h3, h4 {
   letter-spacing: -0.02em;
+  color: #ffffff;
 }
 
 /* -----------------------------------------------------------
-   Scrollbars — subtle and modern
+   Scrollbars — subtle on dark canvas
    ----------------------------------------------------------- */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(11, 16, 32, 0.18) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
 }
 
 *::-webkit-scrollbar { width: 10px; height: 10px; }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb {
-  background-color: rgba(11, 16, 32, 0.18);
+  background-color: rgba(255, 255, 255, 0.14);
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(11, 16, 32, 0.32);
+  background-color: rgba(255, 255, 255, 0.28);
   background-clip: content-box;
   border: 2px solid transparent;
 }
 
 /* -----------------------------------------------------------
-   Focus — consistent accent ring
+   Focus ring — sky accent
    ----------------------------------------------------------- */
 :where(a, button, input, textarea, select, [role="button"]):focus-visible {
   outline: none;
-  box-shadow: var(--ring);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35);
   border-radius: 0.5rem;
 }
 
 /* -----------------------------------------------------------
-   Reusable component utilities
+   Reusable component utilities (AOP / AI Showcase style)
    ----------------------------------------------------------- */
 @layer components {
+  /* Standard raised card on dark canvas */
   .card {
-    @apply bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-soft;
+    @apply relative overflow-hidden rounded-xl border p-6;
+    background-color: var(--canvas-raised);
+    border-color: var(--line);
   }
   .card-hover {
-    @apply transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:shadow-soft-lg hover:border-slate-300/80;
+    @apply transition-colors duration-200 ease-smooth;
   }
+  .card-hover:hover {
+    background-color: var(--canvas-elevated);
+  }
+
+  /* Left-accent rail variants used by AOP tiles */
+  .card-accent-sky     { @apply card; border-left: 4px solid var(--accent-sky); }
+  .card-accent-emerald { @apply card; border-left: 4px solid var(--accent-emerald); }
+  .card-accent-amber   { @apply card; border-left: 4px solid var(--accent-amber); }
+  .card-accent-violet  { @apply card; border-left: 4px solid var(--accent-violet); }
+  .card-accent-rose    { @apply card; border-left: 4px solid var(--accent-rose); }
+
+  /* Eyebrow labels (the uppercase tracked text used across AOP/AI pages) */
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase;
+    letter-spacing: 0.25em;
+    color: var(--ink-muted);
+  }
+  .eyebrow-sky     { @apply eyebrow; color: var(--accent-sky); }
+  .eyebrow-emerald { @apply eyebrow; color: var(--accent-emerald); }
+  .eyebrow-amber   { @apply eyebrow; color: var(--accent-amber); }
+  .eyebrow-violet  { @apply eyebrow; color: var(--accent-violet); }
+
+  /* Buttons */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 ease-smooth;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ease-smooth;
   }
   .btn-primary {
-    @apply btn text-white bg-brand-gradient shadow-soft hover:shadow-soft-lg hover:brightness-110 active:brightness-95;
+    @apply btn text-[#050914];
+    background-color: var(--accent-sky);
   }
+  .btn-primary:hover { filter: brightness(1.08); }
   .btn-secondary {
-    @apply btn bg-white text-ink border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-soft-sm;
+    @apply btn text-white border;
+    background-color: var(--canvas-raised);
+    border-color: var(--line-strong);
   }
+  .btn-secondary:hover { background-color: var(--canvas-elevated); }
   .btn-ghost {
-    @apply btn text-ink-soft hover:bg-slate-100;
+    @apply btn text-gray-300;
   }
+  .btn-ghost:hover { background-color: rgba(255, 255, 255, 0.05); color: #fff; }
+
+  /* Chips / tags */
   .chip {
-    @apply inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded-full border;
+    border-color: var(--line-strong);
+    background-color: rgba(255, 255, 255, 0.03);
+    color: var(--ink-soft);
   }
-  .section-title {
-    @apply text-lg font-semibold tracking-tight text-ink;
-  }
-  .section-subtitle {
-    @apply text-sm text-ink-muted;
-  }
-  .glass-nav {
-    background: linear-gradient(135deg, rgba(11, 16, 32, 0.96) 0%, rgba(20, 28, 73, 0.96) 60%, rgba(28, 45, 117, 0.96) 100%);
-    backdrop-filter: saturate(140%) blur(10px);
-    -webkit-backdrop-filter: saturate(140%) blur(10px);
-  }
+
+  /* Section headings */
+  .section-title    { @apply text-xl font-semibold tracking-tight text-white; }
+  .section-subtitle { @apply text-sm; color: var(--ink-muted); }
+
+  /* Blurred accent glow used as decoration inside cards/hero */
+  .glow-sky     { background-color: rgba(56, 189, 248, 0.12); }
+  .glow-emerald { background-color: rgba(52, 211, 153, 0.12); }
+  .glow-amber   { background-color: rgba(251, 191, 36, 0.12); }
+  .glow-violet  { background-color: rgba(167, 139, 250, 0.14); }
 }
 
 /* -----------------------------------------------------------
-   Handsontable overrides — modernized compact look
+   Handsontable overrides — dark-aware compact look
    ----------------------------------------------------------- */
 .handsontable td,
 .handsontable th {
@@ -129,29 +172,22 @@ h1, h2, h3, h4 {
     "Segoe UI", Roboto, sans-serif !important;
 }
 
-.handsontable th {
-  background-color: #f7f8fb !important;
-  color: #343a4a !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.01em;
-}
-
 .handsontable .htDimmed {
   color: #6b7280;
 }
 
-/* Total row styling */
 .total-row td {
   font-weight: 600 !important;
-  background-color: #eef1f7 !important;
-  color: #0b1020 !important;
+  background-color: #f3f4f6 !important;
 }
 
 /* -----------------------------------------------------------
    Small animations
    ----------------------------------------------------------- */
 @media (prefers-reduced-motion: no-preference) {
-  .anim-fade-in { animation: fade-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .anim-fade-in {
+    animation: fade-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
   @keyframes fade-in {
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }

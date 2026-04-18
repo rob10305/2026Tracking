@@ -24,13 +24,11 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
         />
       </head>
-      <body className="font-sans text-ink min-h-screen antialiased">
+      <body className="font-sans min-h-screen antialiased bg-canvas text-gray-100">
         <StoreProvider>
           <SavedForecastsProvider>
             <Navigation />
-            <main className="px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto anim-fade-in">
-              {children}
-            </main>
+            <main className="p-4 anim-fade-in">{children}</main>
           </SavedForecastsProvider>
         </StoreProvider>
       </body>
