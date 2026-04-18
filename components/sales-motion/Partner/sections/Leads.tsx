@@ -81,14 +81,14 @@ export function Leads({ partner, updateField, readOnly }: SectionProps) {
     <Section icon={Users} title={`Leads (${partner.leads.length})`} color="bg-sky-100 text-sky-600">
       {/* Summary counts */}
       <div className="grid grid-cols-3 gap-3">
-        <SummaryTile label="This Month" value={thisMonth} bgClass="bg-sky-50" textClass="text-sky-700" />
-        <SummaryTile label="This Quarter" value={thisQuarter} bgClass="bg-indigo-50" textClass="text-indigo-700" />
-        <SummaryTile label="YTD" value={ytd} bgClass="bg-purple-50" textClass="text-purple-700" />
+        <SummaryTile label="This Month" value={thisMonth} accent="sky" />
+        <SummaryTile label="This Quarter" value={thisQuarter} accent="violet" />
+        <SummaryTile label="YTD" value={ytd} accent="emerald" />
       </div>
 
       {/* Stage filter */}
       <div className="pt-2">
-        <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Stage</div>
+        <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.25em] mb-1.5">Stage</div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {STAGE_FILTERS.map((s) => (
             <Pill key={s} active={stage === s} onClick={() => setStage(s)}>
@@ -100,7 +100,7 @@ export function Leads({ partner, updateField, readOnly }: SectionProps) {
 
       {/* Source filter */}
       <div>
-        <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Source</div>
+        <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.25em] mb-1.5">Source</div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {SOURCE_FILTERS.map((s) => (
             <Pill key={s} active={source === s} onClick={() => setSource(s)}>
@@ -112,32 +112,32 @@ export function Leads({ partner, updateField, readOnly }: SectionProps) {
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <p className="text-sm text-gray-400 italic">
+        <p className="text-sm text-gray-500 italic">
           {partner.leads.length === 0 ? 'No leads yet.' : 'No leads match the current filters.'}
         </p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-md border border-white/5">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left bg-gray-50">
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">Lead Name</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">Company</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[140px]">Source</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[120px]">Date</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[120px]">Stage</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[120px]">Owner</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[80px]">SF</th>
+              <tr className="text-left bg-white/[0.02]">
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Lead Name</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Company</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[140px]">Source</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[120px]">Date</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[120px]">Stage</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[120px]">Owner</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[80px]">SF</th>
                 <th className="px-3 py-2 w-[40px]" />
               </tr>
             </thead>
             <tbody>
               {filtered.map((l) => (
-                <tr key={l.id} className="border-t border-gray-100">
+                <tr key={l.id} className="border-t border-white/5 hover:bg-white/[0.02]">
                   <td className="px-3 py-2">
-                    <EditableField value={l.name} onSave={(v) => updateLead(l.id, { name: v })} placeholder="Lead name" className="text-sm font-medium" disabled={readOnly} />
+                    <EditableField value={l.name} onSave={(v) => updateLead(l.id, { name: v })} placeholder="Lead name" className="text-sm font-medium text-white" disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
-                    <EditableField value={l.company} onSave={(v) => updateLead(l.id, { company: v })} placeholder="Company" className="text-xs" disabled={readOnly} />
+                    <EditableField value={l.company} onSave={(v) => updateLead(l.id, { company: v })} placeholder="Company" className="text-xs text-gray-300" disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
                     <SelectDropdown
@@ -149,13 +149,13 @@ export function Leads({ partner, updateField, readOnly }: SectionProps) {
                   </td>
                   <td className="px-3 py-2">
                     {readOnly ? (
-                      <span className="text-xs text-gray-600">{l.date || '—'}</span>
+                      <span className="text-xs text-gray-300">{l.date || '—'}</span>
                     ) : (
                       <input
                         type="date"
                         value={l.date}
                         onChange={(e) => updateLead(l.id, { date: e.target.value })}
-                        className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white"
+                        className="border border-white/10 bg-canvas text-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-accent-sky/50 [color-scheme:dark]"
                       />
                     )}
                   </td>
@@ -168,24 +168,24 @@ export function Leads({ partner, updateField, readOnly }: SectionProps) {
                     />
                   </td>
                   <td className="px-3 py-2">
-                    <EditableField value={l.owner} onSave={(v) => updateLead(l.id, { owner: v })} placeholder="Owner" className="text-xs" disabled={readOnly} />
+                    <EditableField value={l.owner} onSave={(v) => updateLead(l.id, { owner: v })} placeholder="Owner" className="text-xs text-gray-300" disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
                     {readOnly ? (
                       l.sfLink ? (
-                        <a href={l.sfLink} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-600 hover:underline inline-flex items-center gap-1">
+                        <a href={l.sfLink} target="_blank" rel="noopener noreferrer" className="text-xs text-accent-sky hover:text-white transition-colors inline-flex items-center gap-1">
                           Open <ExternalLink size={10} />
                         </a>
                       ) : (
-                        <span className="text-xs text-gray-400">—</span>
+                        <span className="text-xs text-gray-500">—</span>
                       )
                     ) : (
-                      <EditableField value={l.sfLink} onSave={(v) => updateLead(l.id, { sfLink: v })} placeholder="SF URL" className="text-xs" disabled={readOnly} />
+                      <EditableField value={l.sfLink} onSave={(v) => updateLead(l.id, { sfLink: v })} placeholder="SF URL" className="text-xs text-gray-300" disabled={readOnly} />
                     )}
                   </td>
                   <td className="px-3 py-2">
                     {!readOnly && (
-                      <button onClick={() => removeLead(l.id)} className="text-gray-300 hover:text-red-500" aria-label="Remove lead">
+                      <button onClick={() => removeLead(l.id)} className="text-gray-500 hover:text-accent-rose transition-colors" aria-label="Remove lead">
                         <Trash2 size={14} />
                       </button>
                     )}
@@ -206,21 +206,31 @@ export function Leads({ partner, updateField, readOnly }: SectionProps) {
   );
 }
 
+type Accent = 'sky' | 'emerald' | 'amber' | 'violet';
+
+const SUMMARY_ACCENT: Record<Accent, { text: string; rail: string }> = {
+  sky:     { text: 'text-accent-sky',     rail: 'border-l-accent-sky' },
+  emerald: { text: 'text-accent-emerald', rail: 'border-l-accent-emerald' },
+  amber:   { text: 'text-accent-amber',   rail: 'border-l-accent-amber' },
+  violet:  { text: 'text-accent-violet',  rail: 'border-l-accent-violet' },
+};
+
 function SummaryTile({
   label,
   value,
-  bgClass,
-  textClass,
+  accent,
 }: {
   label: string;
   value: number;
-  bgClass: string;
-  textClass: string;
+  accent: Accent;
 }) {
+  const a = SUMMARY_ACCENT[accent];
   return (
-    <div className={`rounded-xl p-3 border border-gray-100 ${bgClass}`}>
-      <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{label}</div>
-      <div className={`text-2xl font-bold ${textClass}`}>{value}</div>
+    <div className={`rounded-md p-3 bg-white/[0.02] border border-white/5 ${a.rail} border-l-4`}>
+      <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.25em]">
+        {label}
+      </div>
+      <div className={`text-2xl font-bold ${a.text} mt-1`}>{value}</div>
     </div>
   );
 }

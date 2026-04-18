@@ -30,23 +30,23 @@ export function ActiveCampaigns({ partner, updateField, readOnly }: SectionProps
       </p>
 
       {partner.campaignLinks.length === 0 ? (
-        <p className="text-sm text-gray-400 italic">No campaign links yet.</p>
+        <p className="text-sm text-gray-500 italic">No campaign links yet.</p>
       ) : (
         <div className="space-y-2">
           {partner.campaignLinks.map((c) => (
-            <div key={c.id} className="flex items-center gap-2 flex-wrap border border-gray-100 rounded-lg px-3 py-2 bg-white">
+            <div key={c.id} className="flex items-center gap-2 flex-wrap border border-white/5 rounded-md px-3 py-2 bg-white/[0.02]">
               <div className="flex-1 min-w-[200px]">
                 <EditableField
                   value={c.label}
                   onSave={(v) => updateLink(c.id, { label: v })}
                   placeholder="Campaign label"
-                  className="text-sm font-medium text-gray-800"
+                  className="text-sm font-medium text-white"
                   disabled={readOnly}
                 />
               </div>
               <div className="flex-1 min-w-[200px]">
                 {readOnly && c.url ? (
-                  <a href={c.url} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-600 hover:underline inline-flex items-center gap-1">
+                  <a href={c.url} target="_blank" rel="noopener noreferrer" className="text-xs text-accent-sky hover:text-white transition-colors inline-flex items-center gap-1">
                     {c.url} <ExternalLink size={10} />
                   </a>
                 ) : (
@@ -54,7 +54,7 @@ export function ActiveCampaigns({ partner, updateField, readOnly }: SectionProps
                     value={c.url}
                     onSave={(v) => updateLink(c.id, { url: v })}
                     placeholder="https://…"
-                    className="text-xs text-gray-600"
+                    className="text-xs text-gray-300"
                     disabled={readOnly}
                   />
                 )}
@@ -63,7 +63,7 @@ export function ActiveCampaigns({ partner, updateField, readOnly }: SectionProps
                 <button
                   type="button"
                   onClick={() => removeLink(c.id)}
-                  className="text-gray-300 hover:text-red-500"
+                  className="text-gray-500 hover:text-accent-rose transition-colors"
                   aria-label="Remove campaign link"
                 >
                   <Trash2 size={14} />

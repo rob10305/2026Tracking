@@ -66,40 +66,40 @@ export function Deliverables({ partner, updateField, readOnly }: SectionProps) {
       </div>
 
       {visible.length === 0 ? (
-        <p className="text-sm text-gray-400 italic">
+        <p className="text-sm text-gray-500 italic">
           {partner.deliverables.length === 0 ? 'No deliverables yet.' : 'No deliverables in this view.'}
         </p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-md border border-white/5">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left bg-gray-50">
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">Title</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[120px]">Owner</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[120px]">Due</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[130px]">Status</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">Notes</th>
+              <tr className="text-left bg-white/[0.02]">
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Title</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[120px]">Owner</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[120px]">Due</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[130px]">Status</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Notes</th>
                 <th className="px-3 py-2 w-[40px]" />
               </tr>
             </thead>
             <tbody>
               {visible.map((d) => (
-                <tr key={d.id} className="border-t border-gray-100 align-top">
+                <tr key={d.id} className="border-t border-white/5 hover:bg-white/[0.02] align-top">
                   <td className="px-3 py-2">
-                    <EditableField value={d.title} onSave={(v) => updateRow(d.id, { title: v })} placeholder="Deliverable title" className="text-sm font-medium" disabled={readOnly} />
+                    <EditableField value={d.title} onSave={(v) => updateRow(d.id, { title: v })} placeholder="Deliverable title" className="text-sm font-medium text-white" disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
-                    <EditableField value={d.owner} onSave={(v) => updateRow(d.id, { owner: v })} placeholder="Owner" className="text-xs" disabled={readOnly} />
+                    <EditableField value={d.owner} onSave={(v) => updateRow(d.id, { owner: v })} placeholder="Owner" className="text-xs text-gray-300" disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
                     {readOnly ? (
-                      <span className="text-xs text-gray-600">{d.dueDate || '—'}</span>
+                      <span className="text-xs text-gray-300">{d.dueDate || '—'}</span>
                     ) : (
                       <input
                         type="date"
                         value={d.dueDate}
                         onChange={(e) => updateRow(d.id, { dueDate: e.target.value })}
-                        className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white"
+                        className="border border-white/10 bg-canvas text-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-accent-sky/50 [color-scheme:dark]"
                       />
                     )}
                   </td>
@@ -112,11 +112,11 @@ export function Deliverables({ partner, updateField, readOnly }: SectionProps) {
                     />
                   </td>
                   <td className="px-3 py-2">
-                    <EditableField value={d.notes} onSave={(v) => updateRow(d.id, { notes: v })} placeholder="Notes" className="text-xs" multiline disabled={readOnly} />
+                    <EditableField value={d.notes} onSave={(v) => updateRow(d.id, { notes: v })} placeholder="Notes" className="text-xs text-gray-300" multiline disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
                     {!readOnly && (
-                      <button onClick={() => removeRow(d.id)} className="text-gray-300 hover:text-red-500" aria-label="Remove deliverable">
+                      <button onClick={() => removeRow(d.id)} className="text-gray-500 hover:text-accent-rose transition-colors" aria-label="Remove deliverable">
                         <Trash2 size={14} />
                       </button>
                     )}

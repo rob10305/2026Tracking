@@ -6,15 +6,22 @@ import type { Partner, PartnerStatus } from '@/lib/sales-motion/partner/types';
 import { Handshake, Users, DollarSign, Trophy, Hash } from 'lucide-react';
 
 const STATUS_COLORS: Record<PartnerStatus, string> = {
-  Active: 'bg-green-100 text-green-700 border-green-200',
-  Recruit: 'bg-blue-100 text-blue-700 border-blue-200',
-  Dormant: 'bg-gray-100 text-gray-600 border-gray-200',
+  Active:  'bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/30',
+  Recruit: 'bg-accent-sky/10 text-accent-sky border border-accent-sky/30',
+  Dormant: 'bg-white/5 text-gray-400 border border-white/10',
 };
 
 const TIER_COLORS: Record<string, string> = {
-  Strategic: 'bg-purple-100 text-purple-700',
-  Preferred: 'bg-indigo-100 text-indigo-700',
-  Standard: 'bg-slate-100 text-slate-700',
+  Strategic: 'bg-accent-violet/10 text-accent-violet border border-accent-violet/30',
+  Preferred: 'bg-accent-sky/10 text-accent-sky border border-accent-sky/30',
+  Standard:  'bg-white/5 text-gray-300 border border-white/10',
+};
+
+// Left-border accent rail reflects partner status
+const STATUS_RAIL: Record<PartnerStatus, string> = {
+  Active:  'border-l-accent-emerald',
+  Recruit: 'border-l-accent-sky',
+  Dormant: 'border-l-white/20',
 };
 
 function fmtCompact(raw: string): string {
@@ -36,30 +43,42 @@ export function PartnerCard({ partner }: { partner: Partner }) {
   return (
     <Link
       href={`/sales-motion/partner/details/${partner.id}`}
-      className="group bg-white rounded-2xl border-2 border-gray-200 hover:border-purple-400 hover:shadow-xl transition-all overflow-hidden flex flex-col"
+      className={`group relative overflow-hidden bg-canvas-raised rounded-xl border border-white/5 ${STATUS_RAIL[partner.status]} border-l-4 hover:bg-canvas-elevated transition-colors flex flex-col`}
     >
+      {/* Decorative corner glow (violet, subtle) */}
+      <div
+        aria-hidden
+        className="absolute -top-12 -right-12 h-32 w-32 rounded-full glow-violet blur-3xl pointer-events-none opacity-70"
+      />
+
       {/* Header strip with logo and status */}
-      <div className="relative bg-gradient-to-br from-purple-50 to-indigo-50 h-32 flex items-center justify-center border-b border-gray-100">
+      <div className="relative h-28 flex items-center justify-center border-b border-white/5 bg-white/[0.02]">
         {hasLogo ? (
           <Image
             src={partner.logo}
             alt={partner.name || 'Partner logo'}
             width={120}
             height={60}
-            className="object-contain max-h-16"
+            className="object-contain max-h-14 opacity-90"
             unoptimized
           />
         ) : (
-          <div className="w-16 h-16 rounded-full bg-white/80 flex items-center justify-center text-2xl font-bold text-purple-600 border-2 border-purple-200">
-            {partner.name ? partner.name[0].toUpperCase() : <Handshake size={28} />}
+          <div className="w-14 h-14 rounded-full bg-accent-violet/10 border border-accent-violet/30 flex items-center justify-center text-xl font-bold text-accent-violet">
+            {partner.name ? partner.name[0].toUpperCase() : <Handshake size={24} />}
           </div>
         )}
         <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
-          <span className={`inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${STATUS_COLORS[partner.status]}`}>
+          <span
+            className={`inline-block text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full ${STATUS_COLORS[partner.status]}`}
+          >
             {partner.status}
           </span>
           {partner.tier && (
-            <span className={`inline-block text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded ${TIER_COLORS[partner.tier] || 'bg-gray-100 text-gray-600'}`}>
+            <span
+              className={`inline-block text-[9px] font-semibold uppercase tracking-[0.2em] px-1.5 py-0.5 rounded-full ${
+                TIER_COLORS[partner.tier] ?? 'bg-white/5 text-gray-400 border border-white/10'
+              }`}
+            >
               {partner.tier}
             </span>
           )}
@@ -67,39 +86,63 @@ export function PartnerCard({ partner }: { partner: Partner }) {
       </div>
 
       {/* Name + owner */}
-      <div className="px-4 pt-3 pb-2">
-        <h3 className="text-base font-bold text-gray-900 group-hover:text-purple-700 transition-colors truncate">
+      <div className="relative px-4 pt-3 pb-2">
+        <h3 className="text-base font-bold text-white group-hover:text-accent-violet transition-colors truncate">
           {partner.name || 'Unnamed Partner'}
         </h3>
       </div>
 
       {/* Metrics grid */}
-      <div className="px-4 pb-3 grid grid-cols-2 gap-2">
-        <Metric icon={Hash} label="Pipeline Deals" value={fmtCompact(partner.pipelineDeals)} color="text-blue-600" bg="bg-blue-50" />
-        <Metric icon={DollarSign} label="Pipeline $" value={fmtCompact(partner.pipelineValue)} color="text-indigo-600" bg="bg-indigo-50" />
-        <Metric icon={Users} label="Contacts" value={fmtCompact(partner.activeContacts)} color="text-teal-600" bg="bg-teal-50" />
-        <Metric icon={Trophy} label="Wins" value={fmtCompact(partner.wins)} color="text-amber-600" bg="bg-amber-50" />
+      <div className="relative px-4 pb-3 grid grid-cols-2 gap-2">
+        <Metric icon={Hash} label="Pipeline Deals" value={fmtCompact(partner.pipelineDeals)} accent="sky" />
+        <Metric icon={DollarSign} label="Pipeline $" value={fmtCompact(partner.pipelineValue)} accent="emerald" />
+        <Metric icon={Users} label="Contacts" value={fmtCompact(partner.activeContacts)} accent="violet" />
+        <Metric icon={Trophy} label="Wins" value={fmtCompact(partner.wins)} accent="amber" />
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2 bg-gray-50 border-t border-gray-100 flex items-center justify-between mt-auto">
-        <span className="text-[10px] text-gray-400">
+      <div className="relative px-4 py-2 bg-white/[0.02] border-t border-white/5 flex items-center justify-between mt-auto">
+        <span className="text-[10px] text-gray-500">
           {partner.lastActivity ? `Last: ${partner.lastActivity}` : 'No activity yet'}
         </span>
-        <span className="text-[10px] font-semibold text-purple-600 group-hover:text-purple-700">View →</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-violet group-hover:translate-x-0.5 transition-transform">
+          View →
+        </span>
       </div>
     </Link>
   );
 }
 
-function Metric({ icon: Icon, label, value, color, bg }: { icon: typeof Hash; label: string; value: string; color: string; bg: string }) {
+type Accent = 'sky' | 'emerald' | 'amber' | 'violet';
+
+const METRIC_ACCENT: Record<Accent, { text: string; border: string }> = {
+  sky:     { text: 'text-accent-sky',     border: 'border-accent-sky/20' },
+  emerald: { text: 'text-accent-emerald', border: 'border-accent-emerald/20' },
+  amber:   { text: 'text-accent-amber',   border: 'border-accent-amber/20' },
+  violet:  { text: 'text-accent-violet',  border: 'border-accent-violet/20' },
+};
+
+function Metric({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: typeof Hash;
+  label: string;
+  value: string;
+  accent: Accent;
+}) {
+  const a = METRIC_ACCENT[accent];
   return (
-    <div className={`${bg} rounded-lg p-2`}>
+    <div className={`bg-white/[0.02] border ${a.border} rounded-md p-2`}>
       <div className="flex items-center gap-1 mb-0.5">
-        <Icon size={10} className={color} />
-        <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider">{label}</span>
+        <Icon size={10} className={a.text} />
+        <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-[0.18em]">
+          {label}
+        </span>
       </div>
-      <div className={`text-sm font-bold ${color}`}>{value}</div>
+      <div className={`text-sm font-bold ${a.text}`}>{value}</div>
     </div>
   );
 }

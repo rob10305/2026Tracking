@@ -75,23 +75,23 @@ export function Enablement({ partner, updateField, readOnly }: SectionProps) {
       <div>
         <FieldLabel>Certifications ({partner.certifications.length})</FieldLabel>
         {partner.certifications.length === 0 ? (
-          <p className="text-sm text-gray-400 italic mb-2">No certifications yet.</p>
+          <p className="text-sm text-gray-500 italic mb-2">No certifications yet.</p>
         ) : (
           <div className="overflow-x-auto mb-2">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left bg-gray-50">
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-500">Certification</th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[140px]">Holder</th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[130px]">Issued</th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[130px]">Expires</th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[130px]">Status</th>
+                <tr className="text-left bg-white/[0.02]">
+                  <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Certification</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[140px]">Holder</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[130px]">Issued</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[130px]">Expires</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[130px]">Status</th>
                   <th className="px-3 py-2 w-[40px]" />
                 </tr>
               </thead>
               <tbody>
                 {partner.certifications.map((c) => (
-                  <tr key={c.id} className="border-t border-gray-100 align-top">
+                  <tr key={c.id} className="border-t border-white/5 hover:bg-white/[0.02] align-top">
                     <td className="px-3 py-2">
                       <EditableField value={c.certification} onSave={(v) => updateCert(c.id, { certification: v })} placeholder="Certification name" className="text-sm" disabled={readOnly} />
                     </td>
@@ -100,25 +100,25 @@ export function Enablement({ partner, updateField, readOnly }: SectionProps) {
                     </td>
                     <td className="px-3 py-2">
                       {readOnly ? (
-                        <span className="text-xs text-gray-600">{c.issued || '—'}</span>
+                        <span className="text-xs text-gray-300">{c.issued || '—'}</span>
                       ) : (
                         <input
                           type="date"
                           value={c.issued}
                           onChange={(e) => updateCert(c.id, { issued: e.target.value })}
-                          className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white"
+                          className="border border-white/10 bg-canvas text-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-accent-sky/50 [color-scheme:dark]"
                         />
                       )}
                     </td>
                     <td className="px-3 py-2">
                       {readOnly ? (
-                        <span className="text-xs text-gray-600">{c.expires || '—'}</span>
+                        <span className="text-xs text-gray-300">{c.expires || '—'}</span>
                       ) : (
                         <input
                           type="date"
                           value={c.expires}
                           onChange={(e) => updateCert(c.id, { expires: e.target.value })}
-                          className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white"
+                          className="border border-white/10 bg-canvas text-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-accent-sky/50 [color-scheme:dark]"
                         />
                       )}
                     </td>
@@ -132,7 +132,7 @@ export function Enablement({ partner, updateField, readOnly }: SectionProps) {
                     </td>
                     <td className="px-3 py-2">
                       {!readOnly && (
-                        <button onClick={() => removeCert(c.id)} className="text-gray-300 hover:text-red-500" aria-label="Remove certification">
+                        <button onClick={() => removeCert(c.id)} className="text-gray-500 hover:text-accent-rose transition-colors" aria-label="Remove certification">
                           <Trash2 size={14} />
                         </button>
                       )}
@@ -151,19 +151,19 @@ export function Enablement({ partner, updateField, readOnly }: SectionProps) {
       </div>
 
       {/* Training Log */}
-      <div className="pt-3 border-t border-gray-100">
+      <div className="pt-3 border-t border-white/5">
         <FieldLabel>Training Log ({partner.trainings.length})</FieldLabel>
         {partner.trainings.length === 0 ? (
-          <p className="text-sm text-gray-400 italic mb-2">No training logged yet.</p>
+          <p className="text-sm text-gray-500 italic mb-2">No training logged yet.</p>
         ) : (
           <div className="overflow-x-auto mb-2">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left bg-gray-50">
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[130px]">Date</th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-500">Training</th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[160px]">Attendee</th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-500">Notes</th>
+                <tr className="text-left bg-white/[0.02]">
+                  <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[130px]">Date</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Training</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[160px]">Attendee</th>
+                  <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Notes</th>
                   <th className="px-3 py-2 w-[40px]" />
                 </tr>
               </thead>
@@ -171,16 +171,16 @@ export function Enablement({ partner, updateField, readOnly }: SectionProps) {
                 {[...partner.trainings]
                   .sort((a, b) => b.date.localeCompare(a.date))
                   .map((t) => (
-                    <tr key={t.id} className="border-t border-gray-100 align-top">
+                    <tr key={t.id} className="border-t border-white/5 hover:bg-white/[0.02] align-top">
                       <td className="px-3 py-2">
                         {readOnly ? (
-                          <span className="text-xs text-gray-600">{t.date || '—'}</span>
+                          <span className="text-xs text-gray-300">{t.date || '—'}</span>
                         ) : (
                           <input
                             type="date"
                             value={t.date}
                             onChange={(e) => updateTraining(t.id, { date: e.target.value })}
-                            className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white"
+                            className="border border-white/10 bg-canvas text-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-accent-sky/50 [color-scheme:dark]"
                           />
                         )}
                       </td>
@@ -195,7 +195,7 @@ export function Enablement({ partner, updateField, readOnly }: SectionProps) {
                       </td>
                       <td className="px-3 py-2">
                         {!readOnly && (
-                          <button onClick={() => removeTraining(t.id)} className="text-gray-300 hover:text-red-500" aria-label="Remove training">
+                          <button onClick={() => removeTraining(t.id)} className="text-gray-500 hover:text-accent-rose transition-colors" aria-label="Remove training">
                             <Trash2 size={14} />
                           </button>
                         )}
@@ -214,7 +214,7 @@ export function Enablement({ partner, updateField, readOnly }: SectionProps) {
       </div>
 
       {/* Outstanding Requirements / Gaps */}
-      <div className="pt-3 border-t border-gray-100">
+      <div className="pt-3 border-t border-white/5">
         <FieldLabel>Outstanding Requirements / Gaps</FieldLabel>
         <textarea
           value={enablementDraft}
@@ -222,7 +222,7 @@ export function Enablement({ partner, updateField, readOnly }: SectionProps) {
           placeholder="Notes on enablement gaps, upcoming certification needs, required training…"
           rows={3}
           disabled={readOnly}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white disabled:bg-gray-50 disabled:text-gray-500"
+          className="w-full border border-white/10 bg-canvas text-gray-200 placeholder-gray-500 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-accent-sky/50 disabled:bg-white/[0.02] disabled:text-gray-400"
         />
         {!readOnly && (
           <div className="mt-2 flex items-center gap-2">
@@ -230,12 +230,12 @@ export function Enablement({ partner, updateField, readOnly }: SectionProps) {
               type="button"
               onClick={saveEnablement}
               disabled={!enablementDirty}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-accent-violet text-[#050914] rounded-md hover:brightness-110 disabled:opacity-40 transition"
             >
               Save
             </button>
             {savedAt && (
-              <span className="inline-flex items-center gap-1 text-xs text-green-600">
+              <span className="inline-flex items-center gap-1 text-xs text-accent-emerald">
                 <Check size={12} /> Saved
               </span>
             )}

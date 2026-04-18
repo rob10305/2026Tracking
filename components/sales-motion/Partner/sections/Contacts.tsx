@@ -86,37 +86,37 @@ export function Contacts({ partner, updateField, readOnly }: SectionProps) {
       </div>
 
       {visible.length === 0 ? (
-        <p className="text-sm text-gray-400 italic">
+        <p className="text-sm text-gray-500 italic">
           {partner.contacts.length === 0 ? 'No contacts yet.' : 'No contacts match this filter.'}
         </p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-md border border-white/5">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left bg-gray-50">
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">Name</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">Role</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">Email</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">Phone</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">Tags</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">Notes</th>
+              <tr className="text-left bg-white/[0.02]">
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Name</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Role</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Email</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Phone</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Tags</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Notes</th>
                 <th className="px-3 py-2 w-[40px]" />
               </tr>
             </thead>
             <tbody>
               {visible.map((c) => (
-                <tr key={c.id} className="border-t border-gray-100 align-top">
+                <tr key={c.id} className="border-t border-white/5 hover:bg-white/[0.02] align-top">
                   <td className="px-3 py-2">
-                    <EditableField value={c.name} onSave={(v) => updateContact(c.id, { name: v })} placeholder="Name" className="text-sm font-medium" disabled={readOnly} />
+                    <EditableField value={c.name} onSave={(v) => updateContact(c.id, { name: v })} placeholder="Name" className="text-sm font-medium text-white" disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
-                    <EditableField value={c.role} onSave={(v) => updateContact(c.id, { role: v })} placeholder="Role" className="text-xs" disabled={readOnly} />
+                    <EditableField value={c.role} onSave={(v) => updateContact(c.id, { role: v })} placeholder="Role" className="text-xs text-gray-300" disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
-                    <EditableField value={c.email} onSave={(v) => updateContact(c.id, { email: v })} placeholder="email@…" className="text-xs" disabled={readOnly} />
+                    <EditableField value={c.email} onSave={(v) => updateContact(c.id, { email: v })} placeholder="email@…" className="text-xs text-gray-300" disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
-                    <EditableField value={c.phone} onSave={(v) => updateContact(c.id, { phone: v })} placeholder="Phone" className="text-xs" disabled={readOnly} />
+                    <EditableField value={c.phone} onSave={(v) => updateContact(c.id, { phone: v })} placeholder="Phone" className="text-xs text-gray-300" disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
@@ -128,10 +128,10 @@ export function Contacts({ partner, updateField, readOnly }: SectionProps) {
                             key={tag}
                             onClick={() => !readOnly && toggleTag(c.id, tag)}
                             disabled={readOnly}
-                            className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
+                            className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-colors ${
                               active
-                                ? 'bg-purple-600 text-white border-purple-600'
-                                : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                                ? 'bg-accent-violet/15 text-accent-violet border-accent-violet/40'
+                                : 'bg-white/[0.03] text-gray-400 border-white/10 hover:bg-white/[0.06] hover:text-white'
                             } ${readOnly ? 'cursor-default' : ''}`}
                           >
                             {tag}
@@ -141,11 +141,11 @@ export function Contacts({ partner, updateField, readOnly }: SectionProps) {
                     </div>
                   </td>
                   <td className="px-3 py-2">
-                    <EditableField value={c.notes} onSave={(v) => updateContact(c.id, { notes: v })} placeholder="Notes" className="text-xs" disabled={readOnly} />
+                    <EditableField value={c.notes} onSave={(v) => updateContact(c.id, { notes: v })} placeholder="Notes" className="text-xs text-gray-300" disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
                     {!readOnly && (
-                      <button onClick={() => removeContact(c.id)} className="text-gray-300 hover:text-red-500" aria-label="Remove contact">
+                      <button onClick={() => removeContact(c.id)} className="text-gray-500 hover:text-accent-rose transition-colors" aria-label="Remove contact">
                         <Trash2 size={14} />
                       </button>
                     )}
@@ -169,7 +169,7 @@ export function Contacts({ partner, updateField, readOnly }: SectionProps) {
               type="button"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={safePage === 0}
-              className="p-1 rounded hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent"
+              className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
               aria-label="Previous page"
             >
               <ChevronLeft size={14} />
@@ -181,7 +181,7 @@ export function Contacts({ partner, updateField, readOnly }: SectionProps) {
               type="button"
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={safePage >= totalPages - 1}
-              className="p-1 rounded hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent"
+              className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
               aria-label="Next page"
             >
               <ChevronRight size={14} />

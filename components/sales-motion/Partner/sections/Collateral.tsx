@@ -64,12 +64,16 @@ export function Collateral({ partner, updateField, readOnly }: SectionProps) {
       title={`Collateral (${partner.collateral.length})`}
       color="bg-cyan-100 text-cyan-600"
       right={
-        <div className="flex items-center gap-1 bg-gray-100 rounded-md p-0.5">
+        <div className="flex items-center gap-1 bg-white/[0.03] border border-white/10 rounded-md p-0.5">
           <button
             type="button"
             onClick={() => setView('grid')}
             aria-label="Grid view"
-            className={`p-1 rounded ${view === 'grid' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`p-1 rounded transition-colors ${
+              view === 'grid'
+                ? 'bg-accent-sky/15 text-accent-sky'
+                : 'text-gray-400 hover:text-white'
+            }`}
           >
             <LayoutGrid size={14} />
           </button>
@@ -77,7 +81,11 @@ export function Collateral({ partner, updateField, readOnly }: SectionProps) {
             type="button"
             onClick={() => setView('table')}
             aria-label="Table view"
-            className={`p-1 rounded ${view === 'table' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`p-1 rounded transition-colors ${
+              view === 'table'
+                ? 'bg-accent-sky/15 text-accent-sky'
+                : 'text-gray-400 hover:text-white'
+            }`}
           >
             <Rows size={14} />
           </button>
@@ -86,7 +94,7 @@ export function Collateral({ partner, updateField, readOnly }: SectionProps) {
     >
       {/* Type filter */}
       <div>
-        <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Type</div>
+        <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.25em] mb-1.5">Type</div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {TYPE_FILTERS.map((t) => (
             <Pill key={t} active={typeFilter === t} onClick={() => setTypeFilter(t)}>
@@ -98,7 +106,7 @@ export function Collateral({ partner, updateField, readOnly }: SectionProps) {
 
       {/* Audience filter */}
       <div>
-        <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Audience</div>
+        <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.25em] mb-1.5">Audience</div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {AUDIENCE_FILTERS.map((a) => (
             <Pill key={a} active={audienceFilter === a} onClick={() => setAudienceFilter(a)}>
@@ -109,26 +117,26 @@ export function Collateral({ partner, updateField, readOnly }: SectionProps) {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-gray-400 italic">
+        <p className="text-sm text-gray-500 italic">
           {partner.collateral.length === 0 ? 'No collateral yet.' : 'No items match the current filters.'}
         </p>
       ) : view === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((c) => (
-            <div key={c.id} className="border border-gray-200 rounded-xl p-3 bg-white space-y-2">
+            <div key={c.id} className="border border-white/5 rounded-md p-3 bg-white/[0.02] hover:bg-white/[0.04] transition-colors space-y-2">
               <div className="flex items-start justify-between gap-2">
                 <EditableField
                   value={c.title}
                   onSave={(v) => updateRow(c.id, { title: v })}
                   placeholder="Title"
-                  className="text-sm font-semibold text-gray-900 flex-1"
+                  className="text-sm font-semibold text-white flex-1"
                   disabled={readOnly}
                 />
                 {!readOnly && (
                   <button
                     type="button"
                     onClick={() => removeRow(c.id)}
-                    className="text-gray-300 hover:text-red-500"
+                    className="text-gray-500 hover:text-accent-rose transition-colors"
                     aria-label="Remove collateral"
                   >
                     <Trash2 size={14} />
@@ -150,7 +158,7 @@ export function Collateral({ partner, updateField, readOnly }: SectionProps) {
                 />
               </div>
               {readOnly && c.url ? (
-                <a href={c.url} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-600 hover:underline inline-flex items-center gap-1 break-all">
+                <a href={c.url} target="_blank" rel="noopener noreferrer" className="text-xs text-accent-sky hover:text-white transition-colors inline-flex items-center gap-1 break-all">
                   {c.url} <ExternalLink size={10} />
                 </a>
               ) : (
@@ -158,7 +166,7 @@ export function Collateral({ partner, updateField, readOnly }: SectionProps) {
                   value={c.url}
                   onSave={(v) => updateRow(c.id, { url: v })}
                   placeholder="https://…"
-                  className="text-xs text-gray-600"
+                  className="text-xs text-gray-300"
                   disabled={readOnly}
                 />
               )}
@@ -166,7 +174,7 @@ export function Collateral({ partner, updateField, readOnly }: SectionProps) {
                 value={c.notes}
                 onSave={(v) => updateRow(c.id, { notes: v })}
                 placeholder="Notes"
-                className="text-xs text-gray-700"
+                className="text-xs text-gray-300"
                 multiline
                 disabled={readOnly}
               />
@@ -174,23 +182,23 @@ export function Collateral({ partner, updateField, readOnly }: SectionProps) {
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-md border border-white/5">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left bg-gray-50">
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">Title</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[150px]">Type</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500 w-[150px]">Audience</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">URL</th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500">Notes</th>
+              <tr className="text-left bg-white/[0.02]">
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Title</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[150px]">Type</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em] w-[150px]">Audience</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">URL</th>
+                <th className="px-3 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.2em]">Notes</th>
                 <th className="px-3 py-2 w-[40px]" />
               </tr>
             </thead>
             <tbody>
               {filtered.map((c) => (
-                <tr key={c.id} className="border-t border-gray-100 align-top">
+                <tr key={c.id} className="border-t border-white/5 hover:bg-white/[0.02] align-top">
                   <td className="px-3 py-2">
-                    <EditableField value={c.title} onSave={(v) => updateRow(c.id, { title: v })} placeholder="Title" className="text-sm font-medium" disabled={readOnly} />
+                    <EditableField value={c.title} onSave={(v) => updateRow(c.id, { title: v })} placeholder="Title" className="text-sm font-medium text-white" disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
                     <SelectDropdown
@@ -210,19 +218,19 @@ export function Collateral({ partner, updateField, readOnly }: SectionProps) {
                   </td>
                   <td className="px-3 py-2">
                     {readOnly && c.url ? (
-                      <a href={c.url} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-600 hover:underline inline-flex items-center gap-1">
+                      <a href={c.url} target="_blank" rel="noopener noreferrer" className="text-xs text-accent-sky hover:text-white transition-colors inline-flex items-center gap-1">
                         Open <ExternalLink size={10} />
                       </a>
                     ) : (
-                      <EditableField value={c.url} onSave={(v) => updateRow(c.id, { url: v })} placeholder="https://…" className="text-xs" disabled={readOnly} />
+                      <EditableField value={c.url} onSave={(v) => updateRow(c.id, { url: v })} placeholder="https://…" className="text-xs text-gray-300" disabled={readOnly} />
                     )}
                   </td>
                   <td className="px-3 py-2">
-                    <EditableField value={c.notes} onSave={(v) => updateRow(c.id, { notes: v })} placeholder="Notes" className="text-xs" multiline disabled={readOnly} />
+                    <EditableField value={c.notes} onSave={(v) => updateRow(c.id, { notes: v })} placeholder="Notes" className="text-xs text-gray-300" multiline disabled={readOnly} />
                   </td>
                   <td className="px-3 py-2">
                     {!readOnly && (
-                      <button onClick={() => removeRow(c.id)} className="text-gray-300 hover:text-red-500" aria-label="Remove collateral">
+                      <button onClick={() => removeRow(c.id)} className="text-gray-500 hover:text-accent-rose transition-colors" aria-label="Remove collateral">
                         <Trash2 size={14} />
                       </button>
                     )}

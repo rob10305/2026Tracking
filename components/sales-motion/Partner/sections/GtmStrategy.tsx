@@ -36,7 +36,7 @@ export function GtmStrategy({ partner, updateField, readOnly }: SectionProps) {
       <GtmTextField label="Offerings" value={plan.offerings} onSave={(v) => updateGtm('offerings', v)} disabled={readOnly} multiline />
 
       {/* Structured GTM fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-white/5">
         <GtmTextField label="Partner Margin %" value={plan.partnerMargin} onSave={(v) => updateGtm('partnerMargin', v)} placeholder="e.g. 20%" disabled={readOnly} />
         <GtmTextField label="Pricing Model" value={plan.pricingModel} onSave={(v) => updateGtm('pricingModel', v)} placeholder="e.g. Resell, Referral, Co-sell" disabled={readOnly} />
         <GtmTextField label="MDF Budget" value={plan.mdfBudget} onSave={(v) => updateGtm('mdfBudget', v)} placeholder="e.g. $50K / quarter" disabled={readOnly} />
@@ -44,25 +44,25 @@ export function GtmStrategy({ partner, updateField, readOnly }: SectionProps) {
       </div>
 
       {/* Key dates */}
-      <div className="pt-3 border-t border-gray-100">
+      <div className="pt-3 border-t border-white/5">
         <div className="flex items-center gap-2 mb-2">
-          <Calendar size={13} className="text-gray-500" />
+          <Calendar size={13} className="text-accent-sky" />
           <FieldLabel>Key Dates</FieldLabel>
         </div>
         {plan.keyDates.length === 0 ? (
-          <p className="text-xs text-gray-400 italic mb-2">No key dates yet.</p>
+          <p className="text-xs text-gray-500 italic mb-2">No key dates yet.</p>
         ) : (
           <div className="space-y-2 mb-2">
             {plan.keyDates.map((d) => (
               <div key={d.id} className="flex items-center gap-2 flex-wrap">
                 {readOnly ? (
-                  <span className="text-xs text-gray-700 font-medium">{d.date || '—'}</span>
+                  <span className="text-xs text-gray-200 font-medium">{d.date || '—'}</span>
                 ) : (
                   <input
                     type="date"
                     value={d.date}
                     onChange={(e) => updateKeyDate(d.id, 'date', e.target.value)}
-                    className="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white"
+                    className="border border-white/10 bg-canvas text-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-accent-sky/50 [color-scheme:dark]"
                   />
                 )}
                 <div className="flex-1 min-w-[200px]">
@@ -70,7 +70,7 @@ export function GtmStrategy({ partner, updateField, readOnly }: SectionProps) {
                     value={d.description}
                     onSave={(v) => updateKeyDate(d.id, 'description', v)}
                     placeholder="Describe milestone…"
-                    className="text-xs text-gray-700"
+                    className="text-xs text-gray-300"
                     disabled={readOnly}
                   />
                 </div>
@@ -78,7 +78,7 @@ export function GtmStrategy({ partner, updateField, readOnly }: SectionProps) {
                   <button
                     type="button"
                     onClick={() => removeKeyDate(d.id)}
-                    className="text-gray-300 hover:text-red-500"
+                    className="text-gray-500 hover:text-accent-rose transition-colors"
                     aria-label="Remove key date"
                   >
                     <Trash2 size={14} />
@@ -120,7 +120,7 @@ function GtmTextField({
         value={value}
         onSave={onSave}
         placeholder={placeholder ?? `Add ${label.toLowerCase()}…`}
-        className="text-sm text-gray-700 block w-full whitespace-pre-wrap break-words"
+        className="text-sm text-gray-300 block w-full whitespace-pre-wrap break-words"
         multiline={multiline}
         disabled={disabled}
       />

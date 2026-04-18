@@ -75,20 +75,20 @@ export function NotesFeed({ partner, updateField, readOnly }: SectionProps) {
         <button
           type="button"
           onClick={beginDraft}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-accent-violet text-[#050914] rounded-md hover:brightness-110 transition"
         >
           <Plus size={12} /> Add Note
         </button>
       )}
 
       {drafting && !readOnly && (
-        <div className="border border-purple-200 rounded-lg p-3 bg-purple-50 space-y-2">
+        <div className="border border-accent-violet/30 rounded-md p-3 bg-accent-violet/5 space-y-2">
           <input
             type="text"
             value={draftAuthor}
             onChange={(e) => setDraftAuthor(e.target.value)}
             placeholder="Your name (optional)"
-            className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white"
+            className="w-full border border-white/10 bg-canvas text-white placeholder-gray-500 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-accent-violet/50"
           />
           <textarea
             value={draftBody}
@@ -96,21 +96,21 @@ export function NotesFeed({ partner, updateField, readOnly }: SectionProps) {
             placeholder="Write your note…"
             rows={4}
             autoFocus
-            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white"
+            className="w-full border border-white/10 bg-canvas text-white placeholder-gray-500 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-accent-violet/50"
           />
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={saveDraft}
               disabled={!draftBody.trim()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-accent-violet text-[#050914] rounded-md hover:brightness-110 disabled:opacity-40 transition"
             >
               <Check size={12} /> Save Note
             </button>
             <button
               type="button"
               onClick={cancelDraft}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-300 border border-white/10 bg-white/[0.03] rounded-md hover:bg-white/[0.06] hover:text-white transition-colors"
             >
               <X size={12} /> Cancel
             </button>
@@ -119,20 +119,20 @@ export function NotesFeed({ partner, updateField, readOnly }: SectionProps) {
       )}
 
       {sorted.length === 0 ? (
-        <p className="text-sm text-gray-400 italic">No notes yet.</p>
+        <p className="text-sm text-gray-500 italic">No notes yet.</p>
       ) : (
         <ul className="space-y-3">
           {sorted.map((note) => {
             const editing = editingId === note.id;
             return (
-              <li key={note.id} className="border border-gray-200 rounded-lg p-3 bg-white">
-                <div className="flex items-center justify-between gap-2 mb-1.5 text-xs text-gray-500">
+              <li key={note.id} className="border border-white/5 rounded-md p-3 bg-white/[0.02]">
+                <div className="flex items-center justify-between gap-2 mb-2 text-xs text-gray-500">
                   <span>
-                    <span className="font-medium text-gray-700">{note.author || 'Unknown'}</span>
-                    <span className="mx-1.5">·</span>
+                    <span className="font-semibold text-gray-200">{note.author || 'Unknown'}</span>
+                    <span className="mx-1.5 text-gray-600">·</span>
                     <span title={note.createdAt}>{formatDate(note.createdAt)}</span>
                     {note.updatedAt !== note.createdAt && (
-                      <span className="ml-1.5 italic text-gray-400">(edited {formatDate(note.updatedAt)})</span>
+                      <span className="ml-1.5 italic text-gray-500">(edited {formatDate(note.updatedAt)})</span>
                     )}
                   </span>
                   {!readOnly && !editing && (
@@ -140,7 +140,7 @@ export function NotesFeed({ partner, updateField, readOnly }: SectionProps) {
                       <button
                         type="button"
                         onClick={() => beginEdit(note)}
-                        className="text-gray-400 hover:text-purple-600 p-1"
+                        className="text-gray-500 hover:text-accent-violet p-1 transition-colors"
                         aria-label="Edit note"
                       >
                         <Pencil size={12} />
@@ -148,7 +148,7 @@ export function NotesFeed({ partner, updateField, readOnly }: SectionProps) {
                       <button
                         type="button"
                         onClick={() => removeNote(note.id)}
-                        className="text-gray-400 hover:text-red-500 p-1"
+                        className="text-gray-500 hover:text-accent-rose p-1 transition-colors"
                         aria-label="Delete note"
                       >
                         <Trash2 size={12} />
@@ -163,28 +163,28 @@ export function NotesFeed({ partner, updateField, readOnly }: SectionProps) {
                       onChange={(e) => setEditBody(e.target.value)}
                       rows={4}
                       autoFocus
-                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white"
+                      className="w-full border border-white/10 bg-canvas text-white placeholder-gray-500 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-accent-violet/50"
                     />
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={saveEdit}
                         disabled={!editBody.trim()}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-40"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-accent-violet text-[#050914] rounded-md hover:brightness-110 disabled:opacity-40 transition"
                       >
                         <Check size={12} /> Save
                       </button>
                       <button
                         type="button"
                         onClick={cancelEdit}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-300 border border-white/10 bg-white/[0.03] rounded-md hover:bg-white/[0.06] hover:text-white transition-colors"
                       >
                         <X size={12} /> Cancel
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">{note.body}</p>
+                  <p className="text-sm text-gray-300 whitespace-pre-wrap break-words">{note.body}</p>
                 )}
               </li>
             );
