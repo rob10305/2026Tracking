@@ -8,18 +8,44 @@ import {
   GOALS,
   CONTRIBUTION_MONTHS,
   CONTRIBUTION_MONTH_LABELS,
-  getAnnualGoal,
   actualKey,
   type ContributionMonth,
   type MetricId,
   type ContributorId,
   type ContributorInfo,
 } from "@/lib/contribution/data";
-import { Edit2, LayoutGrid, CalendarDays } from "lucide-react";
+import { LayoutGrid, CalendarDays, Target } from "lucide-react";
 import Image from "next/image";
 
-const TEAM_BG: Record<string, string> = {
-  cs: "bg-teal-600", sales: "bg-orange-600", partner: "bg-emerald-600",
+// Team → accent token mapping (dark theme)
+const TEAM_ACCENT: Record<
+  string,
+  { text: string; bg: string; border: string; dot: string; rowBg: string; headerBg: string }
+> = {
+  cs: {
+    text: "text-accent-sky",
+    bg: "bg-accent-sky/10",
+    border: "border-accent-sky/30",
+    dot: "bg-accent-sky",
+    rowBg: "bg-accent-sky/[0.06]",
+    headerBg: "bg-accent-sky/[0.08]",
+  },
+  sales: {
+    text: "text-accent-emerald",
+    bg: "bg-accent-emerald/10",
+    border: "border-accent-emerald/30",
+    dot: "bg-accent-emerald",
+    rowBg: "bg-accent-emerald/[0.06]",
+    headerBg: "bg-accent-emerald/[0.08]",
+  },
+  partner: {
+    text: "text-accent-violet",
+    bg: "bg-accent-violet/10",
+    border: "border-accent-violet/30",
+    dot: "bg-accent-violet",
+    rowBg: "bg-accent-violet/[0.06]",
+    headerBg: "bg-accent-violet/[0.08]",
+  },
 };
 
 function Avatar({ contributor, size = 28 }: { contributor: ContributorInfo; size?: number }) {
@@ -30,14 +56,15 @@ function Avatar({ contributor, size = 28 }: { contributor: ContributorInfo; size
         alt={contributor.name}
         width={size}
         height={size}
-        className="rounded-full object-cover flex-shrink-0"
+        className="rounded-full object-cover flex-shrink-0 ring-1 ring-white/10"
         style={{ width: size, height: size }}
       />
     );
   }
+  const accent = TEAM_ACCENT[contributor.color] ?? TEAM_ACCENT.cs;
   return (
     <div
-      className={`${TEAM_BG[contributor.color]} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}
+      className={`${accent.dot} rounded-full flex items-center justify-center text-[#050914] font-bold flex-shrink-0 ring-1 ring-white/10`}
       style={{ width: size, height: size, fontSize: size * 0.38 }}
     >
       {contributor.name[0]}
@@ -45,28 +72,14 @@ function Avatar({ contributor, size = 28 }: { contributor: ContributorInfo; size
   );
 }
 
-const TEAM_STYLES: Record<string, { row: string; badge: string; text: string; header: string }> = {
-  cs:      { row: "bg-teal-50",    badge: "bg-teal-100 text-teal-800 border border-teal-200",       text: "text-teal-900",    header: "bg-teal-50/80" },
-  sales:   { row: "bg-orange-50",  badge: "bg-orange-100 text-orange-800 border border-orange-200",  text: "text-orange-900",  header: "bg-orange-50/80" },
-  partner: { row: "bg-emerald-50", badge: "bg-emerald-100 text-emerald-800 border border-emerald-200", text: "text-emerald-900", header: "bg-emerald-50/80" },
-};
-
+// Left-border accent per metric, all on accent palette
 const SECTION_ACCENT: Record<string, string> = {
-  beta_customer:       "border-l-4 border-l-violet-400",
-  pipeline_value:      "border-l-4 border-l-blue-400",
-  pipeline_opps:       "border-l-4 border-l-blue-300",
-  new_logo_value:      "border-l-4 border-l-indigo-400",
-  reference_customers: "border-l-4 border-l-amber-400",
-  multi_year:          "border-l-4 border-l-emerald-400",
-};
-
-const METRIC_ACCENT_BG: Record<string, string> = {
-  beta_customer:       "bg-violet-50",
-  pipeline_value:      "bg-blue-50",
-  pipeline_opps:       "bg-blue-50",
-  new_logo_value:      "bg-indigo-50",
-  reference_customers: "bg-amber-50",
-  multi_year:          "bg-emerald-50",
+  beta_customer:       "border-l-4 border-l-accent-violet",
+  pipeline_value:      "border-l-4 border-l-accent-sky",
+  pipeline_opps:       "border-l-4 border-l-accent-sky",
+  new_logo_value:      "border-l-4 border-l-accent-violet",
+  reference_customers: "border-l-4 border-l-accent-amber",
+  multi_year:          "border-l-4 border-l-accent-emerald",
 };
 
 function fmtCurrency(n: number): string {
@@ -86,17 +99,25 @@ function calcPct(actual: number, goal: number): number {
 }
 
 function pctColor(p: number): string {
-  if (p >= 100) return "text-emerald-600";
-  if (p >= 75) return "text-amber-600";
-  return "text-red-500";
+  if (p >= 100) return "text-accent-emerald";
+  if (p >= 75) return "text-accent-amber";
+  return "text-accent-rose";
 }
 
-function AttainmentBadge({ actual, goal, format }: { actual: number; goal: number; format: "number" | "currency" }) {
+function AttainmentBadge({
+  actual,
+  goal,
+  format,
+}: {
+  actual: number;
+  goal: number;
+  format: "number" | "currency";
+}) {
   const p = calcPct(actual, goal);
   return (
     <div className="text-center leading-tight">
-      <div className="text-[12px] font-semibold text-gray-800">{fmtVal(actual, format)}</div>
-      <div className={`text-[10px] font-semibold ${pctColor(p)}`}>{p}%</div>
+      <div className="text-[12px] font-semibold text-white">{fmtVal(actual, format)}</div>
+      <div className={`text-[10px] font-bold ${pctColor(p)}`}>{p}%</div>
     </div>
   );
 }
@@ -120,12 +141,15 @@ export default function ContributionPage() {
   const selectedMonth = CONTRIBUTION_MONTHS[selectedMonthIdx] as ContributionMonth;
 
   // Helper to get a goal value: DB-loaded map first, hardcoded fallback
-  const getGoalValue = useCallback((cid: string, mid: string, month: string): number => {
-    const key = `${cid}::${mid}::${month}`;
-    if (key in goalsMap) return goalsMap[key];
-    const mi = CONTRIBUTION_MONTHS.indexOf(month as ContributionMonth);
-    return GOALS[cid as ContributorId]?.[mid as MetricId]?.[mi] ?? 0;
-  }, [goalsMap]);
+  const getGoalValue = useCallback(
+    (cid: string, mid: string, month: string): number => {
+      const key = `${cid}::${mid}::${month}`;
+      if (key in goalsMap) return goalsMap[key];
+      const mi = CONTRIBUTION_MONTHS.indexOf(month as ContributionMonth);
+      return GOALS[cid as ContributorId]?.[mid as MetricId]?.[mi] ?? 0;
+    },
+    [goalsMap],
+  );
 
   useEffect(() => {
     Promise.all([
@@ -147,7 +171,8 @@ export default function ContributionPage() {
     for (const metric of METRICS) {
       result[metric.id] = {};
       for (const month of CONTRIBUTION_MONTHS) {
-        let goalSum = 0; let actualSum = 0;
+        let goalSum = 0;
+        let actualSum = 0;
         for (const c of CONTRIBUTORS) {
           goalSum += getGoalValue(c.id, metric.id, month);
           actualSum += actuals[actualKey(c.id, metric.id, month)] ?? 0;
@@ -166,12 +191,15 @@ export default function ContributionPage() {
   const EditLinks = () => (
     <div className="flex items-center gap-2 flex-wrap justify-end">
       {CONTRIBUTORS.map((c) => {
-        const style = TEAM_STYLES[c.color];
+        const accent = TEAM_ACCENT[c.color] ?? TEAM_ACCENT.cs;
         return (
-          <Link key={c.id} href={`/contribution/edit/${c.id}`}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-80 ${style.badge}`}>
+          <Link
+            key={c.id}
+            href={`/contribution/edit/${c.id}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors border ${accent.bg} ${accent.border} ${accent.text} hover:brightness-125`}
+          >
             <Avatar contributor={c} size={20} />
-            {c.name} ({c.team})
+            {c.name} <span className="opacity-70">· {c.team}</span>
           </Link>
         );
       })}
@@ -179,13 +207,13 @@ export default function ContributionPage() {
   );
 
   const ToggleBar = () => (
-    <div className="inline-flex items-center bg-gray-100 rounded-lg p-1 gap-0.5">
+    <div className="inline-flex items-center bg-canvas-raised border border-white/5 rounded-lg p-1 gap-0.5">
       <button
         onClick={() => setViewMode("summary")}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
           viewMode === "summary"
-            ? "bg-white text-gray-900 shadow-sm"
-            : "text-gray-500 hover:text-gray-700"
+            ? "bg-accent-sky/15 text-accent-sky"
+            : "text-gray-400 hover:text-white"
         }`}
       >
         <CalendarDays className="w-3.5 h-3.5" />
@@ -193,10 +221,10 @@ export default function ContributionPage() {
       </button>
       <button
         onClick={() => setViewMode("annual")}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
           viewMode === "annual"
-            ? "bg-white text-gray-900 shadow-sm"
-            : "text-gray-500 hover:text-gray-700"
+            ? "bg-accent-sky/15 text-accent-sky"
+            : "text-gray-400 hover:text-white"
         }`}
       >
         <LayoutGrid className="w-3.5 h-3.5" />
@@ -205,30 +233,56 @@ export default function ContributionPage() {
     </div>
   );
 
-  return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 min-h-0">
-      <div className="px-6 py-8 max-w-[1600px] mx-auto">
+  if (!loaded) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-canvas">
+        <div className="animate-pulse flex flex-col items-center gap-3">
+          <div className="w-10 h-10 bg-accent-sky/10 rounded-full border border-accent-sky/30" />
+          <div className="h-3 w-24 bg-white/10 rounded" />
+        </div>
+      </div>
+    );
+  }
 
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">2026 Individual Goals Tracker</h1>
-            <p className="text-sm text-gray-500 mt-1">April to December · Goals vs Attainment</p>
+  return (
+    <div className="flex-1 overflow-y-auto bg-canvas min-h-0">
+      <div className="px-8 py-8 max-w-[1600px] mx-auto">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+          <div className="flex items-start gap-3">
+            <div className="w-11 h-11 rounded-xl bg-accent-sky/10 border border-accent-sky/30 flex items-center justify-center">
+              <Target size={20} className="text-accent-sky" />
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-accent-sky">
+                FY2026
+              </p>
+              <h1 className="mt-1 text-3xl font-bold text-white tracking-tight">
+                Individual Goals Tracker
+              </h1>
+              <p className="text-sm text-gray-400 mt-1">
+                April to December · Goals vs Attainment
+              </p>
+            </div>
           </div>
           <EditLinks />
         </div>
 
-        <div className="flex items-center gap-3 mb-5">
+        <div className="flex items-center gap-3 mb-5 flex-wrap">
           <ToggleBar />
           {viewMode === "summary" && (
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-600">Month</label>
+              <label className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500">
+                Month
+              </label>
               <select
                 value={selectedMonthIdx}
                 onChange={(e) => setSelectedMonthIdx(Number(e.target.value))}
-                className="text-sm font-semibold border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                className="text-sm font-semibold border border-white/10 rounded-md px-3 py-1.5 bg-canvas-raised text-white focus:outline-none focus:border-accent-sky/50"
               >
                 {CONTRIBUTION_MONTHS.map((m, i) => (
-                  <option key={m} value={i}>{CONTRIBUTION_MONTH_LABELS[i]} 2026</option>
+                  <option key={m} value={i}>
+                    {CONTRIBUTION_MONTH_LABELS[i]} 2026
+                  </option>
                 ))}
               </select>
             </div>
@@ -241,7 +295,6 @@ export default function ContributionPage() {
             selectedMonth={selectedMonth}
             selectedMonthIdx={selectedMonthIdx}
             actuals={actuals}
-            loaded={loaded}
             getGoalValue={getGoalValue}
           />
         )}
@@ -252,17 +305,18 @@ export default function ContributionPage() {
             actuals={actuals}
             annualTotals={annualTotals}
             hasAnyActuals={hasAnyActuals}
-            loaded={loaded}
             getGoalValue={getGoalValue}
           />
         )}
 
-        <div className="mt-6 bg-white rounded-xl border border-gray-200 px-5 py-4">
-          <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-3">Edit Goals</h3>
+        <div className="mt-6 bg-canvas-raised rounded-xl border border-white/5 px-5 py-4">
+          <h3 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-400 mb-3">
+            Edit Goals
+          </h3>
           <EditLinks />
         </div>
 
-        <p className="text-xs text-gray-400 mt-4 text-center">
+        <p className="text-xs text-gray-500 mt-4 text-center">
           Goal values shown. When actuals are entered via the edit links, attainment % appears below each value.
         </p>
       </div>
@@ -274,47 +328,48 @@ function SummaryView({
   selectedMonth,
   selectedMonthIdx,
   actuals,
-  loaded,
   getGoalValue,
 }: {
   selectedMonth: ContributionMonth;
   selectedMonthIdx: number;
   actuals: Record<string, number>;
-  loaded: boolean;
   getGoalValue: (cid: string, mid: string, month: string) => number;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/60">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-gray-700">
+    <div className="bg-canvas-raised rounded-xl border border-white/5 overflow-hidden">
+      <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02]">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gray-300">
           {CONTRIBUTION_MONTH_LABELS[selectedMonthIdx]} 2026 — Monthly Snapshot
         </h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 sticky left-0 bg-white w-44">Goal</th>
+            <tr className="border-b border-white/5">
+              <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500 sticky left-0 bg-canvas-raised w-44">
+                Goal
+              </th>
               {CONTRIBUTORS.map((c) => {
-                const style = TEAM_STYLES[c.color];
+                const accent = TEAM_ACCENT[c.color] ?? TEAM_ACCENT.cs;
                 return (
-                  <th key={c.id} className={`text-center px-3 py-2.5 ${style.header}`}>
-                    <div className="flex flex-col items-center gap-1">
+                  <th key={c.id} className={`text-center px-3 py-2.5 ${accent.headerBg}`}>
+                    <div className="flex flex-col items-center gap-1.5">
                       <Avatar contributor={c} size={32} />
-                      <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-700">{c.name}</div>
-                      <div className="text-[10px] font-normal text-gray-400">{c.team}</div>
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white">
+                        {c.name}
+                      </div>
+                      <div className="text-[10px] text-gray-500">{c.team}</div>
                     </div>
                   </th>
                 );
               })}
-              <th className="text-center px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50/50 w-28">
+              <th className="text-center px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-accent-sky bg-accent-sky/[0.08] w-28">
                 Team Total
               </th>
             </tr>
           </thead>
           <tbody>
             {METRICS.map((metric, mi) => {
-              const accentBg = METRIC_ACCENT_BG[metric.id];
               let teamGoalSum = 0;
               let teamActualSum = 0;
 
@@ -330,46 +385,67 @@ function SummaryView({
               const hasTeamActual = cells.some((x) => x.actual !== null);
 
               return (
-                <tr key={metric.id} className={`border-b border-gray-100 ${mi % 2 === 0 ? "bg-white" : "bg-gray-50/20"}`}>
-                  <td className={`px-5 py-3.5 sticky left-0 ${mi % 2 === 0 ? "bg-white" : "bg-gray-50/20"}`}>
+                <tr
+                  key={metric.id}
+                  className={`border-b border-white/5 ${mi % 2 === 0 ? "bg-transparent" : "bg-white/[0.015]"}`}
+                >
+                  <td
+                    className={`px-5 py-3.5 sticky left-0 ${mi % 2 === 0 ? "bg-canvas-raised" : "bg-canvas-elevated"}`}
+                  >
                     <div className="relative group inline-block">
-                      <div className="font-semibold text-gray-800 text-sm leading-tight cursor-default">{metric.label}</div>
-                      <div className="pointer-events-none absolute left-0 top-full mt-1.5 z-50 hidden group-hover:block w-52 rounded-lg bg-gray-800 px-2.5 py-1.5 text-[11px] text-white shadow-lg">
+                      <div className="font-semibold text-white text-sm leading-tight cursor-default">
+                        {metric.label}
+                      </div>
+                      <div className="pointer-events-none absolute left-0 top-full mt-1.5 z-50 hidden group-hover:block w-52 rounded-md bg-canvas-elevated border border-white/10 px-2.5 py-1.5 text-[11px] text-gray-200 shadow-soft-dark">
                         {metric.description}
                       </div>
                     </div>
                   </td>
                   {cells.map(({ c, goal, actual }) => {
-                    const style = TEAM_STYLES[c.color];
+                    const accent = TEAM_ACCENT[c.color] ?? TEAM_ACCENT.cs;
                     const p = actual !== null ? calcPct(actual, goal) : null;
                     return (
-                      <td key={c.id} className={`px-3 py-3.5 text-center ${style.header}`}>
+                      <td key={c.id} className={`px-3 py-3.5 text-center ${accent.headerBg}`}>
                         {actual !== null ? (
                           <div className="flex flex-col items-center gap-0.5">
-                            <span className="text-sm font-semibold text-gray-800">{fmtVal(actual, metric.format)}</span>
-                            <span className={`text-[11px] font-semibold ${pctColor(p!)}`}>{p}%</span>
-                            <span className="text-[10px] text-gray-400">of {fmtVal(goal, metric.format)}</span>
+                            <span className="text-sm font-semibold text-white">
+                              {fmtVal(actual, metric.format)}
+                            </span>
+                            <span className={`text-[11px] font-bold ${pctColor(p!)}`}>{p}%</span>
+                            <span className="text-[10px] text-gray-500">
+                              of {fmtVal(goal, metric.format)}
+                            </span>
                           </div>
                         ) : (
                           <div className="flex flex-col items-center gap-0.5">
-                            <span className={`text-sm font-medium ${style.text}`}>{fmtVal(goal, metric.format)}</span>
-                            <span className="text-[10px] text-gray-400">goal</span>
+                            <span className={`text-sm font-semibold ${accent.text}`}>
+                              {fmtVal(goal, metric.format)}
+                            </span>
+                            <span className="text-[10px] text-gray-500">goal</span>
                           </div>
                         )}
                       </td>
                     );
                   })}
-                  <td className="px-4 py-3.5 text-center bg-blue-50/50">
+                  <td className="px-4 py-3.5 text-center bg-accent-sky/[0.08]">
                     {hasTeamActual ? (
                       <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-sm font-bold text-gray-800">{fmtVal(teamActualSum, metric.format)}</span>
-                        <span className={`text-[11px] font-bold ${pctColor(teamPct)}`}>{teamPct}%</span>
-                        <span className="text-[10px] text-gray-400">of {fmtVal(teamGoalSum, metric.format)}</span>
+                        <span className="text-sm font-bold text-white">
+                          {fmtVal(teamActualSum, metric.format)}
+                        </span>
+                        <span className={`text-[11px] font-bold ${pctColor(teamPct)}`}>
+                          {teamPct}%
+                        </span>
+                        <span className="text-[10px] text-gray-500">
+                          of {fmtVal(teamGoalSum, metric.format)}
+                        </span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-sm font-bold text-blue-700">{fmtVal(teamGoalSum, metric.format)}</span>
-                        <span className="text-[10px] text-gray-400">team goal</span>
+                        <span className="text-sm font-bold text-accent-sky">
+                          {fmtVal(teamGoalSum, metric.format)}
+                        </span>
+                        <span className="text-[10px] text-gray-500">team goal</span>
                       </div>
                     )}
                   </td>
@@ -387,86 +463,146 @@ function AnnualView({
   actuals,
   annualTotals,
   hasAnyActuals,
-  loaded,
   getGoalValue,
 }: {
   actuals: Record<string, number>;
   annualTotals: Record<string, Record<string, { goal: number; actual: number }>>;
   hasAnyActuals: boolean;
-  loaded: boolean;
   getGoalValue: (cid: string, mid: string, month: string) => number;
 }) {
   return (
     <div className="space-y-5">
       {METRICS.map((metric) => (
-        <div key={metric.id} className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm ${SECTION_ACCENT[metric.id]}`}>
-          <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/60">
-            <div className="flex items-baseline gap-2">
-              <span className="text-xs font-bold uppercase tracking-widest text-gray-700">{metric.label}</span>
-              <span className="text-xs text-gray-400">— {metric.description}</span>
+        <div
+          key={metric.id}
+          className={`bg-canvas-raised rounded-xl border border-white/5 overflow-hidden ${SECTION_ACCENT[metric.id]}`}
+        >
+          <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02]">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-white">
+                {metric.label}
+              </span>
+              <span className="text-xs text-gray-500">— {metric.description}</span>
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-36 sticky left-0 bg-gray-50">Individual</th>
-                  <th className="text-center px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-20">Team</th>
+                <tr className="bg-white/[0.02] border-b border-white/5">
+                  <th className="text-left px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500 w-36 sticky left-0 bg-canvas-raised">
+                    Individual
+                  </th>
+                  <th className="text-center px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500 w-20">
+                    Team
+                  </th>
                   {CONTRIBUTION_MONTH_LABELS.map((lbl) => (
-                    <th key={lbl} className="text-center px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 w-24">{lbl}</th>
+                    <th
+                      key={lbl}
+                      className="text-center px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500 w-24"
+                    >
+                      {lbl}
+                    </th>
                   ))}
-                  <th className="text-center px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-blue-600 w-28">Total</th>
+                  <th className="text-center px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-accent-sky w-28">
+                    Total
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {CONTRIBUTORS.map((c) => {
-                  const style = TEAM_STYLES[c.color];
-                  const annualGoal = CONTRIBUTION_MONTHS.reduce((s, m) => s + getGoalValue(c.id, metric.id, m), 0);
-                  const annualActual = CONTRIBUTION_MONTHS.reduce((s, m) => s + (actuals[actualKey(c.id, metric.id, m)] ?? 0), 0);
+                  const accent = TEAM_ACCENT[c.color] ?? TEAM_ACCENT.cs;
+                  const annualGoal = CONTRIBUTION_MONTHS.reduce(
+                    (s, m) => s + getGoalValue(c.id, metric.id, m),
+                    0,
+                  );
+                  const annualActual = CONTRIBUTION_MONTHS.reduce(
+                    (s, m) => s + (actuals[actualKey(c.id, metric.id, m)] ?? 0),
+                    0,
+                  );
                   return (
-                    <tr key={c.id} className={`${style.row} border-b border-gray-100 hover:brightness-[0.97] transition-all`}>
-                      <td className={`px-5 py-2.5 font-semibold text-sm sticky left-0 ${style.row} ${style.text}`}>{c.name}</td>
-                      <td className="px-3 py-2.5 text-center">
-                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${style.badge}`}>{c.team}</span>
+                    <tr
+                      key={c.id}
+                      className={`${accent.rowBg} border-b border-white/5 hover:bg-canvas-elevated transition-colors`}
+                    >
+                      <td
+                        className={`px-5 py-2.5 font-semibold text-sm sticky left-0 ${accent.rowBg} text-white`}
+                      >
+                        {c.name}
                       </td>
-                      {CONTRIBUTION_MONTHS.map((month, mi) => {
+                      <td className="px-3 py-2.5 text-center">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] border ${accent.bg} ${accent.border} ${accent.text}`}
+                        >
+                          {c.team}
+                        </span>
+                      </td>
+                      {CONTRIBUTION_MONTHS.map((month) => {
                         const goal = getGoalValue(c.id, metric.id, month);
                         const actual = actuals[actualKey(c.id, metric.id, month)] ?? null;
                         return (
                           <td key={month} className="px-3 py-2.5 text-center w-24">
-                            {actual !== null && hasAnyActuals
-                              ? <AttainmentBadge actual={actual} goal={goal} format={metric.format} />
-                              : <span className={`text-[12px] font-medium ${style.text}`}>{fmtVal(goal, metric.format)}</span>}
+                            {actual !== null && hasAnyActuals ? (
+                              <AttainmentBadge
+                                actual={actual}
+                                goal={goal}
+                                format={metric.format}
+                              />
+                            ) : (
+                              <span className={`text-[12px] font-medium ${accent.text}`}>
+                                {fmtVal(goal, metric.format)}
+                              </span>
+                            )}
                           </td>
                         );
                       })}
                       <td className="px-3 py-2.5 text-center font-bold">
-                        {hasAnyActuals && annualActual > 0
-                          ? <AttainmentBadge actual={annualActual} goal={annualGoal} format={metric.format} />
-                          : <span className={`text-[12px] font-semibold ${style.text}`}>{fmtVal(annualGoal, metric.format)}</span>}
+                        {hasAnyActuals && annualActual > 0 ? (
+                          <AttainmentBadge
+                            actual={annualActual}
+                            goal={annualGoal}
+                            format={metric.format}
+                          />
+                        ) : (
+                          <span className={`text-[12px] font-semibold ${accent.text}`}>
+                            {fmtVal(annualGoal, metric.format)}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );
                 })}
-                <tr className="bg-gray-50 border-t-2 border-gray-200">
-                  <td className="px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-gray-600 sticky left-0 bg-gray-50">Total</td>
+                <tr className="bg-white/[0.03] border-t border-white/10">
+                  <td className="px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400 sticky left-0 bg-canvas-elevated">
+                    Total
+                  </td>
                   <td />
                   {CONTRIBUTION_MONTHS.map((month) => {
                     const { goal, actual } = annualTotals[metric.id]?.[month] ?? { goal: 0, actual: 0 };
                     return (
                       <td key={month} className="px-3 py-2.5 text-center">
-                        {hasAnyActuals && actual > 0
-                          ? <AttainmentBadge actual={actual} goal={goal} format={metric.format} />
-                          : <span className="text-[12px] font-bold text-gray-800">{fmtVal(goal, metric.format)}</span>}
+                        {hasAnyActuals && actual > 0 ? (
+                          <AttainmentBadge actual={actual} goal={goal} format={metric.format} />
+                        ) : (
+                          <span className="text-[12px] font-bold text-white">
+                            {fmtVal(goal, metric.format)}
+                          </span>
+                        )}
                       </td>
                     );
                   })}
                   <td className="px-3 py-2.5 text-center">
                     {(() => {
-                      const { goal, actual } = annualTotals[metric.id]?.["annual"] ?? { goal: 0, actual: 0 };
-                      return hasAnyActuals && actual > 0
-                        ? <AttainmentBadge actual={actual} goal={goal} format={metric.format} />
-                        : <span className="text-[12px] font-bold text-blue-700">{fmtVal(goal, metric.format)}</span>;
+                      const { goal, actual } = annualTotals[metric.id]?.["annual"] ?? {
+                        goal: 0,
+                        actual: 0,
+                      };
+                      return hasAnyActuals && actual > 0 ? (
+                        <AttainmentBadge actual={actual} goal={goal} format={metric.format} />
+                      ) : (
+                        <span className="text-[12px] font-bold text-accent-sky">
+                          {fmtVal(goal, metric.format)}
+                        </span>
+                      );
                     })()}
                   </td>
                 </tr>
